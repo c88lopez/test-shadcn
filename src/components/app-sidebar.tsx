@@ -1,4 +1,6 @@
-import { IconDashboard, IconSettings, IconUsers, IconChartBar } from "@tabler/icons-react"
+import { IconDashboard, IconSettings, IconUsers, IconChartBar, IconDotsVertical } from "@tabler/icons-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 import {
   Sidebar,
@@ -72,6 +74,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton className="h-12 data-[state=open]:bg-sidebar-accent">
+                  <Avatar className="size-7 rounded-md">
+                    <AvatarImage src="" alt="Cristian Lopez" />
+                    <AvatarFallback className="rounded-md text-xs">CL</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col text-left leading-tight">
+                    <span className="truncate text-sm font-medium">Cristian Lopez</span>
+                    <span className="text-muted-foreground truncate text-xs">cristian@coperniq.io</span>
+                  </div>
+                  <IconDotsVertical className="ml-auto size-4 shrink-0" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" className="w-56">
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )
