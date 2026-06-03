@@ -4,9 +4,12 @@ import {
   IconSettings,
   IconUsers,
   IconCalendar,
-  IconShoppingCart,
+  IconReceipt,
+  IconChartBar,
   IconBox,
   IconTrophy,
+  IconUserStar,
+  IconSchool,
   IconDotsVertical,
   IconSelector,
   IconCheck,
@@ -47,8 +50,14 @@ const navCourtManagement = [
 ]
 
 const navInventory = [
-  { title: "Sales", url: "/sales", icon: IconShoppingCart },
-  { title: "Inventory", url: "/inventory", icon: IconBox },
+  { title: "Dashboard", url: "/inventory/dashboard", icon: IconChartBar },
+  { title: "Stock", url: "/inventory", icon: IconBox },
+  { title: "Sales Log", url: "/inventory/sales-log", icon: IconReceipt },
+]
+
+const navCoaches = [
+  { title: "Coaches", url: "/coaches", icon: IconUserStar },
+  { title: "Classes", url: "/coaches/classes", icon: IconSchool },
 ]
 
 const navPlayers = [{ title: "Players", url: "/players", icon: IconUsers }]
@@ -136,8 +145,9 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavGroup label="Court Management" items={navCourtManagement} />
+        <NavGroup label="Courts" items={navCourtManagement} />
         <NavGroup label="Inventory" items={navInventory} />
+        <NavGroup label="Coaches" items={navCoaches} />
         <NavGroup label="Players" items={navPlayers} />
         <NavGroup label="Tournaments" items={navTournaments} />
       </SidebarContent>

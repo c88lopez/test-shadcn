@@ -26,8 +26,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const Route = createFileRoute("/_authenticated/sales")({
-  component: SalesPage,
+export const Route = createFileRoute("/_authenticated/inventory/dashboard")({
+  component: InventoryDashboard,
 })
 
 const dailyRevenue = [
@@ -59,7 +59,7 @@ const totalOrders = 15
 const bestSeller = "Padel Racket (Pro)"
 
 const revenueChartConfig = {
-  revenue: { label: "Revenue (€)", color: "var(--chart-1)" },
+  revenue: { label: "Revenue ($)", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
 const categoryChartConfig = {
@@ -69,14 +69,14 @@ const categoryChartConfig = {
 } satisfies ChartConfig
 
 const topProductsConfig = {
-  sales: { label: "Revenue (€)", color: "var(--chart-2)" },
+  sales: { label: "Revenue ($)", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
-function SalesPage() {
+function InventoryDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Sales</h1>
+        <h1 className="text-2xl font-semibold">Sales Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Product sales overview for this week.
         </p>
@@ -96,7 +96,7 @@ function SalesPage() {
               <IconCoin className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-4xl font-bold">€{totalRevenue.toFixed(0)}</p>
+              <p className="text-4xl font-bold">${totalRevenue.toFixed(0)}</p>
               <p className="text-sm text-muted-foreground">this week</p>
             </div>
           </CardContent>
@@ -129,7 +129,7 @@ function SalesPage() {
             </div>
             <div>
               <p className="text-lg leading-tight font-bold">{bestSeller}</p>
-              <p className="text-sm text-muted-foreground">€149.99</p>
+              <p className="text-sm text-muted-foreground">$149.99</p>
             </div>
           </CardContent>
         </Card>
@@ -177,7 +177,7 @@ function SalesPage() {
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `€${v}`}
+                tickFormatter={(v) => `$${v}`}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
@@ -228,7 +228,7 @@ function SalesPage() {
                     className="size-2.5 rounded-full"
                     style={{ background: c.fill }}
                   />
-                  {c.category} · €{c.revenue.toFixed(2)}
+                  {c.category} · ${c.revenue.toFixed(2)}
                 </span>
               ))}
             </div>
@@ -256,7 +256,7 @@ function SalesPage() {
                   type="number"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `€${v}`}
+                  tickFormatter={(v) => `$${v}`}
                 />
                 <YAxis
                   type="category"

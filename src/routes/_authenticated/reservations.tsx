@@ -4,6 +4,7 @@ import { IconPencil, IconPlus } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
+import { NewReservationDrawer } from "@/components/new-reservation-drawer"
 
 export const Route = createFileRoute("/_authenticated/reservations")({
   component: ReservationsPage,
@@ -194,10 +195,14 @@ function ReservationsPage() {
         data={reservations}
         searchPlaceholder="Search reservations..."
         action={
-          <Button size="sm">
-            <IconPlus className="size-4" />
-            New Reservation
-          </Button>
+          <NewReservationDrawer
+            trigger={
+              <Button size="sm">
+                <IconPlus className="size-4" />
+                New Reservation
+              </Button>
+            }
+          />
         }
       />
     </div>

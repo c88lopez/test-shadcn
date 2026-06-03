@@ -13,10 +13,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
-import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
-import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
+import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
+import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
+import { Route as AuthenticatedInventorySalesLogRouteImport } from './routes/_authenticated/inventory/sales-log'
+import { Route as AuthenticatedInventoryDashboardRouteImport } from './routes/_authenticated/inventory/dashboard'
+import { Route as AuthenticatedCoachesClassesRouteImport } from './routes/_authenticated/coaches/classes'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -38,11 +41,6 @@ const AuthenticatedTournamentsRoute =
     path: '/tournaments',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSalesRoute = AuthenticatedSalesRouteImport.update({
-  id: '/sales',
-  path: '/sales',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedReservationsRoute =
   AuthenticatedReservationsRouteImport.update({
     id: '/reservations',
@@ -54,70 +52,113 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+const AuthenticatedInventoryIndexRoute =
+  AuthenticatedInventoryIndexRouteImport.update({
+    id: '/inventory/',
+    path: '/inventory/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCoachesIndexRoute =
+  AuthenticatedCoachesIndexRouteImport.update({
+    id: '/coaches/',
+    path: '/coaches/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedInventorySalesLogRoute =
+  AuthenticatedInventorySalesLogRouteImport.update({
+    id: '/inventory/sales-log',
+    path: '/inventory/sales-log',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedInventoryDashboardRoute =
+  AuthenticatedInventoryDashboardRouteImport.update({
+    id: '/inventory/dashboard',
+    path: '/inventory/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCoachesClassesRoute =
+  AuthenticatedCoachesClassesRouteImport.update({
+    id: '/coaches/classes',
+    path: '/coaches/classes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
-  '/inventory': typeof AuthenticatedInventoryRoute
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
-  '/sales': typeof AuthenticatedSalesRoute
   '/tournaments': typeof AuthenticatedTournamentsRoute
+  '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
+  '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
+  '/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
+  '/coaches/': typeof AuthenticatedCoachesIndexRoute
+  '/inventory/': typeof AuthenticatedInventoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/inventory': typeof AuthenticatedInventoryRoute
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
-  '/sales': typeof AuthenticatedSalesRoute
   '/tournaments': typeof AuthenticatedTournamentsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
+  '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
+  '/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
+  '/coaches': typeof AuthenticatedCoachesIndexRoute
+  '/inventory': typeof AuthenticatedInventoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRoute
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
-  '/_authenticated/sales': typeof AuthenticatedSalesRoute
   '/_authenticated/tournaments': typeof AuthenticatedTournamentsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/coaches/classes': typeof AuthenticatedCoachesClassesRoute
+  '/_authenticated/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
+  '/_authenticated/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
+  '/_authenticated/coaches/': typeof AuthenticatedCoachesIndexRoute
+  '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
-    | '/inventory'
     | '/players'
     | '/reservations'
-    | '/sales'
     | '/tournaments'
+    | '/coaches/classes'
+    | '/inventory/dashboard'
+    | '/inventory/sales-log'
+    | '/coaches/'
+    | '/inventory/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/inventory'
     | '/players'
     | '/reservations'
-    | '/sales'
     | '/tournaments'
     | '/'
+    | '/coaches/classes'
+    | '/inventory/dashboard'
+    | '/inventory/sales-log'
+    | '/coaches'
+    | '/inventory'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
-    | '/_authenticated/inventory'
     | '/_authenticated/players'
     | '/_authenticated/reservations'
-    | '/_authenticated/sales'
     | '/_authenticated/tournaments'
     | '/_authenticated/'
+    | '/_authenticated/coaches/classes'
+    | '/_authenticated/inventory/dashboard'
+    | '/_authenticated/inventory/sales-log'
+    | '/_authenticated/coaches/'
+    | '/_authenticated/inventory/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -155,13 +196,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTournamentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/sales': {
-      id: '/_authenticated/sales'
-      path: '/sales'
-      fullPath: '/sales'
-      preLoaderRoute: typeof AuthenticatedSalesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/reservations': {
       id: '/_authenticated/reservations'
       path: '/reservations'
@@ -176,32 +210,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/inventory': {
-      id: '/_authenticated/inventory'
+    '/_authenticated/inventory/': {
+      id: '/_authenticated/inventory/'
       path: '/inventory'
-      fullPath: '/inventory'
-      preLoaderRoute: typeof AuthenticatedInventoryRouteImport
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof AuthenticatedInventoryIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/coaches/': {
+      id: '/_authenticated/coaches/'
+      path: '/coaches'
+      fullPath: '/coaches/'
+      preLoaderRoute: typeof AuthenticatedCoachesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inventory/sales-log': {
+      id: '/_authenticated/inventory/sales-log'
+      path: '/inventory/sales-log'
+      fullPath: '/inventory/sales-log'
+      preLoaderRoute: typeof AuthenticatedInventorySalesLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inventory/dashboard': {
+      id: '/_authenticated/inventory/dashboard'
+      path: '/inventory/dashboard'
+      fullPath: '/inventory/dashboard'
+      preLoaderRoute: typeof AuthenticatedInventoryDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/coaches/classes': {
+      id: '/_authenticated/coaches/classes'
+      path: '/coaches/classes'
+      fullPath: '/coaches/classes'
+      preLoaderRoute: typeof AuthenticatedCoachesClassesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRoute
   AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
-  AuthenticatedSalesRoute: typeof AuthenticatedSalesRoute
   AuthenticatedTournamentsRoute: typeof AuthenticatedTournamentsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCoachesClassesRoute: typeof AuthenticatedCoachesClassesRoute
+  AuthenticatedInventoryDashboardRoute: typeof AuthenticatedInventoryDashboardRoute
+  AuthenticatedInventorySalesLogRoute: typeof AuthenticatedInventorySalesLogRoute
+  AuthenticatedCoachesIndexRoute: typeof AuthenticatedCoachesIndexRoute
+  AuthenticatedInventoryIndexRoute: typeof AuthenticatedInventoryIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedPlayersRoute: AuthenticatedPlayersRoute,
   AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
-  AuthenticatedSalesRoute: AuthenticatedSalesRoute,
   AuthenticatedTournamentsRoute: AuthenticatedTournamentsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCoachesClassesRoute: AuthenticatedCoachesClassesRoute,
+  AuthenticatedInventoryDashboardRoute: AuthenticatedInventoryDashboardRoute,
+  AuthenticatedInventorySalesLogRoute: AuthenticatedInventorySalesLogRoute,
+  AuthenticatedCoachesIndexRoute: AuthenticatedCoachesIndexRoute,
+  AuthenticatedInventoryIndexRoute: AuthenticatedInventoryIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
