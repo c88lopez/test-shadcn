@@ -23,7 +23,7 @@ function AuthenticatedLayout() {
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b bg-background px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" />
@@ -38,7 +38,7 @@ function AuthenticatedLayout() {
               <NotificationsDrawer />
             </div>
           </header>
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-4 md:p-6">
             <Outlet />
           </div>
         </main>
