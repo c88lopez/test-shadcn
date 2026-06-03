@@ -8,7 +8,12 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 
-const notifications: { id: number; title: string; description: string; read: boolean }[] = []
+const notifications: {
+  id: number
+  title: string
+  description: string
+  read: boolean
+}[] = []
 
 export function NotificationsDrawer() {
   return (
@@ -22,19 +27,27 @@ export function NotificationsDrawer() {
       <DrawerContent>
         <DrawerHeader className="flex flex-row items-center justify-between">
           <DrawerTitle>Notifications</DrawerTitle>
-          <Button variant="ghost" size="sm" className="text-muted-foreground h-7 text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+          >
             Read all
           </Button>
         </DrawerHeader>
         <div className="flex-1 overflow-y-auto px-4">
           {notifications.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">No notifications</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No notifications
+            </p>
           ) : (
             <ul className="space-y-2">
               {notifications.map((n) => (
                 <li key={n.id} className="rounded-md border p-3">
                   <p className="font-medium">{n.title}</p>
-                  <p className="text-muted-foreground text-sm">{n.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {n.description}
+                  </p>
                 </li>
               ))}
             </ul>

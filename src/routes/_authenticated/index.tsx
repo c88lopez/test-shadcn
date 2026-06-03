@@ -1,12 +1,232 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { IconCalendar, IconChartBar } from "@tabler/icons-react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from "recharts"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import type { ChartConfig } from "@/components/ui/chart"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 
-export const Route = createFileRoute("/_authenticated/")({ component: Dashboard })
+export const Route = createFileRoute("/_authenticated/")({
+  component: Dashboard,
+})
+
+const courts = { total: 6, occupied: 4 }
+
+const courtsChartData = [
+  { status: "Occupied", count: courts.occupied, fill: "var(--chart-1)" },
+  {
+    status: "Available",
+    count: courts.total - courts.occupied,
+    fill: "var(--chart-2)",
+  },
+]
+
+const courtsChartConfig = {
+  occupied: { label: "Occupied", color: "var(--chart-1)" },
+  available: { label: "Available", color: "var(--chart-2)" },
+} satisfies ChartConfig
+
+const weeklyData = [
+  { day: "Mon", reservations: 8 },
+  { day: "Tue", reservations: 12 },
+  { day: "Wed", reservations: 7 },
+  { day: "Thu", reservations: 15 },
+  { day: "Fri", reservations: 20 },
+  { day: "Sat", reservations: 18 },
+  { day: "Sun", reservations: 10 },
+]
+
+const weeklyChartConfig = {
+  reservations: { label: "Reservations", color: "var(--chart-1)" },
+} satisfies ChartConfig
+
+const todayReservations = [
+  { court: 1, account: "Maria García", time: "09:00 – 10:30", paid: true },
+  { court: 3, account: "Carlos López", time: "10:00 – 11:30", paid: false },
+  { court: 2, account: "Ana Martínez", time: "11:00 – 12:30", paid: true },
+  { court: 1, account: "Pedro Sánchez", time: "12:00 – 13:30", paid: true },
+  { court: 4, account: "Laura Fernández", time: "16:00 – 17:30", paid: false },
+  { court: 2, account: "Diego Ruiz", time: "18:00 – 19:30", paid: true },
+]
+
+const todayTotal = todayReservations.length
+const weeklyTotal = weeklyData.reduce((sum, d) => sum + d.reservations, 0)
 
 function Dashboard() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <p className="text-muted-foreground mt-1 text-sm">Welcome to your dashboard.</p>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Padel club overview
+        </p>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Courts status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Courts</CardTitle>
+            <CardDescription>Current occupancy</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-2">
+            <ChartContainer
+              config={courtsChartConfig}
+              className="h-[120px] w-[120px]"
+            >
+              <PieChart>
+                <Pie
+                  data={courtsChartData}
+                  dataKey="count"
+                  nameKey="status"
+                  innerRadius={35}
+                  outerRadius={55}
+                  paddingAngle={2}
+                />
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+              </PieChart>
+            </ChartContainer>
+            <div className="flex gap-4 text-sm">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-[var(--chart-1)]" />
+                {courts.occupied} Occupied
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-[var(--chart-2)]" />
+                {courts.total - courts.occupied} Available
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Today's bookings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Today's Bookings
+            </CardTitle>
+            <CardDescription>Reservations for today</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center gap-4 pt-2">
+            <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
+              <IconCalendar className="size-6 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-4xl font-bold">{todayTotal}</p>
+              <p className="text-sm text-muted-foreground">reservations</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Weekly total */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">This Week</CardTitle>
+            <CardDescription>Total reservations</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center gap-4 pt-2">
+            <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
+              <IconChartBar className="size-6 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-4xl font-bold">{weeklyTotal}</p>
+              <p className="text-sm text-muted-foreground">reservations</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Timeline bar chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Reservations this week</CardTitle>
+          <CardDescription>Number of reservations per day</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer
+            config={weeklyChartConfig}
+            className="h-[220px] w-full"
+          >
+            <BarChart
+              data={weeklyData}
+              margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+            >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="day" tickLine={false} axisLine={false} />
+              <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar
+                dataKey="reservations"
+                fill="var(--chart-1)"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Today's reservations table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Today's Reservations</CardTitle>
+          <CardDescription>All bookings scheduled for today</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Court</TableHead>
+                <TableHead>Account</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead className="text-right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {todayReservations.map((r, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">Court {r.court}</TableCell>
+                  <TableCell>{r.account}</TableCell>
+                  <TableCell>{r.time}</TableCell>
+                  <TableCell className="text-right">
+                    {r.paid ? (
+                      <Badge variant="default">Paid</Badge>
+                    ) : (
+                      <Badge variant="outline">Unpaid</Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

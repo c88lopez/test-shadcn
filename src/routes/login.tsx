@@ -3,7 +3,13 @@ import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { login } from "@/lib/auth"
 
 export const Route = createFileRoute("/login")({ component: LoginPage })
@@ -53,7 +59,7 @@ function LoginPage() {
                 required
               />
             </div>
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full">
               Sign in
             </Button>
