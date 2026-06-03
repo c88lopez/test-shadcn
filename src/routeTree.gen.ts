@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
 import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
@@ -31,6 +32,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTournamentsRoute =
+  AuthenticatedTournamentsRouteImport.update({
+    id: '/tournaments',
+    path: '/tournaments',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSalesRoute = AuthenticatedSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/sales': typeof AuthenticatedSalesRoute
+  '/tournaments': typeof AuthenticatedTournamentsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -67,6 +75,7 @@ export interface FileRoutesByTo {
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/sales': typeof AuthenticatedSalesRoute
+  '/tournaments': typeof AuthenticatedTournamentsRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -77,6 +86,7 @@ export interface FileRoutesById {
   '/_authenticated/players': typeof AuthenticatedPlayersRoute
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
   '/_authenticated/sales': typeof AuthenticatedSalesRoute
+  '/_authenticated/tournaments': typeof AuthenticatedTournamentsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -88,8 +98,16 @@ export interface FileRouteTypes {
     | '/players'
     | '/reservations'
     | '/sales'
+    | '/tournaments'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/inventory' | '/players' | '/reservations' | '/sales' | '/'
+  to:
+    | '/login'
+    | '/inventory'
+    | '/players'
+    | '/reservations'
+    | '/sales'
+    | '/tournaments'
+    | '/'
   id:
     | '__root__'
     | '/_authenticated'
@@ -98,6 +116,7 @@ export interface FileRouteTypes {
     | '/_authenticated/players'
     | '/_authenticated/reservations'
     | '/_authenticated/sales'
+    | '/_authenticated/tournaments'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -127,6 +146,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tournaments': {
+      id: '/_authenticated/tournaments'
+      path: '/tournaments'
+      fullPath: '/tournaments'
+      preLoaderRoute: typeof AuthenticatedTournamentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sales': {
@@ -165,6 +191,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRoute
   AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
   AuthenticatedSalesRoute: typeof AuthenticatedSalesRoute
+  AuthenticatedTournamentsRoute: typeof AuthenticatedTournamentsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -173,6 +200,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPlayersRoute: AuthenticatedPlayersRoute,
   AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
   AuthenticatedSalesRoute: AuthenticatedSalesRoute,
+  AuthenticatedTournamentsRoute: AuthenticatedTournamentsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
