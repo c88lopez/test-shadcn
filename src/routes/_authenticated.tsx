@@ -24,7 +24,7 @@ function AuthenticatedLayout() {
       <SidebarProvider>
         <AppSidebar />
         <main className="flex flex-1 flex-col">
-          <header className="flex h-12 items-center gap-3 border-b px-4">
+          <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b bg-background px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" />
             <div className="relative w-full max-w-sm">
