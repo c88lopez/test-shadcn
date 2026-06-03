@@ -38,11 +38,9 @@ function RootLayout() {
           <header className="flex h-12 items-center gap-3 border-b px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" />
-            <div className="flex flex-1 justify-center">
-              <div className="relative w-full max-w-sm">
-                <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-                <Input placeholder="Search…" className="pl-8 h-8 bg-muted/50 border-0 focus-visible:ring-1" />
-              </div>
+            <div className="relative w-full max-w-sm">
+              <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+              <Input placeholder="Search…" className="pl-8 h-8 bg-muted/50 border-0 focus-visible:ring-1" />
             </div>
           </header>
           <div className="flex-1 p-6">
