@@ -1,4 +1,9 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+} from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -7,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { IconSearch } from "@tabler/icons-react"
 import { AppSidebar } from "@/components/app-sidebar"
+import { NotificationsDrawer } from "@/components/notifications-drawer"
 
 import appCss from "../styles.css?url"
 
@@ -39,8 +45,14 @@ function RootLayout() {
             <SidebarTrigger />
             <Separator orientation="vertical" />
             <div className="relative w-full max-w-sm">
-              <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-              <Input placeholder="Search…" className="pl-8 h-8 bg-muted/50 border-0 focus-visible:ring-1" />
+              <IconSearch className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search…"
+                className="h-8 border-0 bg-muted/50 pl-8 focus-visible:ring-1"
+              />
+            </div>
+            <div className="ml-auto">
+              <NotificationsDrawer />
             </div>
           </header>
           <div className="flex-1 p-6">
@@ -56,13 +68,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <title>Dense mf</title>
         <HeadContent />
       </head>
       <body>
         {children}
         <TanStackDevtools
           config={{ position: "bottom-right" }}
-          plugins={[{ name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel /> }]}
+          plugins={[
+            {
+              name: "Tanstack Router",
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+          ]}
         />
         <Scripts />
       </body>

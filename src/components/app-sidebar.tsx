@@ -1,10 +1,4 @@
-import {
-  IconDashboard,
-  IconSettings,
-  IconUsers,
-  IconChartBar,
-  IconBell,
-} from "@tabler/icons-react"
+import { IconDashboard, IconSettings, IconUsers, IconChartBar } from "@tabler/icons-react"
 
 import {
   Sidebar,
@@ -23,7 +17,6 @@ const navMain = [
   { title: "Dashboard", url: "/", icon: IconDashboard },
   { title: "Analytics", url: "/analytics", icon: IconChartBar },
   { title: "Users", url: "/users", icon: IconUsers },
-  { title: "Notifications", url: "/notifications", icon: IconBell },
 ]
 
 const navSecondary = [
