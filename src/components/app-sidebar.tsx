@@ -1,6 +1,8 @@
 import { IconDashboard, IconSettings, IconUsers, IconChartBar, IconDotsVertical } from "@tabler/icons-react"
+import { useRouter } from "@tanstack/react-router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { logout } from "@/lib/auth"
 
 import {
   Sidebar,
@@ -26,6 +28,13 @@ const navSecondary = [
 ]
 
 export function AppSidebar() {
+  const router = useRouter()
+
+  function handleSignOut() {
+    logout()
+    router.navigate({ to: "/login" })
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -93,7 +102,7 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-56">
                 <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleSignOut}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
