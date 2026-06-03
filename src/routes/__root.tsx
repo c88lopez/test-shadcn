@@ -47,7 +47,7 @@ function RootLayout() {
             <div className="relative w-full max-w-sm">
               <IconSearch className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search…"
+                placeholder="Search anything..."
                 className="h-8 border-0 bg-muted/50 pl-8 focus-visible:ring-1"
               />
             </div>
