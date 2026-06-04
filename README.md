@@ -21,10 +21,12 @@ bun run dev   # http://localhost:3003
 
 ### Authentication
 
-Auth is mock-only and runs entirely in the browser (credentials are hardcoded, session lives in `localStorage`). Do not use as-is in production.
+Auth is mock-only and runs entirely in the browser (credentials are checked client-side, the "session" is a flag in `localStorage`). There is no server, no password hashing, and no real session — **do not use as-is in production**.
 
 - **Username**: `admin`
 - **Password**: `admin123`
+
+To override the demo credentials, copy `.env.example` to `.env` and set `VITE_DEMO_USERNAME` / `VITE_DEMO_PASSWORD` (must be `VITE_`-prefixed to reach the browser bundle).
 
 ## Scripts
 

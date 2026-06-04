@@ -1,13 +1,23 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
-import { IconPlus, IconTrophy, IconUsers, IconCalendar, IconMedal } from "@tabler/icons-react"
+import {
+  IconPlus,
+  IconTrophy,
+  IconUsers,
+  IconCalendar,
+  IconMedal,
+} from "@tabler/icons-react"
 import { Bar, BarChart, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ChartConfig } from "@/components/ui/chart"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 import { DataTable } from "@/components/data-table"
 import { NewPlayerDrawer } from "@/components/new-player-drawer"
 import type { PlayerData } from "@/components/new-player-drawer"
@@ -257,10 +267,10 @@ const tournamentCounts: Record<string, number> = {
 }
 
 const topReservationPlayer = Object.entries(reservationCounts).sort(
-  (a, b) => b[1] - a[1],
+  (a, b) => b[1] - a[1]
 )[0]
 const topTournamentPlayer = Object.entries(tournamentCounts).sort(
-  (a, b) => b[1] - a[1],
+  (a, b) => b[1] - a[1]
 )[0]
 
 const categoryDistribution = [
@@ -298,7 +308,11 @@ function PlayerActions({ player }: { player: Player }) {
   const [editOpen, setEditOpen] = useState(false)
   return (
     <>
-      <NewPlayerDrawer player={player} open={editOpen} onOpenChange={setEditOpen} />
+      <NewPlayerDrawer
+        player={player}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
       <RowActions
         onEdit={() => setEditOpen(true)}
         onDuplicate={() => console.log("[dummy] duplicate", player.fullName)}
@@ -328,7 +342,11 @@ const columns: ColumnDef<Player>[] = [
     meta: { className: "w-[384px] text-center" },
     cell: ({ row }) => {
       const cat = row.getValue<Category>("category")
-      return <div className="flex justify-center"><Badge variant={levelVariant[cat]}>{cat}</Badge></div>
+      return (
+        <div className="flex justify-center">
+          <Badge variant={levelVariant[cat]}>{cat}</Badge>
+        </div>
+      )
     },
   },
   {
@@ -363,11 +381,11 @@ function PlayersPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Players</CardTitle>
-            <IconUsers className="text-muted-foreground size-4" />
+            <IconUsers className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{players.length}</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {players.filter((p) => p.gender === "Male").length}M ·{" "}
               {players.filter((p) => p.gender === "Female").length}F
             </p>
@@ -379,13 +397,13 @@ function PlayersPage() {
             <CardTitle className="text-sm font-medium">
               Most Reservations
             </CardTitle>
-            <IconCalendar className="text-muted-foreground size-4" />
+            <IconCalendar className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="truncate text-xl font-bold">
               {topReservationPlayer[0]}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {topReservationPlayer[1]} reservations this season
             </p>
           </CardContent>
@@ -396,13 +414,13 @@ function PlayersPage() {
             <CardTitle className="text-sm font-medium">
               Most Tournaments
             </CardTitle>
-            <IconTrophy className="text-muted-foreground size-4" />
+            <IconTrophy className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="truncate text-xl font-bold">
               {topTournamentPlayer[0]}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {topTournamentPlayer[1]} tournaments played
             </p>
           </CardContent>
@@ -413,11 +431,11 @@ function PlayersPage() {
             <CardTitle className="text-sm font-medium">
               Top Category (M)
             </CardTitle>
-            <IconMedal className="text-muted-foreground size-4" />
+            <IconMedal className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">C4</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {players.filter((p) => p.category === "C4").length} players at
               highest level
             </p>
@@ -433,10 +451,7 @@ function PlayersPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer
-            config={categoryChartConfig}
-            className="h-40 w-full"
-          >
+          <ChartContainer config={categoryChartConfig} className="h-40 w-full">
             <BarChart data={categoryDistribution} barSize={28}>
               <XAxis
                 dataKey="category"

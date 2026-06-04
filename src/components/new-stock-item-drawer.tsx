@@ -52,7 +52,12 @@ interface Props {
   onOpenChange?: (open: boolean) => void
 }
 
-export function NewStockItemDrawer({ trigger, item, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+export function NewStockItemDrawer({
+  trigger,
+  item,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
@@ -78,7 +83,9 @@ export function NewStockItemDrawer({ trigger, item, open: controlledOpen, onOpen
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{isEditing ? "Edit Item" : "New Stock Item"}</DrawerTitle>
+          <DrawerTitle>
+            {isEditing ? "Edit Item" : "New Stock Item"}
+          </DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -129,7 +136,13 @@ export function NewStockItemDrawer({ trigger, item, open: controlledOpen, onOpen
                 <FormItem>
                   <FormLabel>Price ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,7 +164,9 @@ export function NewStockItemDrawer({ trigger, item, open: controlledOpen, onOpen
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">{isEditing ? "Save Changes" : "Add Item"}</Button>
+              <Button type="submit">
+                {isEditing ? "Save Changes" : "Add Item"}
+              </Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>

@@ -23,16 +23,96 @@ interface CoachClass {
 }
 
 const classesData: CoachClass[] = [
-  { id: 1,  coach: "Marcos Delgado",  court: 1, date: "2026-06-03", time: "09:00", duration: "90 min",  status: "Ongoing"   },
-  { id: 2,  coach: "Elena Vidal",     court: 3, date: "2026-06-03", time: "10:30", duration: "60 min",  status: "Upcoming"  },
-  { id: 3,  coach: "Rubén Fernández", court: 5, date: "2026-06-03", time: "12:00", duration: "90 min",  status: "Upcoming"  },
-  { id: 4,  coach: "Patricia Ríos",   court: 2, date: "2026-06-02", time: "08:00", duration: "60 min",  status: "Completed" },
-  { id: 5,  coach: "Jorge Salinas",   court: 4, date: "2026-06-02", time: "10:00", duration: "120 min", status: "Completed" },
-  { id: 6,  coach: "Marcos Delgado",  court: 6, date: "2026-06-02", time: "17:00", duration: "90 min",  status: "Completed" },
-  { id: 7,  coach: "Elena Vidal",     court: 1, date: "2026-06-01", time: "09:30", duration: "60 min",  status: "Completed" },
-  { id: 8,  coach: "Rubén Fernández", court: 3, date: "2026-06-01", time: "11:00", duration: "90 min",  status: "Completed" },
-  { id: 9,  coach: "Patricia Ríos",   court: 2, date: "2026-06-04", time: "08:00", duration: "60 min",  status: "Upcoming"  },
-  { id: 10, coach: "Jorge Salinas",   court: 5, date: "2026-06-04", time: "10:00", duration: "120 min", status: "Upcoming"  },
+  {
+    id: 1,
+    coach: "Marcos Delgado",
+    court: 1,
+    date: "2026-06-03",
+    time: "09:00",
+    duration: "90 min",
+    status: "Ongoing",
+  },
+  {
+    id: 2,
+    coach: "Elena Vidal",
+    court: 3,
+    date: "2026-06-03",
+    time: "10:30",
+    duration: "60 min",
+    status: "Upcoming",
+  },
+  {
+    id: 3,
+    coach: "Rubén Fernández",
+    court: 5,
+    date: "2026-06-03",
+    time: "12:00",
+    duration: "90 min",
+    status: "Upcoming",
+  },
+  {
+    id: 4,
+    coach: "Patricia Ríos",
+    court: 2,
+    date: "2026-06-02",
+    time: "08:00",
+    duration: "60 min",
+    status: "Completed",
+  },
+  {
+    id: 5,
+    coach: "Jorge Salinas",
+    court: 4,
+    date: "2026-06-02",
+    time: "10:00",
+    duration: "120 min",
+    status: "Completed",
+  },
+  {
+    id: 6,
+    coach: "Marcos Delgado",
+    court: 6,
+    date: "2026-06-02",
+    time: "17:00",
+    duration: "90 min",
+    status: "Completed",
+  },
+  {
+    id: 7,
+    coach: "Elena Vidal",
+    court: 1,
+    date: "2026-06-01",
+    time: "09:30",
+    duration: "60 min",
+    status: "Completed",
+  },
+  {
+    id: 8,
+    coach: "Rubén Fernández",
+    court: 3,
+    date: "2026-06-01",
+    time: "11:00",
+    duration: "90 min",
+    status: "Completed",
+  },
+  {
+    id: 9,
+    coach: "Patricia Ríos",
+    court: 2,
+    date: "2026-06-04",
+    time: "08:00",
+    duration: "60 min",
+    status: "Upcoming",
+  },
+  {
+    id: 10,
+    coach: "Jorge Salinas",
+    court: 5,
+    date: "2026-06-04",
+    time: "10:00",
+    duration: "120 min",
+    status: "Upcoming",
+  },
 ]
 
 const statusVariant: Record<ClassStatus, "default" | "secondary" | "outline"> =
@@ -70,7 +150,11 @@ const columns: ColumnDef<CoachClass>[] = [
     meta: { className: "w-[416px] text-center" },
     cell: ({ row }) => {
       const status = row.getValue<ClassStatus>("status")
-      return <div className="flex justify-center"><Badge variant={statusVariant[status]}>{status}</Badge></div>
+      return (
+        <div className="flex justify-center">
+          <Badge variant={statusVariant[status]}>{status}</Badge>
+        </div>
+      )
     },
   },
 ]
@@ -80,7 +164,7 @@ function ClassesPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Classes</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="mt-1 text-sm text-muted-foreground">
           Coach-led sessions linked to reserved courts.
         </p>
       </div>

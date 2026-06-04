@@ -1,15 +1,7 @@
 import * as React from "react"
 import { Slot } from "radix-ui"
-import {
-  Controller,
-  FormProvider,
-  useFormContext,
-} from "react-hook-form"
-import type {
-  ControllerProps,
-  FieldPath,
-  FieldValues,
-} from "react-hook-form"
+import { Controller, FormProvider, useFormContext } from "react-hook-form"
+import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
@@ -23,7 +15,7 @@ interface FormFieldContextValue<
 }
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue,
+  {} as FormFieldContextValue
 )
 
 function FormField<
@@ -64,7 +56,7 @@ interface FormItemContextValue {
 }
 
 const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue,
+  {} as FormItemContextValue
 )
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
@@ -109,20 +101,24 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       id={formDescriptionId}
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   )
 }
 
-function FormMessage({ className, children, ...props }: React.ComponentProps<"p">) {
+function FormMessage({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message ?? "") : children
   if (!body) return null
   return (
     <p
       id={formMessageId}
-      className={cn("text-destructive text-sm font-medium", className)}
+      className={cn("text-sm font-medium text-destructive", className)}
       {...props}
     >
       {body}

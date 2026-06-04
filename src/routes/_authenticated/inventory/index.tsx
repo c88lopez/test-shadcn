@@ -20,18 +20,60 @@ interface StockItem extends StockItemData {
 }
 
 const stockItemsData: StockItem[] = [
-  { id: 1,  name: "Water Bottle (500ml)",  category: "Drinks",      price: 1.5,    stock: 120 },
-  { id: 2,  name: "Energy Drink",           category: "Drinks",      price: 2.5,    stock: 48  },
-  { id: 3,  name: "Sports Juice",           category: "Drinks",      price: 2.0,    stock: 60  },
-  { id: 4,  name: "Isotonic Drink",         category: "Drinks",      price: 2.2,    stock: 35  },
-  { id: 5,  name: "Padel Racket (Basic)",   category: "Equipment",   price: 49.99,  stock: 8   },
-  { id: 6,  name: "Padel Racket (Pro)",     category: "Equipment",   price: 149.99, stock: 4   },
-  { id: 7,  name: "Ball Pack (3 units)",    category: "Equipment",   price: 6.99,   stock: 55  },
-  { id: 8,  name: "Overgrip Tape",          category: "Accessories", price: 3.5,    stock: 80  },
-  { id: 9,  name: "Wristband",              category: "Accessories", price: 4.0,    stock: 40  },
-  { id: 10, name: "Sports Towel",           category: "Accessories", price: 8.99,   stock: 22  },
-  { id: 11, name: "Padel Bag",              category: "Equipment",   price: 34.99,  stock: 6   },
-  { id: 12, name: "Sports Socks",           category: "Accessories", price: 5.99,   stock: 50  },
+  {
+    id: 1,
+    name: "Water Bottle (500ml)",
+    category: "Drinks",
+    price: 1.5,
+    stock: 120,
+  },
+  { id: 2, name: "Energy Drink", category: "Drinks", price: 2.5, stock: 48 },
+  { id: 3, name: "Sports Juice", category: "Drinks", price: 2.0, stock: 60 },
+  { id: 4, name: "Isotonic Drink", category: "Drinks", price: 2.2, stock: 35 },
+  {
+    id: 5,
+    name: "Padel Racket (Basic)",
+    category: "Equipment",
+    price: 49.99,
+    stock: 8,
+  },
+  {
+    id: 6,
+    name: "Padel Racket (Pro)",
+    category: "Equipment",
+    price: 149.99,
+    stock: 4,
+  },
+  {
+    id: 7,
+    name: "Ball Pack (3 units)",
+    category: "Equipment",
+    price: 6.99,
+    stock: 55,
+  },
+  {
+    id: 8,
+    name: "Overgrip Tape",
+    category: "Accessories",
+    price: 3.5,
+    stock: 80,
+  },
+  { id: 9, name: "Wristband", category: "Accessories", price: 4.0, stock: 40 },
+  {
+    id: 10,
+    name: "Sports Towel",
+    category: "Accessories",
+    price: 8.99,
+    stock: 22,
+  },
+  { id: 11, name: "Padel Bag", category: "Equipment", price: 34.99, stock: 6 },
+  {
+    id: 12,
+    name: "Sports Socks",
+    category: "Accessories",
+    price: 5.99,
+    stock: 50,
+  },
 ]
 
 function EditableStockCell({ initialValue }: { initialValue: number }) {
@@ -68,7 +110,7 @@ function EditableStockCell({ initialValue }: { initialValue: number }) {
       title="Click to edit"
       className={cn(
         "cursor-pointer rounded px-1 py-0.5 text-sm hover:bg-muted",
-        value < 10 && "font-medium text-destructive",
+        value < 10 && "font-medium text-destructive"
       )}
     >
       {value} units
@@ -80,7 +122,11 @@ function StockActions({ item }: { item: StockItem }) {
   const [editOpen, setEditOpen] = useState(false)
   return (
     <>
-      <NewStockItemDrawer item={item} open={editOpen} onOpenChange={setEditOpen} />
+      <NewStockItemDrawer
+        item={item}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
       <RowActions
         onEdit={() => setEditOpen(true)}
         onDuplicate={() => console.log("[dummy] duplicate", item.name)}
@@ -100,13 +146,15 @@ const stockColumns: ColumnDef<StockItem>[] = [
     header: "Category",
     meta: { className: "w-[448px] text-center" },
     cell: ({ row }) => (
-      <div className="flex justify-center"><Badge variant="outline">{row.getValue("category")}</Badge></div>
+      <div className="flex justify-center">
+        <Badge variant="outline">{row.getValue("category")}</Badge>
+      </div>
     ),
   },
   {
     accessorKey: "price",
     header: "Price",
-    cell: ({ row }) => `$${(row.getValue<number>("price")).toFixed(2)}`,
+    cell: ({ row }) => `$${row.getValue<number>("price").toFixed(2)}`,
   },
   {
     accessorKey: "stock",
@@ -128,7 +176,7 @@ function StockPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Stock</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage stock levels. Click a count to edit it. Items below 10 units
           are highlighted.
         </p>

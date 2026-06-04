@@ -62,9 +62,13 @@ const navCoaches = [
 
 const navPlayers = [{ title: "Players", url: "/players", icon: IconUsers }]
 
-const navTournaments = [{ title: "Tournaments", url: "/tournaments", icon: IconTrophy }]
+const navTournaments = [
+  { title: "Tournaments", url: "/tournaments", icon: IconTrophy },
+]
 
-const navSecondary = [{ title: "Settings", url: "/settings", icon: IconSettings }]
+const navSecondary = [
+  { title: "Settings", url: "/settings", icon: IconSettings },
+]
 
 function NavGroup({
   label,
@@ -114,12 +118,14 @@ export function AppSidebar() {
                   <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
                     {activeClub.initials}
                   </div>
-                  <span className="truncate font-semibold">{activeClub.name}</span>
+                  <span className="truncate font-semibold">
+                    {activeClub.name}
+                  </span>
                   <IconSelector className="ml-auto size-4 shrink-0 opacity-50" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="bottom" align="start" className="w-60">
-                <DropdownMenuLabel className="text-muted-foreground text-xs">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
                   Your clubs
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -177,11 +183,15 @@ export function AppSidebar() {
                 <SidebarMenuButton className="h-12 data-[state=open]:bg-sidebar-accent">
                   <Avatar className="size-7 rounded-md">
                     <AvatarImage src="" alt="Cristian Lopez" />
-                    <AvatarFallback className="rounded-md text-xs">CL</AvatarFallback>
+                    <AvatarFallback className="rounded-md text-xs">
+                      CL
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left leading-tight">
-                    <span className="truncate text-sm font-medium">Cristian Lopez</span>
-                    <span className="text-muted-foreground truncate text-xs">
+                    <span className="truncate text-sm font-medium">
+                      Cristian Lopez
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
                       cristian@coperniq.io
                     </span>
                   </div>
@@ -190,7 +200,9 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-56">
                 <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem onSelect={handleSignOut}>Sign out</DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleSignOut}>
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

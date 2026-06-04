@@ -18,18 +18,47 @@ interface Coach extends CoachData {
 }
 
 const coaches: Coach[] = [
-  { id: 1, name: "Marcos Delgado", phone: "+34 611 234 567", birthday: new Date("1985-03-12") },
-  { id: 2, name: "Elena Vidal",    phone: "+34 622 345 678", birthday: new Date("1990-07-24") },
-  { id: 3, name: "Rubén Fernández",phone: "+34 633 456 789", birthday: new Date("1988-11-05") },
-  { id: 4, name: "Patricia Ríos",  phone: "+34 644 567 890", birthday: new Date("1993-02-18") },
-  { id: 5, name: "Jorge Salinas",  phone: "+34 655 678 901", birthday: new Date("1979-09-30") },
+  {
+    id: 1,
+    name: "Marcos Delgado",
+    phone: "+34 611 234 567",
+    birthday: new Date("1985-03-12"),
+  },
+  {
+    id: 2,
+    name: "Elena Vidal",
+    phone: "+34 622 345 678",
+    birthday: new Date("1990-07-24"),
+  },
+  {
+    id: 3,
+    name: "Rubén Fernández",
+    phone: "+34 633 456 789",
+    birthday: new Date("1988-11-05"),
+  },
+  {
+    id: 4,
+    name: "Patricia Ríos",
+    phone: "+34 644 567 890",
+    birthday: new Date("1993-02-18"),
+  },
+  {
+    id: 5,
+    name: "Jorge Salinas",
+    phone: "+34 655 678 901",
+    birthday: new Date("1979-09-30"),
+  },
 ]
 
 function CoachActions({ coach }: { coach: Coach }) {
   const [editOpen, setEditOpen] = useState(false)
   return (
     <>
-      <NewCoachDrawer coach={coach} open={editOpen} onOpenChange={setEditOpen} />
+      <NewCoachDrawer
+        coach={coach}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
       <RowActions
         onEdit={() => setEditOpen(true)}
         onDuplicate={() => console.log("[dummy] duplicate", coach.name)}
@@ -82,7 +111,7 @@ function CoachesPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Coaches</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage club coaches.
         </p>
       </div>
