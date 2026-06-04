@@ -37,7 +37,7 @@ const reservations: Reservation[] = [
     court: 3,
     reservedTo: "Carlos López",
     reservedBy: "Carlos López",
-    time: "10:00 – 11:30",
+    time: "10:00 – 11:00",
     paid: false,
   },
   {
@@ -109,7 +109,7 @@ const reservations: Reservation[] = [
     court: 4,
     reservedTo: "Elena Romero",
     reservedBy: "Admin",
-    time: "17:00 – 18:30",
+    time: "17:30 – 19:00",
     paid: false,
   },
   {
@@ -117,7 +117,7 @@ const reservations: Reservation[] = [
     court: 2,
     reservedTo: "Antonio Díaz",
     reservedBy: "Antonio Díaz",
-    time: "19:00 – 20:30",
+    time: "19:30 – 21:00",
     paid: true,
   },
   {
@@ -125,7 +125,7 @@ const reservations: Reservation[] = [
     court: 6,
     reservedTo: "Carmen López",
     reservedBy: "Admin",
-    time: "10:30 – 12:00",
+    time: "11:00 – 12:30",
     paid: true,
   },
   {
@@ -159,6 +159,7 @@ const ZOOM_STEPS = [52, 80, 120, 160, 200, 260]
 const DEFAULT_ZOOM = 3 // index 3 → 160 px/h → ~5 h visible
 const SIDE_PAD = 24 // px of breathing room before 08:00 and after 23:00
 const LABEL_COL = 96 // w-24 in px
+const BLOCK_GAP = 5 // px horizontal gap between adjacent reservation blocks
 
 function parseTimeRange(time: string): { startMin: number; endMin: number } {
   const [startStr, endStr] = time.split(" – ")
@@ -179,19 +180,42 @@ function CourtTimeline() {
   // track = SIDE_PAD + 15h * pxPerHour + SIDE_PAD; inner div = LABEL_COL + track
   const innerWidth = LABEL_COL + 2 * SIDE_PAD + TOTAL_HOURS * pxPerHour
 
-  const now = new Date()
+  const [now, setNow] = useState(() => new Date())
   const nowMin = now.getHours() * 60 + now.getMinutes()
   const nowInRange = nowMin >= START_HOUR * 60 && nowMin <= END_HOUR * 60
 
+  // Tick the "now" indicator forward, aligned to each minute boundary, so it
+  // stays in sync without requiring a page refresh.
   useEffect(() => {
-    if (!scrollRef.current || !nowInRange) return
+    let timer: ReturnType<typeof setTimeout>
+    const scheduleNextTick = () => {
+      timer = setTimeout(
+        () => {
+          setNow(new Date())
+          scheduleNextTick()
+        },
+        60_000 - (Date.now() % 60_000)
+      )
+    }
+    scheduleNextTick()
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Center the view on the current time on mount and whenever zoom changes.
+  // Reads the time fresh here (instead of depending on the ticking `now`) so the
+  // per-minute updates don't yank the user's scroll position.
+  useEffect(() => {
+    if (!scrollRef.current) return
+    const current = new Date()
+    const currentMin = current.getHours() * 60 + current.getMinutes()
+    if (currentMin < START_HOUR * 60 || currentMin > END_HOUR * 60) return
     const el = scrollRef.current
     requestAnimationFrame(() => {
       // LABEL_COL is sticky so add it to reach the track's coordinate space
-      const nowPixel = LABEL_COL + toPx(nowMin, pxPerHour)
-      el.scrollLeft = nowPixel - el.clientWidth / 2
+      el.scrollLeft =
+        LABEL_COL + toPx(currentMin, pxPerHour) - el.clientWidth / 2
     })
-  }, [pxPerHour, nowInRange, nowMin])
+  }, [pxPerHour])
 
   const today = now.toLocaleDateString("en-GB", {
     weekday: "long",
@@ -267,7 +291,7 @@ function CourtTimeline() {
                 </div>
 
                 {/* Track */}
-                <div className="relative h-16 flex-1">
+                <div className="relative h-12 flex-1">
                   {/* Hour grid lines */}
                   {HOURS.map((h) => (
                     <div
@@ -299,8 +323,9 @@ function CourtTimeline() {
                             : "border border-border bg-secondary text-secondary-foreground"
                         )}
                         style={{
-                          left: toPx(startMin, pxPerHour),
-                          width: ((endMin - startMin) / 60) * pxPerHour,
+                          left: toPx(startMin, pxPerHour) + BLOCK_GAP / 2,
+                          width:
+                            ((endMin - startMin) / 60) * pxPerHour - BLOCK_GAP,
                         }}
                       >
                         <span className="truncate text-[11px] font-medium">
