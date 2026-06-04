@@ -65,11 +65,12 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: {
       items: [{ item: "", quantity: 1, unitPrice: 0 }],
@@ -81,7 +82,7 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
     name: "items",
   })
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     console.log("New sale:", values)
     form.reset({ items: [{ item: "", quantity: 1, unitPrice: 0 }] })
     setOpen(false)

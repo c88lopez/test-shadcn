@@ -42,6 +42,10 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type FormInput = Omit<FormValues, "age" | "gender"> & {
+  age?: number
+  gender?: "Male" | "Female"
+}
 
 export interface PlayerData {
   fullName: string
@@ -59,25 +63,47 @@ interface Props {
   onOpenChange?: (open: boolean) => void
 }
 
-export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+export function NewPlayerDrawer({
+  trigger,
+  player,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!player
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput>({
     resolver: zodResolver(schema),
-    defaultValues: player ?? { fullName: "", email: "", phone: "", age: undefined, gender: undefined, category: "" },
+    defaultValues: player ?? {
+      fullName: "",
+      email: "",
+      phone: "",
+      age: undefined,
+      gender: undefined,
+      category: "",
+    },
   })
 
   useEffect(() => {
-    if (open) form.reset(player ?? { fullName: "", email: "", phone: "", age: undefined, gender: undefined, category: "" })
+    if (open)
+      form.reset(
+        player ?? {
+          fullName: "",
+          email: "",
+          phone: "",
+          age: undefined,
+          gender: undefined,
+          category: "",
+        }
+      )
   }, [open, player, form])
 
   const gender = form.watch("gender")
   const categories = gender === "Female" ? femaleCategories : maleCategories
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     console.log(isEditing ? "Update player:" : "New player:", values)
     form.reset()
     setOpen(false)
@@ -116,7 +142,11 @@ export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenC
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="player@email.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="player@email.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,7 +160,11 @@ export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenC
                 <FormItem>
                   <FormLabel>Phone</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="+34 600 000 000" {...field} />
+                    <Input
+                      type="tel"
+                      placeholder="+34 600 000 000"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,7 +178,13 @@ export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenC
                 <FormItem>
                   <FormLabel>Age</FormLabel>
                   <FormControl>
-                    <Input type="number" min="5" max="99" placeholder="25" {...field} />
+                    <Input
+                      type="number"
+                      min="5"
+                      max="99"
+                      placeholder="25"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -185,10 +225,18 @@ export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenC
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={!gender}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!gender}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={gender ? "Select category" : "Select gender first"} />
+                        <SelectValue
+                          placeholder={
+                            gender ? "Select category" : "Select gender first"
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -205,7 +253,9 @@ export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenC
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">{isEditing ? "Save Changes" : "Add Player"}</Button>
+              <Button type="submit">
+                {isEditing ? "Save Changes" : "Add Player"}
+              </Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>

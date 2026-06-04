@@ -55,11 +55,12 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: {
       coach: "",
@@ -69,7 +70,7 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
     },
   })
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     console.log("New class:", values)
     form.reset({ coach: "", court: "", time: "", duration: "" })
     setOpen(false)
@@ -150,7 +151,7 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           <IconCalendar className="mr-2 size-4" />

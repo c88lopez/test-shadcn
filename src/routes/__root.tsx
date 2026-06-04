@@ -14,7 +14,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Dashboard" },
+      { title: "Padel Club Admin" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -32,7 +32,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <title>Dense MF</title>
         <HeadContent />
       </head>
       <body>

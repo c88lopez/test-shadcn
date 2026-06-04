@@ -48,6 +48,7 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export interface ReservationData {
   player: string
@@ -65,22 +66,42 @@ interface Props {
   onOpenChange?: (open: boolean) => void
 }
 
-export function NewReservationDrawer({ trigger, reservation, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+export function NewReservationDrawer({
+  trigger,
+  reservation,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!reservation
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput>({
     resolver: zodResolver(schema),
-    defaultValues: reservation ?? { player: "", court: "", time: "", duration: "", paymentStatus: "" },
+    defaultValues: reservation ?? {
+      player: "",
+      court: "",
+      time: "",
+      duration: "",
+      paymentStatus: "",
+    },
   })
 
   useEffect(() => {
-    if (open) form.reset(reservation ?? { player: "", court: "", time: "", duration: "", paymentStatus: "" })
+    if (open)
+      form.reset(
+        reservation ?? {
+          player: "",
+          court: "",
+          time: "",
+          duration: "",
+          paymentStatus: "",
+        }
+      )
   }, [open, reservation, form])
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     console.log(isEditing ? "Update reservation:" : "New reservation:", values)
     form.reset()
     setOpen(false)
@@ -91,7 +112,9 @@ export function NewReservationDrawer({ trigger, reservation, open: controlledOpe
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{isEditing ? "Edit Reservation" : "New Reservation"}</DrawerTitle>
+          <DrawerTitle>
+            {isEditing ? "Edit Reservation" : "New Reservation"}
+          </DrawerTitle>
         </DrawerHeader>
 
         <Form {...form}>
@@ -151,11 +174,13 @@ export function NewReservationDrawer({ trigger, reservation, open: controlledOpe
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           <IconCalendar className="mr-2 size-4" />
-                          {field.value ? format(field.value, "PPP") : "Pick a date"}
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -164,7 +189,9 @@ export function NewReservationDrawer({ trigger, reservation, open: controlledOpe
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
                       />
                     </PopoverContent>
                   </Popover>
@@ -236,7 +263,9 @@ export function NewReservationDrawer({ trigger, reservation, open: controlledOpe
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">{isEditing ? "Save Changes" : "Create Reservation"}</Button>
+              <Button type="submit">
+                {isEditing ? "Save Changes" : "Create Reservation"}
+              </Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>

@@ -38,6 +38,7 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type FormInput = Omit<FormValues, "birthday"> & { birthday?: Date }
 
 export interface CoachData {
   name: string
@@ -52,13 +53,18 @@ interface Props {
   onOpenChange?: (open: boolean) => void
 }
 
-export function NewCoachDrawer({ trigger, coach, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+export function NewCoachDrawer({
+  trigger,
+  coach,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!coach
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: coach ?? { name: "", phone: "" },
   })
@@ -67,7 +73,7 @@ export function NewCoachDrawer({ trigger, coach, open: controlledOpen, onOpenCha
     if (open) form.reset(coach ?? { name: "", phone: "" })
   }, [open, coach, form])
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     console.log(isEditing ? "Update coach:" : "New coach:", values)
     form.reset()
     setOpen(false)
@@ -126,7 +132,7 @@ export function NewCoachDrawer({ trigger, coach, open: controlledOpen, onOpenCha
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           <IconCalendar className="mr-2 size-4" />
