@@ -16,22 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { NewSaleDrawer } from "@/components/new-sale-drawer"
+import { saleTotal } from "@/lib/sales"
+import type { Sale } from "@/lib/sales"
 
 export const Route = createFileRoute("/_authenticated/inventory/sales-log")({
   component: SalesLogPage,
 })
-
-interface SaleLineItem {
-  item: string
-  quantity: number
-  unitPrice: number
-}
-
-interface Sale {
-  id: number
-  date: string
-  items: SaleLineItem[]
-}
 
 const salesData: Sale[] = [
   {
@@ -90,10 +80,6 @@ const salesData: Sale[] = [
     ],
   },
 ]
-
-function saleTotal(sale: Sale) {
-  return sale.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0)
-}
 
 function SalesLogPage() {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
