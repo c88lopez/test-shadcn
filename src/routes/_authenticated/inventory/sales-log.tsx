@@ -193,9 +193,9 @@ function SalesLogPage() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="pl-8">Product</TableHead>
-                                <TableHead>Qty</TableHead>
-                                <TableHead>Unit Price</TableHead>
-                                <TableHead className="text-right">
+                                <TableHead className="w-20">Qty</TableHead>
+                                <TableHead className="w-32">Unit Price</TableHead>
+                                <TableHead className="w-32 text-right">
                                   Subtotal
                                 </TableHead>
                               </TableRow>

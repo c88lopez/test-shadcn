@@ -1,11 +1,13 @@
+import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
-import { IconPencil, IconPlus } from "@tabler/icons-react"
+import { IconPlus } from "@tabler/icons-react"
 import { differenceInYears } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { NewCoachDrawer } from "@/components/new-coach-drawer"
 import type { CoachData } from "@/components/new-coach-drawer"
+import { RowActions } from "@/components/row-actions"
 
 export const Route = createFileRoute("/_authenticated/coaches/")({
   component: CoachesPage,
@@ -22,6 +24,20 @@ const coaches: Coach[] = [
   { id: 4, name: "Patricia Ríos",  phone: "+34 644 567 890", birthday: new Date("1993-02-18") },
   { id: 5, name: "Jorge Salinas",  phone: "+34 655 678 901", birthday: new Date("1979-09-30") },
 ]
+
+function CoachActions({ coach }: { coach: Coach }) {
+  const [editOpen, setEditOpen] = useState(false)
+  return (
+    <>
+      <NewCoachDrawer coach={coach} open={editOpen} onOpenChange={setEditOpen} />
+      <RowActions
+        onEdit={() => setEditOpen(true)}
+        onDuplicate={() => console.log("[dummy] duplicate", coach.name)}
+        onDelete={() => console.log("[dummy] delete", coach.name)}
+      />
+    </>
+  )
+}
 
 const columns: ColumnDef<Coach>[] = [
   {
@@ -56,16 +72,8 @@ const columns: ColumnDef<Coach>[] = [
   {
     id: "actions",
     enableSorting: false,
-    cell: ({ row }) => (
-      <NewCoachDrawer
-        coach={row.original}
-        trigger={
-          <Button variant="ghost" size="icon" className="size-8">
-            <IconPencil className="size-4" />
-          </Button>
-        }
-      />
-    ),
+    meta: { className: "text-right" },
+    cell: ({ row }) => <CoachActions coach={row.original} />,
   },
 ]
 

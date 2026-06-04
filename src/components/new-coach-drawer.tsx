@@ -46,12 +46,16 @@ export interface CoachData {
 }
 
 interface Props {
-  trigger: React.ReactNode
+  trigger?: React.ReactNode
   coach?: CoachData
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function NewCoachDrawer({ trigger, coach }: Props) {
-  const [open, setOpen] = useState(false)
+export function NewCoachDrawer({ trigger, coach, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!coach
 
   const form = useForm<FormValues>({
@@ -71,7 +75,7 @@ export function NewCoachDrawer({ trigger, coach }: Props) {
 
   return (
     <Drawer direction="right" open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{isEditing ? "Edit Coach" : "New Coach"}</DrawerTitle>

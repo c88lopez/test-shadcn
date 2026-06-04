@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -49,36 +49,49 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-interface NewReservationDrawerProps {
-  trigger: React.ReactNode
+export interface ReservationData {
+  player: string
+  court: string
+  date: Date
+  time: string
+  duration: string
+  paymentStatus: string
 }
 
-export function NewReservationDrawer({ trigger }: NewReservationDrawerProps) {
-  const [open, setOpen] = useState(false)
+interface Props {
+  trigger?: React.ReactNode
+  reservation?: ReservationData
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+export function NewReservationDrawer({ trigger, reservation, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
+  const isEditing = !!reservation
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      player: "",
-      court: "",
-      time: "",
-      duration: "",
-      paymentStatus: "",
-    },
+    defaultValues: reservation ?? { player: "", court: "", time: "", duration: "", paymentStatus: "" },
   })
 
+  useEffect(() => {
+    if (open) form.reset(reservation ?? { player: "", court: "", time: "", duration: "", paymentStatus: "" })
+  }, [open, reservation, form])
+
   function onSubmit(values: FormValues) {
-    console.log("New reservation:", values)
+    console.log(isEditing ? "Update reservation:" : "New reservation:", values)
     form.reset()
     setOpen(false)
   }
 
   return (
     <Drawer direction="right" open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>New Reservation</DrawerTitle>
+          <DrawerTitle>{isEditing ? "Edit Reservation" : "New Reservation"}</DrawerTitle>
         </DrawerHeader>
 
         <Form {...form}>
@@ -223,7 +236,7 @@ export function NewReservationDrawer({ trigger }: NewReservationDrawerProps) {
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">Create Reservation</Button>
+              <Button type="submit">{isEditing ? "Save Changes" : "Create Reservation"}</Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>

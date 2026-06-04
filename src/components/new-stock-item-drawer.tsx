@@ -46,12 +46,16 @@ export interface StockItemData {
 }
 
 interface Props {
-  trigger: React.ReactNode
+  trigger?: React.ReactNode
   item?: StockItemData
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function NewStockItemDrawer({ trigger, item }: Props) {
-  const [open, setOpen] = useState(false)
+export function NewStockItemDrawer({ trigger, item, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!item
 
   const form = useForm<FormValues>({
@@ -71,7 +75,7 @@ export function NewStockItemDrawer({ trigger, item }: Props) {
 
   return (
     <Drawer direction="right" open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{isEditing ? "Edit Item" : "New Stock Item"}</DrawerTitle>

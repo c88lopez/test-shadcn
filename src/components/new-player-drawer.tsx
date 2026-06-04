@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -43,29 +43,52 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export function NewPlayerDrawer({ trigger }: { trigger: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
+export interface PlayerData {
+  fullName: string
+  email: string
+  phone: string
+  age: number
+  gender: "Male" | "Female"
+  category: string
+}
+
+interface Props {
+  trigger?: React.ReactNode
+  player?: PlayerData
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+export function NewPlayerDrawer({ trigger, player, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
+  const isEditing = !!player
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { fullName: "", email: "", phone: "", age: undefined, gender: undefined, category: "" },
+    defaultValues: player ?? { fullName: "", email: "", phone: "", age: undefined, gender: undefined, category: "" },
   })
+
+  useEffect(() => {
+    if (open) form.reset(player ?? { fullName: "", email: "", phone: "", age: undefined, gender: undefined, category: "" })
+  }, [open, player, form])
 
   const gender = form.watch("gender")
   const categories = gender === "Female" ? femaleCategories : maleCategories
 
   function onSubmit(values: FormValues) {
-    console.log("New player:", values)
+    console.log(isEditing ? "Update player:" : "New player:", values)
     form.reset()
     setOpen(false)
   }
 
   return (
     <Drawer direction="right" open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>New Player</DrawerTitle>
+          <DrawerTitle>{isEditing ? "Edit Player" : "New Player"}</DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -182,7 +205,7 @@ export function NewPlayerDrawer({ trigger }: { trigger: React.ReactNode }) {
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">Add Player</Button>
+              <Button type="submit">{isEditing ? "Save Changes" : "Add Player"}</Button>
               <DrawerClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DrawerClose>
