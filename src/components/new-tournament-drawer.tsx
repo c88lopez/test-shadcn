@@ -47,16 +47,17 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", category: "", format: "", maxTeams: 8 },
   })
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     console.log("New tournament:", values)
     form.reset()
     setOpen(false)
@@ -101,11 +102,13 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           <IconCalendar className="mr-2 size-4" />
-                          {field.value ? format(field.value, "PPP") : "Pick a date"}
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -114,7 +117,9 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
                       />
                     </PopoverContent>
                   </Popover>
@@ -136,8 +141,22 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {["C4", "C5", "C6", "C7", "C8", "D4", "D5", "D6", "D7", "D8", "Mixed"].map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      {[
+                        "C4",
+                        "C5",
+                        "C6",
+                        "C7",
+                        "C8",
+                        "D4",
+                        "D5",
+                        "D6",
+                        "D7",
+                        "D8",
+                        "Mixed",
+                      ].map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -160,8 +179,12 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="round_robin">Round Robin</SelectItem>
-                      <SelectItem value="elimination">Single Elimination</SelectItem>
-                      <SelectItem value="double_elimination">Double Elimination</SelectItem>
+                      <SelectItem value="elimination">
+                        Single Elimination
+                      </SelectItem>
+                      <SelectItem value="double_elimination">
+                        Double Elimination
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
