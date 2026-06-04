@@ -1,6 +1,7 @@
+import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
-import { IconPencil, IconPlus, IconTrophy, IconUsers, IconCalendar, IconMedal } from "@tabler/icons-react"
+import { IconPlus, IconTrophy, IconUsers, IconCalendar, IconMedal } from "@tabler/icons-react"
 import { Bar, BarChart, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,8 @@ import type { ChartConfig } from "@/components/ui/chart"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { DataTable } from "@/components/data-table"
 import { NewPlayerDrawer } from "@/components/new-player-drawer"
+import type { PlayerData } from "@/components/new-player-drawer"
+import { RowActions } from "@/components/row-actions"
 
 export const Route = createFileRoute("/_authenticated/players")({
   component: PlayersPage,
@@ -18,13 +21,8 @@ type MaleCategory = "C8" | "C7" | "C6" | "C5" | "C4"
 type FemaleCategory = "D8" | "D7" | "D6" | "D5" | "D4"
 type Category = MaleCategory | FemaleCategory
 
-interface Player {
+interface Player extends PlayerData {
   id: number
-  fullName: string
-  email: string
-  phone: string
-  age: number
-  gender: "Male" | "Female"
   category: Category
 }
 
@@ -296,6 +294,20 @@ const levelVariant: Record<string, "default" | "secondary" | "outline"> = {
   D8: "outline",
 }
 
+function PlayerActions({ player }: { player: Player }) {
+  const [editOpen, setEditOpen] = useState(false)
+  return (
+    <>
+      <NewPlayerDrawer player={player} open={editOpen} onOpenChange={setEditOpen} />
+      <RowActions
+        onEdit={() => setEditOpen(true)}
+        onDuplicate={() => console.log("[dummy] duplicate", player.fullName)}
+        onDelete={() => console.log("[dummy] delete", player.fullName)}
+      />
+    </>
+  )
+}
+
 const columns: ColumnDef<Player>[] = [
   {
     accessorKey: "fullName",
@@ -313,9 +325,10 @@ const columns: ColumnDef<Player>[] = [
   {
     accessorKey: "category",
     header: "Category",
+    meta: { className: "w-[384px] text-center" },
     cell: ({ row }) => {
       const cat = row.getValue<Category>("category")
-      return <Badge variant={levelVariant[cat]}>{cat}</Badge>
+      return <div className="flex justify-center"><Badge variant={levelVariant[cat]}>{cat}</Badge></div>
     },
   },
   {
@@ -330,11 +343,8 @@ const columns: ColumnDef<Player>[] = [
   {
     id: "actions",
     enableSorting: false,
-    cell: () => (
-      <Button variant="ghost" size="icon" className="size-8">
-        <IconPencil className="size-4" />
-      </Button>
-    ),
+    meta: { className: "text-right" },
+    cell: ({ row }) => <PlayerActions player={row.original} />,
   },
 ]
 

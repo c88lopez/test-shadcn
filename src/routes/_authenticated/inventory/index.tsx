@@ -1,13 +1,14 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
-import { IconPencil, IconPlus } from "@tabler/icons-react"
+import { IconPlus } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
 import { NewStockItemDrawer } from "@/components/new-stock-item-drawer"
 import type { StockItemData } from "@/components/new-stock-item-drawer"
+import { RowActions } from "@/components/row-actions"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_authenticated/inventory/")({
@@ -75,6 +76,20 @@ function EditableStockCell({ initialValue }: { initialValue: number }) {
   )
 }
 
+function StockActions({ item }: { item: StockItem }) {
+  const [editOpen, setEditOpen] = useState(false)
+  return (
+    <>
+      <NewStockItemDrawer item={item} open={editOpen} onOpenChange={setEditOpen} />
+      <RowActions
+        onEdit={() => setEditOpen(true)}
+        onDuplicate={() => console.log("[dummy] duplicate", item.name)}
+        onDelete={() => console.log("[dummy] delete", item.name)}
+      />
+    </>
+  )
+}
+
 const stockColumns: ColumnDef<StockItem>[] = [
   {
     accessorKey: "name",
@@ -83,8 +98,9 @@ const stockColumns: ColumnDef<StockItem>[] = [
   {
     accessorKey: "category",
     header: "Category",
+    meta: { className: "w-[448px] text-center" },
     cell: ({ row }) => (
-      <Badge variant="outline">{row.getValue("category")}</Badge>
+      <div className="flex justify-center"><Badge variant="outline">{row.getValue("category")}</Badge></div>
     ),
   },
   {
@@ -102,16 +118,8 @@ const stockColumns: ColumnDef<StockItem>[] = [
   {
     id: "actions",
     enableSorting: false,
-    cell: ({ row }) => (
-      <NewStockItemDrawer
-        item={row.original}
-        trigger={
-          <Button variant="ghost" size="icon" className="size-8">
-            <IconPencil className="size-4" />
-          </Button>
-        }
-      />
-    ),
+    meta: { className: "text-right" },
+    cell: ({ row }) => <StockActions item={row.original} />,
   },
 ]
 

@@ -8,11 +8,19 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import type { ColumnDef, SortingState } from "@tanstack/react-table"
+
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData, TValue> {
+    className?: string
+  }
+}
 import {
   IconChevronUp,
   IconChevronDown,
   IconSelector,
 } from "@tabler/icons-react"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -72,33 +80,42 @@ export function DataTable<TData, TValue>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                      <button
-                        className="flex items-center gap-1 hover:text-foreground"
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getIsSorted() === "asc" ? (
-                          <IconChevronUp className="size-3.5" />
-                        ) : header.column.getIsSorted() === "desc" ? (
-                          <IconChevronDown className="size-3.5" />
-                        ) : (
-                          <IconSelector className="size-3.5 opacity-40" />
-                        )}
-                      </button>
-                    ) : (
-                      flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )
-                    )}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const metaClass = header.column.columnDef.meta?.className
+                  const centered = metaClass?.includes("text-center")
+                  return (
+                    <TableHead key={header.id} className={metaClass}>
+                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                        <button
+                          className={cn(
+                            "flex items-center gap-1 hover:text-foreground",
+                            centered && "w-full justify-center",
+                          )}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {header.column.getIsSorted() === "asc" ? (
+                            <IconChevronUp className="size-3.5" />
+                          ) : header.column.getIsSorted() === "desc" ? (
+                            <IconChevronDown className="size-3.5" />
+                          ) : (
+                            <IconSelector className="size-3.5 opacity-40" />
+                          )}
+                        </button>
+                      ) : (
+                        <div className={cn(centered && "text-center", metaClass?.includes("text-right") && "text-right")}>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </div>
+                      )}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -106,14 +123,20 @@ export function DataTable<TData, TValue>({
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const metaClass = cell.column.columnDef.meta?.className
+                    const isRight = metaClass?.includes("text-right")
+                    return (
+                      <TableCell key={cell.id} className={metaClass}>
+                        <div className={cn(isRight && "flex justify-end")}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </div>
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (

@@ -67,9 +67,10 @@ const columns: ColumnDef<CoachClass>[] = [
   {
     accessorKey: "status",
     header: "Status",
+    meta: { className: "w-[416px] text-center" },
     cell: ({ row }) => {
       const status = row.getValue<ClassStatus>("status")
-      return <Badge variant={statusVariant[status]}>{status}</Badge>
+      return <div className="flex justify-center"><Badge variant={statusVariant[status]}>{status}</Badge></div>
     },
   },
 ]
