@@ -8,13 +8,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import type { ColumnDef, SortingState } from "@tanstack/react-table"
-
-declare module "@tanstack/react-table" {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface ColumnMeta<TData, TValue> {
-    className?: string
-  }
-}
 import {
   IconChevronUp,
   IconChevronDown,
@@ -31,6 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+declare module "@tanstack/react-table" {
+  interface ColumnMeta<TData, TValue> {
+    className?: string
+  }
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -89,7 +88,7 @@ export function DataTable<TData, TValue>({
                         <button
                           className={cn(
                             "flex items-center gap-1 hover:text-foreground",
-                            centered && "w-full justify-center",
+                            centered && "w-full justify-center"
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                         >
@@ -106,7 +105,12 @@ export function DataTable<TData, TValue>({
                           )}
                         </button>
                       ) : (
-                        <div className={cn(centered && "text-center", metaClass?.includes("text-right") && "text-right")}>
+                        <div
+                          className={cn(
+                            centered && "text-center",
+                            metaClass?.includes("text-right") && "text-right"
+                          )}
+                        >
                           {flexRender(
                             header.column.columnDef.header,
                             header.getContext()
