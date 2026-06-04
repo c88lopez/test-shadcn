@@ -112,11 +112,13 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           <IconCalendar className="mr-2 size-4" />
-                          {field.value ? format(field.value, "PPP") : "Pick a date"}
+                          {field.value
+                            ? format(field.value, "PPP")
+                            : "Pick a date"}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -140,17 +142,24 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => append({ item: "", quantity: 1, unitPrice: 0 })}
+                  onClick={() =>
+                    append({ item: "", quantity: 1, unitPrice: 0 })
+                  }
                 >
                   <IconPlus className="size-3.5" />
                   Add Item
                 </Button>
               </div>
 
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex flex-col gap-3 rounded-md border p-3">
+              {fields.map((fieldItem, index) => (
+                <div
+                  key={fieldItem.id}
+                  className="flex flex-col gap-3 rounded-md border p-3"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-xs">Item {index + 1}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Item {index + 1}
+                    </span>
                     {fields.length > 1 && (
                       <Button
                         type="button"
@@ -170,7 +179,10 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Product</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a product" />
@@ -178,7 +190,9 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                           </FormControl>
                           <SelectContent>
                             {stockItemNames.map((name) => (
-                              <SelectItem key={name} value={name}>{name}</SelectItem>
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -195,7 +209,12 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                         <FormItem>
                           <FormLabel>Qty</FormLabel>
                           <FormControl>
-                            <Input type="number" min="1" placeholder="1" {...field} />
+                            <Input
+                              type="number"
+                              min="1"
+                              placeholder="1"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -209,7 +228,13 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                         <FormItem>
                           <FormLabel>Unit Price ($)</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
