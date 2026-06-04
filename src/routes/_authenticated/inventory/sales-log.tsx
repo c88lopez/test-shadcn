@@ -1,6 +1,10 @@
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
-import { IconChevronDown, IconChevronRight, IconPlus } from "@tabler/icons-react"
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconPlus,
+} from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -107,8 +111,8 @@ function SalesLogPage() {
         (s) =>
           s.date.includes(filter) ||
           s.items.some((i) =>
-            i.item.toLowerCase().includes(filter.toLowerCase()),
-          ),
+            i.item.toLowerCase().includes(filter.toLowerCase())
+          )
       )
     : salesData
 
@@ -116,7 +120,7 @@ function SalesLogPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Sales Log</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="mt-1 text-sm text-muted-foreground">
           Click a row to expand its line items.
         </p>
       </div>
@@ -153,7 +157,7 @@ function SalesLogPage() {
               <TableRow>
                 <TableCell
                   colSpan={4}
-                  className="text-muted-foreground py-8 text-center"
+                  className="py-8 text-center text-muted-foreground"
                 >
                   No results.
                 </TableCell>
@@ -163,21 +167,20 @@ function SalesLogPage() {
                 const expanded = expandedRows.has(sale.id)
                 const total = saleTotal(sale)
                 return (
-                  <>
+                  <Fragment key={sale.id}>
                     <TableRow
-                      key={sale.id}
                       className="cursor-pointer"
                       onClick={() => toggle(sale.id)}
                     >
                       <TableCell className="pr-0">
                         {expanded ? (
-                          <IconChevronDown className="text-muted-foreground size-4" />
+                          <IconChevronDown className="size-4 text-muted-foreground" />
                         ) : (
-                          <IconChevronRight className="text-muted-foreground size-4" />
+                          <IconChevronRight className="size-4 text-muted-foreground" />
                         )}
                       </TableCell>
                       <TableCell>{sale.date}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="text-sm text-muted-foreground">
                         {sale.items.length}{" "}
                         {sale.items.length === 1 ? "item" : "items"}
                       </TableCell>
@@ -194,7 +197,9 @@ function SalesLogPage() {
                               <TableRow>
                                 <TableHead className="pl-8">Product</TableHead>
                                 <TableHead className="w-20">Qty</TableHead>
-                                <TableHead className="w-32">Unit Price</TableHead>
+                                <TableHead className="w-32">
+                                  Unit Price
+                                </TableHead>
                                 <TableHead className="w-32 text-right">
                                   Subtotal
                                 </TableHead>
@@ -211,7 +216,10 @@ function SalesLogPage() {
                                     ${line.unitPrice.toFixed(2)}
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    ${(line.quantity * line.unitPrice).toFixed(2)}
+                                    $
+                                    {(line.quantity * line.unitPrice).toFixed(
+                                      2
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -220,7 +228,7 @@ function SalesLogPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 )
               })
             )}
