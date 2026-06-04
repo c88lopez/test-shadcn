@@ -173,7 +173,13 @@ function toPx(minutes: number, pxPerHour: number): number {
   return SIDE_PAD + ((minutes - START_HOUR * 60) / 60) * pxPerHour
 }
 
-function CourtTimeline() {
+function CourtTimeline({
+  hoveredId,
+  onHover,
+}: {
+  hoveredId: number | null
+  onHover: (id: number | null) => void
+}) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [zoomIdx, setZoomIdx] = useState(DEFAULT_ZOOM)
   const pxPerHour = ZOOM_STEPS[zoomIdx]
@@ -312,15 +318,19 @@ function CourtTimeline() {
                   {/* Reservation blocks */}
                   {courtReservations.map((r) => {
                     const { startMin, endMin } = parseTimeRange(r.time)
+                    const highlighted = hoveredId === r.id
                     return (
                       <div
                         key={r.id}
                         title={`${r.reservedTo} · ${r.time}${r.paid ? "" : " · Unpaid"}`}
+                        onMouseEnter={() => onHover(r.id)}
+                        onMouseLeave={() => onHover(null)}
                         className={cn(
-                          "absolute top-2.5 bottom-2.5 z-10 flex items-center overflow-hidden rounded px-2",
+                          "absolute top-2.5 bottom-2.5 z-10 flex items-center overflow-hidden rounded px-2 ring-offset-2 ring-offset-background transition-shadow",
                           r.paid
                             ? "bg-primary text-primary-foreground"
-                            : "border border-border bg-secondary text-secondary-foreground"
+                            : "border border-border bg-secondary text-secondary-foreground",
+                          highlighted && "z-20 ring-2 ring-ring"
                         )}
                         style={{
                           left: toPx(startMin, pxPerHour) + BLOCK_GAP / 2,
@@ -424,6 +434,8 @@ const columns: ColumnDef<Reservation>[] = [
 // --- Page ---
 
 function ReservationsPage() {
+  const [hoveredId, setHoveredId] = useState<number | null>(null)
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -445,7 +457,7 @@ function ReservationsPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Today's Timeline</h2>
-        <CourtTimeline />
+        <CourtTimeline hoveredId={hoveredId} onHover={setHoveredId} />
       </section>
 
       <section className="flex flex-col gap-3">
@@ -454,6 +466,8 @@ function ReservationsPage() {
           columns={columns}
           data={reservations}
           searchPlaceholder="Search reservations..."
+          onRowHover={(r) => setHoveredId(r ? r.id : null)}
+          isRowHighlighted={(r) => r.id === hoveredId}
         />
       </section>
     </div>

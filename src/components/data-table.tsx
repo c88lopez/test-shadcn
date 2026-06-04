@@ -37,6 +37,8 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string
   pageSize?: number
   action?: React.ReactNode
+  onRowHover?: (row: TData | null) => void
+  isRowHighlighted?: (row: TData) => boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -45,6 +47,8 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Search...",
   pageSize = 10,
   action,
+  onRowHover,
+  isRowHighlighted,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState("")
@@ -126,7 +130,18 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  data-highlighted={
+                    isRowHighlighted?.(row.original) || undefined
+                  }
+                  onMouseEnter={() => onRowHover?.(row.original)}
+                  onMouseLeave={() => onRowHover?.(null)}
+                  className={cn(
+                    onRowHover && "cursor-default",
+                    "data-[highlighted=true]:bg-muted"
+                  )}
+                >
                   {row.getVisibleCells().map((cell) => {
                     const metaClass = cell.column.columnDef.meta?.className
                     const isRight = metaClass?.includes("text-right")
