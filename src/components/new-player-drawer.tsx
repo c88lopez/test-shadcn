@@ -2,7 +2,10 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
 import {
   Drawer,
   DrawerClose,
@@ -74,6 +77,8 @@ export function NewPlayerDrawer({
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!player
 
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: player ?? {
@@ -87,7 +92,7 @@ export function NewPlayerDrawer({
   })
 
   useEffect(() => {
-    if (open)
+    if (open) {
       form.reset(
         player ?? {
           fullName: "",
@@ -98,15 +103,30 @@ export function NewPlayerDrawer({
           category: "",
         }
       )
-  }, [open, player, form])
+      reset()
+    }
+  }, [open, player, form, reset])
 
   const gender = form.watch("gender")
   const categories = gender === "Female" ? femaleCategories : maleCategories
 
   function onSubmit(values: FormInput) {
-    console.log(isEditing ? "Update player:" : "New player:", values)
-    form.reset()
-    setOpen(false)
+    // PoC: type "fail" anywhere in the form to exercise the error path.
+    run({
+      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      onSuccess: () => {
+        console.log(isEditing ? "Update player:" : "New player:", values)
+        toast.success(isEditing ? "Player updated" : "Player created", {
+          description: `${values.fullName} has been saved successfully.`,
+        })
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The player could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -253,11 +273,15 @@ export function NewPlayerDrawer({
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">
-                {isEditing ? "Save Changes" : "Add Player"}
-              </Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label={isEditing ? "Save Changes" : "Add Player"}
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>

@@ -3,9 +3,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { format } from "date-fns"
+import { toast } from "sonner"
 import { IconCalendar } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
 import {
   Drawer,
   DrawerClose,
@@ -64,19 +67,37 @@ export function NewCoachDrawer({
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!coach
 
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: coach ?? { name: "", phone: "" },
   })
 
   useEffect(() => {
-    if (open) form.reset(coach ?? { name: "", phone: "" })
-  }, [open, coach, form])
+    if (open) {
+      form.reset(coach ?? { name: "", phone: "" })
+      reset()
+    }
+  }, [open, coach, form, reset])
 
   function onSubmit(values: FormInput) {
-    console.log(isEditing ? "Update coach:" : "New coach:", values)
-    form.reset()
-    setOpen(false)
+    // PoC: type "fail" anywhere in the form to exercise the error path.
+    run({
+      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      onSuccess: () => {
+        console.log(isEditing ? "Update coach:" : "New coach:", values)
+        toast.success(isEditing ? "Coach updated" : "Coach created", {
+          description: `${values.name} has been saved successfully.`,
+        })
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The coach could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -86,6 +107,7 @@ export function NewCoachDrawer({
         <DrawerHeader>
           <DrawerTitle>{isEditing ? "Edit Coach" : "New Coach"}</DrawerTitle>
         </DrawerHeader>
+
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -156,11 +178,15 @@ export function NewCoachDrawer({
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">
-                {isEditing ? "Save Changes" : "Add Coach"}
-              </Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label={isEditing ? "Save Changes" : "Add Coach"}
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>

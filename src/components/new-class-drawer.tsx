@@ -1,11 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { format } from "date-fns"
+import { toast } from "sonner"
 import { IconCalendar } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
 import {
   Drawer,
   DrawerClose,
@@ -60,6 +63,8 @@ type FormInput = Omit<FormValues, "date"> & { date?: Date }
 export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -70,10 +75,30 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
     },
   })
 
+  useEffect(() => {
+    if (open) {
+      form.reset({ coach: "", court: "", time: "", duration: "" })
+      reset()
+    }
+  }, [open, form, reset])
+
   function onSubmit(values: FormInput) {
-    console.log("New class:", values)
-    form.reset({ coach: "", court: "", time: "", duration: "" })
-    setOpen(false)
+    // PoC: type "fail" anywhere in the form to exercise the error path.
+    run({
+      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      onSuccess: () => {
+        console.log("New class:", values)
+        toast.success("Class scheduled", {
+          description: `Class with ${values.coach} has been saved.`,
+        })
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The class could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -214,9 +239,15 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
             </div>
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">Schedule Class</Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label="Schedule Class"
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>

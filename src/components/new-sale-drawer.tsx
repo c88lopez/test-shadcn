@@ -1,11 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { format } from "date-fns"
+import { toast } from "sonner"
 import { IconCalendar, IconPlus, IconTrash } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
 import {
   Drawer,
   DrawerClose,
@@ -70,6 +73,8 @@ type FormInput = Omit<FormValues, "date"> & { date?: Date }
 export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -82,10 +87,31 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
     name: "items",
   })
 
+  useEffect(() => {
+    if (open) {
+      form.reset({ items: [{ item: "", quantity: 1, unitPrice: 0 }] })
+      reset()
+    }
+  }, [open, form, reset])
+
   function onSubmit(values: FormInput) {
-    console.log("New sale:", values)
-    form.reset({ items: [{ item: "", quantity: 1, unitPrice: 0 }] })
-    setOpen(false)
+    // PoC: type "fail" anywhere in the form to exercise the error path.
+    run({
+      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      onSuccess: () => {
+        console.log("New sale:", values)
+        const count = values.items.length
+        toast.success("Sale recorded", {
+          description: `${count} ${count === 1 ? "item" : "items"} have been saved.`,
+        })
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The sale could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -247,9 +273,15 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
             </div>
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">Record Sale</Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label="Record Sale"
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>

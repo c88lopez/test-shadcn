@@ -3,9 +3,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { format } from "date-fns"
+import { toast } from "sonner"
 import { IconCalendar } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
 import {
   Drawer,
   DrawerClose,
@@ -77,6 +80,8 @@ export function NewReservationDrawer({
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!reservation
 
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: reservation ?? {
@@ -89,7 +94,7 @@ export function NewReservationDrawer({
   })
 
   useEffect(() => {
-    if (open)
+    if (open) {
       form.reset(
         reservation ?? {
           player: "",
@@ -99,12 +104,33 @@ export function NewReservationDrawer({
           paymentStatus: "",
         }
       )
-  }, [open, reservation, form])
+      reset()
+    }
+  }, [open, reservation, form, reset])
 
   function onSubmit(values: FormInput) {
-    console.log(isEditing ? "Update reservation:" : "New reservation:", values)
-    form.reset()
-    setOpen(false)
+    // PoC: type "fail" anywhere in the form to exercise the error path.
+    run({
+      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      onSuccess: () => {
+        console.log(
+          isEditing ? "Update reservation:" : "New reservation:",
+          values
+        )
+        toast.success(
+          isEditing ? "Reservation updated" : "Reservation created",
+          {
+            description: `Reservation for ${values.player} has been saved.`,
+          }
+        )
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The reservation could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -263,11 +289,15 @@ export function NewReservationDrawer({
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">
-                {isEditing ? "Save Changes" : "Create Reservation"}
-              </Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label={isEditing ? "Save Changes" : "Create Reservation"}
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>

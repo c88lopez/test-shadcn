@@ -1,11 +1,14 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { format } from "date-fns"
+import { toast } from "sonner"
 import { IconCalendar } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
 import {
   Drawer,
   DrawerClose,
@@ -52,15 +55,37 @@ type FormInput = Omit<FormValues, "date"> & { date?: Date }
 export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
 
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", category: "", format: "", maxTeams: 8 },
   })
 
+  useEffect(() => {
+    if (open) {
+      form.reset({ name: "", category: "", format: "", maxTeams: 8 })
+      reset()
+    }
+  }, [open, form, reset])
+
   function onSubmit(values: FormInput) {
-    console.log("New tournament:", values)
-    form.reset()
-    setOpen(false)
+    // PoC: type "fail" anywhere in the form to exercise the error path.
+    run({
+      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      onSuccess: () => {
+        console.log("New tournament:", values)
+        toast.success("Tournament created", {
+          description: `${values.name} has been saved.`,
+        })
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The tournament could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -207,9 +232,15 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">Create Tournament</Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label="Create Tournament"
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>
