@@ -9,7 +9,12 @@ import { NewReservationDrawer } from "@/components/new-reservation-drawer"
 import type { ReservationData } from "@/components/new-reservation-drawer"
 import { RowActions } from "@/components/row-actions"
 import { cn } from "@/lib/utils"
-import { formatHour, todayHours, useAppSettings } from "@/lib/app-settings"
+import {
+  formatHour,
+  formatTimeRange,
+  todayHours,
+  useAppSettings,
+} from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/reservations")({
   component: ReservationsPage,
@@ -334,7 +339,7 @@ function CourtTimeline({
                     return (
                       <div
                         key={r.id}
-                        title={`${r.reservedTo} · ${r.time}${r.paid ? "" : " · Unpaid"}`}
+                        title={`${r.reservedTo} · ${formatTimeRange(r.time, general.timeFormat)}${r.paid ? "" : " · Unpaid"}`}
                         onMouseEnter={() => onHover(r.id)}
                         onMouseLeave={() => onHover(null)}
                         className={cn(
@@ -366,6 +371,11 @@ function CourtTimeline({
 }
 
 // --- Table columns ---
+
+function TimeCell({ time }: { time: string }) {
+  const { general } = useAppSettings()
+  return <>{formatTimeRange(time, general.timeFormat)}</>
+}
 
 function toReservationData(r: Reservation): ReservationData {
   const startTime = r.time.split(" – ")[0]
@@ -418,6 +428,7 @@ const columns: ColumnDef<Reservation>[] = [
   {
     accessorKey: "time",
     header: "Time",
+    cell: ({ row }) => <TimeCell time={row.getValue<string>("time")} />,
   },
   {
     accessorKey: "paid",

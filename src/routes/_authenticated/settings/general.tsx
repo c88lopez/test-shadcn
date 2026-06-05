@@ -19,9 +19,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import {
-  CURRENCIES,
   DEFAULT_APP_SETTINGS,
-  LOCALES,
   setAppSettings,
   TIMEZONES,
   useAppSettings,
@@ -129,46 +127,10 @@ function GeneralSettingsPage() {
         <CardHeader>
           <CardTitle>Regional</CardTitle>
           <CardDescription>
-            Controls currency, dates and time formatting throughout the app.
+            Controls dates and time formatting throughout the app.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label>Currency</Label>
-            <Select
-              value={general.currency}
-              onValueChange={(v) => update({ currency: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map((c) => (
-                  <SelectItem key={c.code} value={c.code}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label>Language &amp; format</Label>
-            <Select
-              value={general.locale}
-              onValueChange={(v) => update({ locale: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LOCALES.map((l) => (
-                  <SelectItem key={l.code} value={l.code}>
-                    {l.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="flex flex-col gap-2">
             <Label>Timezone</Label>
             <Select

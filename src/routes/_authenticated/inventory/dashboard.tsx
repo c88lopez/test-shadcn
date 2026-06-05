@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { formatCurrency, getCurrencySymbol } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/inventory/dashboard")({
   component: InventoryDashboard,
@@ -57,10 +58,7 @@ const topProducts = [
 const totalRevenue = dailyRevenue.reduce((s, d) => s + d.revenue, 0)
 const totalOrders = 15
 const bestSeller = "Padel Racket (Pro)"
-
-const revenueChartConfig = {
-  revenue: { label: "Revenue ($)", color: "var(--chart-1)" },
-} satisfies ChartConfig
+const bestSellerRevenue = 149.99
 
 const categoryChartConfig = {
   drinks: { label: "Drinks", color: "var(--chart-1)" },
@@ -68,11 +66,17 @@ const categoryChartConfig = {
   accessories: { label: "Accessories", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
-const topProductsConfig = {
-  sales: { label: "Revenue ($)", color: "var(--chart-2)" },
-} satisfies ChartConfig
-
 function InventoryDashboard() {
+  const symbol = getCurrencySymbol()
+
+  const revenueChartConfig = {
+    revenue: { label: `Revenue (${symbol})`, color: "var(--chart-1)" },
+  } satisfies ChartConfig
+
+  const topProductsConfig = {
+    sales: { label: `Revenue (${symbol})`, color: "var(--chart-2)" },
+  } satisfies ChartConfig
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -96,7 +100,10 @@ function InventoryDashboard() {
               <IconCoin className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-4xl font-bold">${totalRevenue.toFixed(0)}</p>
+              <p className="text-4xl font-bold">
+                {symbol}
+                {totalRevenue.toFixed(0)}
+              </p>
               <p className="text-sm text-muted-foreground">this week</p>
             </div>
           </CardContent>
@@ -129,7 +136,9 @@ function InventoryDashboard() {
             </div>
             <div>
               <p className="text-lg leading-tight font-bold">{bestSeller}</p>
-              <p className="text-sm text-muted-foreground">$149.99</p>
+              <p className="text-sm text-muted-foreground">
+                {formatCurrency(bestSellerRevenue)}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -177,7 +186,7 @@ function InventoryDashboard() {
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `$${v}`}
+                tickFormatter={(v) => `${symbol}${v}`}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
@@ -228,7 +237,7 @@ function InventoryDashboard() {
                     className="size-2.5 rounded-full"
                     style={{ background: c.fill }}
                   />
-                  {c.category} · ${c.revenue.toFixed(2)}
+                  {c.category} · {formatCurrency(c.revenue)}
                 </span>
               ))}
             </div>
@@ -256,7 +265,7 @@ function InventoryDashboard() {
                   type="number"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `$${v}`}
+                  tickFormatter={(v) => `${symbol}${v}`}
                 />
                 <YAxis
                   type="category"

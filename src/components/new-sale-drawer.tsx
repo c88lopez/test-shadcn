@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { getCurrencySymbol } from "@/lib/app-settings"
 
 export const stockItemNames = [
   "Water Bottle (500ml)",
@@ -72,6 +73,7 @@ type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
+  const currencySymbol = getCurrencySymbol()
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
@@ -253,7 +255,7 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                       name={`items.${index}.unitPrice`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Unit Price ($)</FormLabel>
+                          <FormLabel>Unit Price ({currencySymbol})</FormLabel>
                           <FormControl>
                             <Input
                               type="number"

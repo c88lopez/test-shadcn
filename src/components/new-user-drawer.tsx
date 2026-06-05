@@ -32,24 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ROLE_DESCRIPTIONS, USER_ROLES } from "@/lib/users"
+import type { UserRole } from "@/lib/users"
+import { useAppSettings } from "@/lib/app-settings"
 
-export const USER_ROLES = [
-  "Owner",
-  "Admin",
-  "Manager",
-  "Coach",
-  "Front Desk",
-] as const
-
-export type UserRole = (typeof USER_ROLES)[number]
-
-export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  Owner: "Full access, including billing and ownership transfer.",
-  Admin: "Manage all club data, users and settings.",
-  Manager: "Manage reservations, players and coaches.",
-  Coach: "View schedules and manage their own classes.",
-  "Front Desk": "Handle bookings and point-of-sale.",
-}
+export { ROLE_DESCRIPTIONS, USER_ROLES }
+export type { UserRole }
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -87,18 +75,21 @@ export function NewUserDrawer({
   const isEditing = !!user
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const { security } = useAppSettings()
+  // New users start at the configured default role (Settings → Users → Security).
+  const blankUser = { name: "", email: "", role: security.defaultRole }
 
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
-    defaultValues: user ?? { name: "", email: "", role: undefined },
+    defaultValues: user ?? blankUser,
   })
 
   useEffect(() => {
     if (open) {
-      form.reset(user ?? { name: "", email: "", role: undefined })
+      form.reset(user ?? { name: "", email: "", role: security.defaultRole })
       reset()
     }
-  }, [open, user, form, reset])
+  }, [open, user, form, reset, security.defaultRole])
 
   function onSubmit(values: FormInput) {
     // PoC: type "fail" anywhere in the form to exercise the error path.

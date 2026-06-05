@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  clampNumber,
   DEFAULT_APP_SETTINGS,
   setAppSettings,
   useAppSettings,
@@ -65,7 +66,7 @@ function InventorySettingsPage() {
               type="number"
               min={0}
               value={inventory.lowStockThreshold}
-              onChange={(e) => setThreshold(Number(e.target.value))}
+              onChange={(e) => setThreshold(clampNumber(e.target.value, 0))}
             />
           </div>
         </CardContent>

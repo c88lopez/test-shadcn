@@ -27,7 +27,7 @@ import { saleTotal } from "@/lib/sales"
 import type { Sale } from "@/lib/sales"
 import { exportRecords } from "@/lib/export"
 import type { ExportFormat } from "@/lib/export"
-import { formatCurrency, useAppSettings } from "@/lib/app-settings"
+import { formatCurrency } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/inventory/sales-log")({
   component: SalesLogPage,
@@ -92,7 +92,6 @@ const salesData: Sale[] = [
 ]
 
 function SalesLogPage() {
-  const { general } = useAppSettings()
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const [filter, setFilter] = useState("")
 
@@ -210,7 +209,7 @@ function SalesLogPage() {
                         {sale.items.length === 1 ? "item" : "items"}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(total, general)}
+                        {formatCurrency(total)}
                       </TableCell>
                     </TableRow>
 
@@ -238,12 +237,11 @@ function SalesLogPage() {
                                   </TableCell>
                                   <TableCell>{line.quantity}</TableCell>
                                   <TableCell>
-                                    {formatCurrency(line.unitPrice, general)}
+                                    {formatCurrency(line.unitPrice)}
                                   </TableCell>
                                   <TableCell className="text-right">
                                     {formatCurrency(
-                                      line.quantity * line.unitPrice,
-                                      general
+                                      line.quantity * line.unitPrice
                                     )}
                                   </TableCell>
                                 </TableRow>

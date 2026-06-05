@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  clampNumber,
   DEFAULT_APP_SETTINGS,
   setAppSettings,
   SLOT_DURATIONS,
@@ -112,40 +113,52 @@ function ReservationSettingsPage() {
         <CardContent className="flex flex-col gap-3">
           {WEEKDAYS.map((day) => {
             const value = reservations.hours[day.key]
+            const invalid = !value.closed && value.open >= value.close
             return (
               <div
                 key={day.key}
-                className="flex flex-wrap items-center gap-3 border-b pb-3 last:border-b-0 last:pb-0"
+                className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0"
               >
-                <span className="w-24 text-sm font-medium">{day.label}</span>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={!value.closed}
-                    onCheckedChange={(checked) =>
-                      updateDay(day.key, { closed: !checked })
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="w-24 text-sm font-medium">{day.label}</span>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={!value.closed}
+                      onCheckedChange={(checked) =>
+                        updateDay(day.key, { closed: !checked })
+                      }
+                    />
+                    <span className="w-12 text-xs text-muted-foreground">
+                      {value.closed ? "Closed" : "Open"}
+                    </span>
+                  </div>
+                  <Input
+                    type="time"
+                    value={value.open}
+                    disabled={value.closed}
+                    aria-invalid={invalid}
+                    onChange={(e) =>
+                      updateDay(day.key, { open: e.target.value })
                     }
+                    className="h-8 w-32"
                   />
-                  <span className="w-12 text-xs text-muted-foreground">
-                    {value.closed ? "Closed" : "Open"}
-                  </span>
+                  <span className="text-muted-foreground">–</span>
+                  <Input
+                    type="time"
+                    value={value.close}
+                    disabled={value.closed}
+                    aria-invalid={invalid}
+                    onChange={(e) =>
+                      updateDay(day.key, { close: e.target.value })
+                    }
+                    className="h-8 w-32"
+                  />
                 </div>
-                <Input
-                  type="time"
-                  value={value.open}
-                  disabled={value.closed}
-                  onChange={(e) => updateDay(day.key, { open: e.target.value })}
-                  className="h-8 w-32"
-                />
-                <span className="text-muted-foreground">–</span>
-                <Input
-                  type="time"
-                  value={value.close}
-                  disabled={value.closed}
-                  onChange={(e) =>
-                    updateDay(day.key, { close: e.target.value })
-                  }
-                  className="h-8 w-32"
-                />
+                {invalid && (
+                  <p className="pl-24 text-xs text-destructive">
+                    Closing time must be after opening time.
+                  </p>
+                )}
               </div>
             )
           })}
@@ -257,7 +270,9 @@ function ReservationSettingsPage() {
               step={30}
               value={reservations.defaultBookingLength}
               onChange={(e) =>
-                update({ defaultBookingLength: Number(e.target.value) })
+                update({
+                  defaultBookingLength: clampNumber(e.target.value, 30),
+                })
               }
             />
           </div>
@@ -280,7 +295,7 @@ function ReservationSettingsPage() {
               min={0}
               value={reservations.minAdvanceHours}
               onChange={(e) =>
-                update({ minAdvanceHours: Number(e.target.value) })
+                update({ minAdvanceHours: clampNumber(e.target.value, 0) })
               }
             />
           </div>
@@ -292,7 +307,7 @@ function ReservationSettingsPage() {
               min={1}
               value={reservations.maxAdvanceDays}
               onChange={(e) =>
-                update({ maxAdvanceDays: Number(e.target.value) })
+                update({ maxAdvanceDays: clampNumber(e.target.value, 1) })
               }
             />
           </div>
@@ -306,7 +321,9 @@ function ReservationSettingsPage() {
               min={0}
               value={reservations.cancellationCutoffHours}
               onChange={(e) =>
-                update({ cancellationCutoffHours: Number(e.target.value) })
+                update({
+                  cancellationCutoffHours: clampNumber(e.target.value, 0),
+                })
               }
             />
           </div>
@@ -320,7 +337,9 @@ function ReservationSettingsPage() {
               min={1}
               value={reservations.maxConcurrentPerPlayer}
               onChange={(e) =>
-                update({ maxConcurrentPerPlayer: Number(e.target.value) })
+                update({
+                  maxConcurrentPerPlayer: clampNumber(e.target.value, 1),
+                })
               }
             />
           </div>

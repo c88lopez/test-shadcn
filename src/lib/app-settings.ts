@@ -6,8 +6,8 @@
  */
 
 import { useSyncExternalStore } from "react"
-import { USER_ROLES } from "@/components/new-user-drawer"
-import type { UserRole } from "@/components/new-user-drawer"
+import { USER_ROLES } from "@/lib/users"
+import type { UserRole } from "@/lib/users"
 
 // --- Types ---
 
@@ -21,8 +21,6 @@ export interface GeneralSettings {
   phone: string
   email: string
   timezone: string
-  currency: string
-  locale: string
   timeFormat: TimeFormat
   weekStart: WeekStart
 }
@@ -90,25 +88,6 @@ export interface AppSettings {
 }
 
 // --- Option lists (for selects) ---
-
-export const CURRENCIES: { code: string; label: string }[] = [
-  { code: "USD", label: "US Dollar ($)" },
-  { code: "EUR", label: "Euro (€)" },
-  { code: "GBP", label: "British Pound (£)" },
-  { code: "ARS", label: "Argentine Peso ($)" },
-  { code: "MXN", label: "Mexican Peso ($)" },
-  { code: "BRL", label: "Brazilian Real (R$)" },
-]
-
-export const LOCALES: { code: string; label: string }[] = [
-  { code: "en-US", label: "English (US)" },
-  { code: "en-GB", label: "English (UK)" },
-  { code: "es-ES", label: "Spanish (Spain)" },
-  { code: "fr-FR", label: "French" },
-  { code: "de-DE", label: "German" },
-  { code: "pt-BR", label: "Portuguese (Brazil)" },
-  { code: "it-IT", label: "Italian" },
-]
 
 export const TIMEZONES: string[] = [
   "UTC",
@@ -180,8 +159,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     phone: "",
     email: "",
     timezone: "Europe/Madrid",
-    currency: "EUR",
-    locale: "es-ES",
     timeFormat: "24h",
     weekStart: "monday",
   },
@@ -312,18 +289,51 @@ export function useAppSettings(): AppSettings {
 
 // --- Helpers ---
 
-export function formatCurrency(
-  amount: number,
-  general: GeneralSettings
-): string {
-  try {
-    return new Intl.NumberFormat(general.locale, {
-      style: "currency",
-      currency: general.currency,
-    }).format(amount)
-  } catch {
-    return `${general.currency} ${amount.toFixed(2)}`
+/** The single currency symbol used across the app for now. */
+export const CURRENCY_SYMBOL = "$"
+
+// Currency is fixed to USD-style "$" for now; clubs will get per-country
+// currency support later.
+export function formatCurrency(amount: number): string {
+  return `${CURRENCY_SYMBOL}${amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+/** Returns the currency symbol, for compact contexts like chart axes. */
+export function getCurrencySymbol(): string {
+  return CURRENCY_SYMBOL
+}
+
+/** Formats a single "HH:MM" string respecting the 12h/24h preference. */
+export function formatTimeString(hhmm: string, timeFormat: TimeFormat): string {
+  const [h, m] = hhmm.split(":").map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm
+  if (timeFormat === "24h") {
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
   }
+  const period = h >= 12 ? "PM" : "AM"
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`
+}
+
+/** Formats a "HH:MM – HH:MM" range respecting the 12h/24h preference. */
+export function formatTimeRange(range: string, timeFormat: TimeFormat): string {
+  const [start, end] = range.split(" – ")
+  if (!start || !end) return range
+  return `${formatTimeString(start, timeFormat)} – ${formatTimeString(end, timeFormat)}`
+}
+
+/** Parses an input value into a number, clamped to [min, max]. */
+export function clampNumber(
+  value: string,
+  min: number,
+  max = Number.POSITIVE_INFINITY
+): number {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return min
+  return Math.min(max, Math.max(min, n))
 }
 
 export function todayHours(reservations: ReservationSettings): DayHours {

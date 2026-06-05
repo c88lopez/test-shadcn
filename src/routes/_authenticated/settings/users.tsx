@@ -43,7 +43,7 @@ import {
 import { NewUserDrawer, USER_ROLES } from "@/components/new-user-drawer"
 import type { UserFormData, UserRole } from "@/components/new-user-drawer"
 import { cn } from "@/lib/utils"
-import { setAppSettings, useAppSettings } from "@/lib/app-settings"
+import { clampNumber, setAppSettings, useAppSettings } from "@/lib/app-settings"
 import type { SecuritySettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/settings/users")({
@@ -222,7 +222,9 @@ function SecuritySection() {
               min={5}
               value={security.sessionTimeoutMinutes}
               onChange={(e) =>
-                update({ sessionTimeoutMinutes: Number(e.target.value) })
+                update({
+                  sessionTimeoutMinutes: clampNumber(e.target.value, 5),
+                })
               }
             />
           </div>
@@ -239,7 +241,7 @@ function SecuritySection() {
                 min={6}
                 value={security.passwordMinLength}
                 onChange={(e) =>
-                  update({ passwordMinLength: Number(e.target.value) })
+                  update({ passwordMinLength: clampNumber(e.target.value, 6) })
                 }
               />
             </div>
@@ -251,7 +253,7 @@ function SecuritySection() {
                 min={0}
                 value={security.passwordExpiryDays}
                 onChange={(e) =>
-                  update({ passwordExpiryDays: Number(e.target.value) })
+                  update({ passwordExpiryDays: clampNumber(e.target.value, 0) })
                 }
               />
             </div>
