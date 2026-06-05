@@ -9,6 +9,7 @@ import { NewReservationDrawer } from "@/components/new-reservation-drawer"
 import type { ReservationData } from "@/components/new-reservation-drawer"
 import { RowActions } from "@/components/row-actions"
 import { cn } from "@/lib/utils"
+import { formatHour, todayHours, useAppSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/reservations")({
   component: ReservationsPage,
@@ -148,16 +149,10 @@ const reservations: Reservation[] = [
 
 // --- Timeline ---
 
-const START_HOUR = 8
-const END_HOUR = 23
-const TOTAL_HOURS = END_HOUR - START_HOUR
-const COURTS = [1, 2, 3, 4, 5, 6]
-const HOURS = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => START_HOUR + i)
-
 // px per hour → roughly how many hours fit in a ~800px viewport
 const ZOOM_STEPS = [52, 80, 120, 160, 200, 260]
 const DEFAULT_ZOOM = 3 // index 3 → 160 px/h → ~5 h visible
-const SIDE_PAD = 24 // px of breathing room before 08:00 and after 23:00
+const SIDE_PAD = 24 // px of breathing room before open and after close
 const LABEL_COL = 96 // w-24 in px
 const BLOCK_GAP = 5 // px horizontal gap between adjacent reservation blocks
 
@@ -169,8 +164,8 @@ function parseTimeRange(time: string): { startMin: number; endMin: number } {
 }
 
 // Returns px offset from the left edge of the track area
-function toPx(minutes: number, pxPerHour: number): number {
-  return SIDE_PAD + ((minutes - START_HOUR * 60) / 60) * pxPerHour
+function toPx(minutes: number, pxPerHour: number, startHour: number): number {
+  return SIDE_PAD + ((minutes - startHour * 60) / 60) * pxPerHour
 }
 
 function CourtTimeline({
@@ -180,15 +175,29 @@ function CourtTimeline({
   hoveredId: number | null
   onHover: (id: number | null) => void
 }) {
+  const { reservations: reservationSettings, general } = useAppSettings()
+  const dayHours = todayHours(reservationSettings)
+  const fallback = dayHours.closed
+  const startHour = fallback ? 8 : Number(dayHours.open.split(":")[0])
+  // Round the close time up to the next hour so the final label is visible.
+  const closeParts = dayHours.close.split(":").map(Number)
+  const endHour = fallback
+    ? 23
+    : closeParts[1] > 0
+      ? closeParts[0] + 1
+      : closeParts[0]
+  const totalHours = Math.max(1, endHour - startHour)
+  const courts = reservationSettings.courts.filter((c) => c.active)
+  const hours = Array.from({ length: totalHours + 1 }, (_, i) => startHour + i)
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const [zoomIdx, setZoomIdx] = useState(DEFAULT_ZOOM)
   const pxPerHour = ZOOM_STEPS[zoomIdx]
-  // track = SIDE_PAD + 15h * pxPerHour + SIDE_PAD; inner div = LABEL_COL + track
-  const innerWidth = LABEL_COL + 2 * SIDE_PAD + TOTAL_HOURS * pxPerHour
+  const innerWidth = LABEL_COL + 2 * SIDE_PAD + totalHours * pxPerHour
 
   const [now, setNow] = useState(() => new Date())
   const nowMin = now.getHours() * 60 + now.getMinutes()
-  const nowInRange = nowMin >= START_HOUR * 60 && nowMin <= END_HOUR * 60
+  const nowInRange = nowMin >= startHour * 60 && nowMin <= endHour * 60
 
   // Tick the "now" indicator forward, aligned to each minute boundary, so it
   // stays in sync without requiring a page refresh.
@@ -214,16 +223,16 @@ function CourtTimeline({
     if (!scrollRef.current) return
     const current = new Date()
     const currentMin = current.getHours() * 60 + current.getMinutes()
-    if (currentMin < START_HOUR * 60 || currentMin > END_HOUR * 60) return
+    if (currentMin < startHour * 60 || currentMin > endHour * 60) return
     const el = scrollRef.current
     requestAnimationFrame(() => {
       // LABEL_COL is sticky so add it to reach the track's coordinate space
       el.scrollLeft =
-        LABEL_COL + toPx(currentMin, pxPerHour) - el.clientWidth / 2
+        LABEL_COL + toPx(currentMin, pxPerHour, startHour) - el.clientWidth / 2
     })
-  }, [pxPerHour])
+  }, [pxPerHour, startHour, endHour])
 
-  const today = now.toLocaleDateString("en-GB", {
+  const todayLabel = now.toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -233,7 +242,10 @@ function CourtTimeline({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{today}</p>
+        <p className="text-sm text-muted-foreground">
+          {todayLabel}
+          {fallback && " · Closed today"}
+        </p>
         <div className="flex items-center gap-1">
           <Button
             variant="outline"
@@ -266,44 +278,44 @@ function CourtTimeline({
               Court
             </div>
             <div className="relative h-8 flex-1 overflow-visible">
-              {HOURS.map((h) => (
+              {hours.map((h) => (
                 <span
                   key={h}
                   className="absolute top-1 -translate-x-1/2 text-[11px] font-bold text-muted-foreground select-none"
-                  style={{ left: toPx(h * 60, pxPerHour) }}
+                  style={{ left: toPx(h * 60, pxPerHour, startHour) }}
                 >
-                  {String(h).padStart(2, "0")}:00
+                  {formatHour(h, general.timeFormat)}
                 </span>
               ))}
             </div>
           </div>
 
           {/* Court rows */}
-          {COURTS.map((court, courtIdx) => {
+          {courts.map((court, courtIdx) => {
             const courtReservations = reservations.filter(
-              (r) => r.court === court
+              (r) => r.court === court.id
             )
             return (
               <div
-                key={court}
+                key={court.id}
                 className={cn(
                   "flex",
-                  courtIdx < COURTS.length - 1 && "border-b"
+                  courtIdx < courts.length - 1 && "border-b"
                 )}
               >
                 {/* Label */}
                 <div className="sticky left-0 z-30 flex w-24 shrink-0 items-center border-r bg-background px-3 text-xs font-bold text-muted-foreground">
-                  # {court}
+                  {court.name}
                 </div>
 
                 {/* Track */}
                 <div className="relative h-12 flex-1">
                   {/* Hour grid lines */}
-                  {HOURS.map((h) => (
+                  {hours.map((h) => (
                     <div
                       key={h}
                       className="absolute top-0 bottom-0 w-px bg-border"
-                      style={{ left: toPx(h * 60, pxPerHour) }}
+                      style={{ left: toPx(h * 60, pxPerHour, startHour) }}
                     />
                   ))}
 
@@ -311,7 +323,7 @@ function CourtTimeline({
                   {nowInRange && (
                     <div
                       className="absolute top-0 bottom-0 z-20 w-0.5 bg-destructive"
-                      style={{ left: toPx(nowMin, pxPerHour) }}
+                      style={{ left: toPx(nowMin, pxPerHour, startHour) }}
                     />
                   )}
 
@@ -330,7 +342,9 @@ function CourtTimeline({
                           highlighted && "z-20 ring-2 ring-ring"
                         )}
                         style={{
-                          left: toPx(startMin, pxPerHour) + BLOCK_GAP / 2,
+                          left:
+                            toPx(startMin, pxPerHour, startHour) +
+                            BLOCK_GAP / 2,
                           width:
                             ((endMin - startMin) / 60) * pxPerHour - BLOCK_GAP,
                         }}

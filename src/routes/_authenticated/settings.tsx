@@ -1,0 +1,65 @@
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
+import {
+  IconBell,
+  IconBox,
+  IconBuildingStore,
+  IconCalendarCog,
+  IconPalette,
+  IconUsers,
+} from "@tabler/icons-react"
+import type { Icon } from "@tabler/icons-react"
+import { cn } from "@/lib/utils"
+
+export const Route = createFileRoute("/_authenticated/settings")({
+  component: SettingsLayout,
+})
+
+const navItems: { to: string; label: string; icon: Icon }[] = [
+  { to: "/settings/general", label: "General", icon: IconBuildingStore },
+  {
+    to: "/settings/reservations",
+    label: "Reservations",
+    icon: IconCalendarCog,
+  },
+  { to: "/settings/notifications", label: "Notifications", icon: IconBell },
+  { to: "/settings/inventory", label: "Inventory", icon: IconBox },
+  { to: "/settings/users", label: "Users", icon: IconUsers },
+  { to: "/settings/ui", label: "UI", icon: IconPalette },
+]
+
+function SettingsLayout() {
+  return (
+    <div className="flex h-full flex-col gap-6">
+      <div className="shrink-0">
+        <h1 className="text-2xl font-semibold">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your club, reservations, notifications, users and appearance.
+        </p>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-6 md:flex-row md:gap-10">
+        <nav className="flex shrink-0 gap-1 md:w-48 md:flex-col">
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              )}
+              activeProps={{
+                className: "bg-muted text-foreground",
+              }}
+            >
+              <item.icon className="size-4" />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-2">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  )
+}

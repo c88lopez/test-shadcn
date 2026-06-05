@@ -8,6 +8,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import { Toaster } from "@/components/ui/sonner"
+import { getUiSettingsInitScript } from "@/lib/ui-settings"
 import appCss from "../styles.css?url"
 
 export const Route = createRootRoute({
@@ -36,9 +37,12 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{ __html: getUiSettingsInitScript() }}
+        />
       </head>
       <body>
         {children}

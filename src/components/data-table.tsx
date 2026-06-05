@@ -11,11 +11,18 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table"
 import {
   IconChevronUp,
   IconChevronDown,
+  IconDownload,
   IconSelector,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -24,6 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { exportRecords } from "@/lib/export"
+import type { ExportFormat, ExportRecord } from "@/lib/export"
 
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData, TValue> {
@@ -39,6 +48,10 @@ interface DataTableProps<TData, TValue> {
   action?: React.ReactNode
   onRowHover?: (row: TData | null) => void
   isRowHighlighted?: (row: TData) => boolean
+  /** Enables the CSV/JSON export menu. Defaults to true. */
+  enableExport?: boolean
+  /** Base name (without extension) for exported files. */
+  exportFileName?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -49,6 +62,8 @@ export function DataTable<TData, TValue>({
   action,
   onRowHover,
   isRowHighlighted,
+  enableExport = true,
+  exportFileName = "export",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState("")
@@ -66,6 +81,26 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize } },
   })
 
+  function handleExport(format: ExportFormat) {
+    // Only accessor columns (those with a real value) are exported; display
+    // columns like row actions are skipped. Respects the active search filter.
+    const accessorCols = table
+      .getAllLeafColumns()
+      .filter((col) => col.accessorFn != null)
+    const labelFor = (id: string) => {
+      const header = accessorCols.find((c) => c.id === id)?.columnDef.header
+      return typeof header === "string" ? header : id
+    }
+    const records: ExportRecord[] = table
+      .getFilteredRowModel()
+      .rows.map((row) =>
+        Object.fromEntries(
+          accessorCols.map((col) => [labelFor(col.id), row.getValue(col.id)])
+        )
+      )
+    exportRecords(records, format, exportFileName)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
@@ -75,7 +110,27 @@ export function DataTable<TData, TValue>({
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
-        {action}
+        <div className="flex items-center gap-2">
+          {enableExport && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconDownload className="size-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("csv")}>
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("json")}>
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {action}
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-md border">

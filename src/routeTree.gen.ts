@@ -13,10 +13,18 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
 import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
+import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
+import { Route as AuthenticatedSettingsUiRouteImport } from './routes/_authenticated/settings/ui'
+import { Route as AuthenticatedSettingsReservationsRouteImport } from './routes/_authenticated/settings/reservations'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsInventoryRouteImport } from './routes/_authenticated/settings/inventory'
+import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
 import { Route as AuthenticatedInventorySalesLogRouteImport } from './routes/_authenticated/inventory/sales-log'
 import { Route as AuthenticatedInventoryDashboardRouteImport } from './routes/_authenticated/inventory/dashboard'
 import { Route as AuthenticatedCoachesClassesRouteImport } from './routes/_authenticated/coaches/classes'
@@ -41,6 +49,11 @@ const AuthenticatedTournamentsRoute =
     path: '/tournaments',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedReservationsRoute =
   AuthenticatedReservationsRouteImport.update({
     id: '/reservations',
@@ -52,6 +65,12 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedInventoryIndexRoute =
   AuthenticatedInventoryIndexRouteImport.update({
     id: '/inventory/',
@@ -63,6 +82,41 @@ const AuthenticatedCoachesIndexRoute =
     id: '/coaches/',
     path: '/coaches/',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsUsersRoute =
+  AuthenticatedSettingsUsersRouteImport.update({
+    id: '/users',
+    path: '/users',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsUiRoute = AuthenticatedSettingsUiRouteImport.update({
+  id: '/ui',
+  path: '/ui',
+  getParentRoute: () => AuthenticatedSettingsRoute,
+} as any)
+const AuthenticatedSettingsReservationsRoute =
+  AuthenticatedSettingsReservationsRouteImport.update({
+    id: '/reservations',
+    path: '/reservations',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsInventoryRoute =
+  AuthenticatedSettingsInventoryRouteImport.update({
+    id: '/inventory',
+    path: '/inventory',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsGeneralRoute =
+  AuthenticatedSettingsGeneralRouteImport.update({
+    id: '/general',
+    path: '/general',
+    getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedInventorySalesLogRoute =
   AuthenticatedInventorySalesLogRouteImport.update({
@@ -88,12 +142,20 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tournaments': typeof AuthenticatedTournamentsRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
   '/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
+  '/settings/general': typeof AuthenticatedSettingsGeneralRoute
+  '/settings/inventory': typeof AuthenticatedSettingsInventoryRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/reservations': typeof AuthenticatedSettingsReservationsRoute
+  '/settings/ui': typeof AuthenticatedSettingsUiRoute
+  '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/inventory/': typeof AuthenticatedInventoryIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -104,8 +166,15 @@ export interface FileRoutesByTo {
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
   '/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
+  '/settings/general': typeof AuthenticatedSettingsGeneralRoute
+  '/settings/inventory': typeof AuthenticatedSettingsInventoryRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/reservations': typeof AuthenticatedSettingsReservationsRoute
+  '/settings/ui': typeof AuthenticatedSettingsUiRoute
+  '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/coaches': typeof AuthenticatedCoachesIndexRoute
   '/inventory': typeof AuthenticatedInventoryIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,13 +182,21 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/players': typeof AuthenticatedPlayersRoute
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tournaments': typeof AuthenticatedTournamentsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/_authenticated/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
   '/_authenticated/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
+  '/_authenticated/settings/general': typeof AuthenticatedSettingsGeneralRoute
+  '/_authenticated/settings/inventory': typeof AuthenticatedSettingsInventoryRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/settings/reservations': typeof AuthenticatedSettingsReservationsRoute
+  '/_authenticated/settings/ui': typeof AuthenticatedSettingsUiRoute
+  '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,12 +205,20 @@ export interface FileRouteTypes {
     | '/login'
     | '/players'
     | '/reservations'
+    | '/settings'
     | '/tournaments'
     | '/coaches/classes'
     | '/inventory/dashboard'
     | '/inventory/sales-log'
+    | '/settings/general'
+    | '/settings/inventory'
+    | '/settings/notifications'
+    | '/settings/reservations'
+    | '/settings/ui'
+    | '/settings/users'
     | '/coaches/'
     | '/inventory/'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -144,21 +229,36 @@ export interface FileRouteTypes {
     | '/coaches/classes'
     | '/inventory/dashboard'
     | '/inventory/sales-log'
+    | '/settings/general'
+    | '/settings/inventory'
+    | '/settings/notifications'
+    | '/settings/reservations'
+    | '/settings/ui'
+    | '/settings/users'
     | '/coaches'
     | '/inventory'
+    | '/settings'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/players'
     | '/_authenticated/reservations'
+    | '/_authenticated/settings'
     | '/_authenticated/tournaments'
     | '/_authenticated/'
     | '/_authenticated/coaches/classes'
     | '/_authenticated/inventory/dashboard'
     | '/_authenticated/inventory/sales-log'
+    | '/_authenticated/settings/general'
+    | '/_authenticated/settings/inventory'
+    | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/reservations'
+    | '/_authenticated/settings/ui'
+    | '/_authenticated/settings/users'
     | '/_authenticated/coaches/'
     | '/_authenticated/inventory/'
+    | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTournamentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reservations': {
       id: '/_authenticated/reservations'
       path: '/reservations'
@@ -210,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/inventory/': {
       id: '/_authenticated/inventory/'
       path: '/inventory'
@@ -223,6 +337,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/coaches/'
       preLoaderRoute: typeof AuthenticatedCoachesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/users': {
+      id: '/_authenticated/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/ui': {
+      id: '/_authenticated/settings/ui'
+      path: '/ui'
+      fullPath: '/settings/ui'
+      preLoaderRoute: typeof AuthenticatedSettingsUiRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/reservations': {
+      id: '/_authenticated/settings/reservations'
+      path: '/reservations'
+      fullPath: '/settings/reservations'
+      preLoaderRoute: typeof AuthenticatedSettingsReservationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/inventory': {
+      id: '/_authenticated/settings/inventory'
+      path: '/inventory'
+      fullPath: '/settings/inventory'
+      preLoaderRoute: typeof AuthenticatedSettingsInventoryRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/general': {
+      id: '/_authenticated/settings/general'
+      path: '/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof AuthenticatedSettingsGeneralRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/inventory/sales-log': {
       id: '/_authenticated/inventory/sales-log'
@@ -248,9 +404,37 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsGeneralRoute: typeof AuthenticatedSettingsGeneralRoute
+  AuthenticatedSettingsInventoryRoute: typeof AuthenticatedSettingsInventoryRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+  AuthenticatedSettingsReservationsRoute: typeof AuthenticatedSettingsReservationsRoute
+  AuthenticatedSettingsUiRoute: typeof AuthenticatedSettingsUiRoute
+  AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsGeneralRoute: AuthenticatedSettingsGeneralRoute,
+  AuthenticatedSettingsInventoryRoute: AuthenticatedSettingsInventoryRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRoute,
+  AuthenticatedSettingsReservationsRoute:
+    AuthenticatedSettingsReservationsRoute,
+  AuthenticatedSettingsUiRoute: AuthenticatedSettingsUiRoute,
+  AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedPlayersRoute: typeof AuthenticatedPlayersRoute
   AuthenticatedReservationsRoute: typeof AuthenticatedReservationsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTournamentsRoute: typeof AuthenticatedTournamentsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCoachesClassesRoute: typeof AuthenticatedCoachesClassesRoute
@@ -263,6 +447,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPlayersRoute: AuthenticatedPlayersRoute,
   AuthenticatedReservationsRoute: AuthenticatedReservationsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTournamentsRoute: AuthenticatedTournamentsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCoachesClassesRoute: AuthenticatedCoachesClassesRoute,

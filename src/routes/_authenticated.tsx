@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -7,6 +8,7 @@ import { IconSearch } from "@tabler/icons-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { NotificationsDrawer } from "@/components/notifications-drawer"
 import { isAuthenticated } from "@/lib/auth"
+import { applyUiSettings, loadUiSettings } from "@/lib/ui-settings"
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: () => {
@@ -19,12 +21,16 @@ export const Route = createFileRoute("/_authenticated")({
 })
 
 function AuthenticatedLayout() {
+  useEffect(() => {
+    applyUiSettings(loadUiSettings())
+  }, [])
+
   return (
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b bg-background px-4">
+        <main className="flex h-svh min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="z-10 flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" />
             <div className="relative w-full max-w-sm">
@@ -38,7 +44,7 @@ function AuthenticatedLayout() {
               <NotificationsDrawer />
             </div>
           </header>
-          <div className="flex-1 p-4 md:p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
             <Outlet />
           </div>
         </main>

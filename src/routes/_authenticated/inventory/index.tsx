@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
@@ -10,6 +10,8 @@ import { NewStockItemDrawer } from "@/components/new-stock-item-drawer"
 import type { StockItemData } from "@/components/new-stock-item-drawer"
 import { RowActions } from "@/components/row-actions"
 import { cn } from "@/lib/utils"
+import { formatCurrency, useAppSettings } from "@/lib/app-settings"
+import type { GeneralSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/inventory/")({
   component: StockPage,
@@ -76,7 +78,13 @@ const stockItemsData: StockItem[] = [
   },
 ]
 
-function EditableStockCell({ initialValue }: { initialValue: number }) {
+function EditableStockCell({
+  initialValue,
+  threshold,
+}: {
+  initialValue: number
+  threshold: number
+}) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(initialValue)
 
@@ -110,7 +118,7 @@ function EditableStockCell({ initialValue }: { initialValue: number }) {
       title="Click to edit"
       className={cn(
         "cursor-pointer rounded px-1 py-0.5 text-sm hover:bg-muted",
-        value < 10 && "font-medium text-destructive"
+        value <= threshold && "font-medium text-destructive"
       )}
     >
       {value} units
@@ -136,49 +144,64 @@ function StockActions({ item }: { item: StockItem }) {
   )
 }
 
-const stockColumns: ColumnDef<StockItem>[] = [
-  {
-    accessorKey: "name",
-    header: "Product",
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    meta: { className: "w-[448px] text-center" },
-    cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Badge variant="outline">{row.getValue("category")}</Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "price",
-    header: "Price",
-    cell: ({ row }) => `$${row.getValue<number>("price").toFixed(2)}`,
-  },
-  {
-    accessorKey: "stock",
-    header: "Stock",
-    cell: ({ row }) => (
-      <EditableStockCell initialValue={row.getValue<number>("stock")} />
-    ),
-  },
-  {
-    id: "actions",
-    enableSorting: false,
-    meta: { className: "text-right" },
-    cell: ({ row }) => <StockActions item={row.original} />,
-  },
-]
+function buildStockColumns(
+  general: GeneralSettings,
+  threshold: number
+): ColumnDef<StockItem>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: "Product",
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      meta: { className: "w-[448px] text-center" },
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Badge variant="outline">{row.getValue("category")}</Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "price",
+      header: "Price",
+      cell: ({ row }) => formatCurrency(row.getValue<number>("price"), general),
+    },
+    {
+      accessorKey: "stock",
+      header: "Stock",
+      cell: ({ row }) => (
+        <EditableStockCell
+          initialValue={row.getValue<number>("stock")}
+          threshold={threshold}
+        />
+      ),
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      meta: { className: "text-right" },
+      cell: ({ row }) => <StockActions item={row.original} />,
+    },
+  ]
+}
 
 function StockPage() {
+  const { general, inventory } = useAppSettings()
+  const threshold = inventory.lowStockThreshold
+  const stockColumns = useMemo(
+    () => buildStockColumns(general, threshold),
+    [general, threshold]
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Stock</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage stock levels. Click a count to edit it. Items below 10 units
-          are highlighted.
+          Manage stock levels. Click a count to edit it. Items at or below{" "}
+          {threshold} units are highlighted.
         </p>
       </div>
 
@@ -186,6 +209,7 @@ function StockPage() {
         columns={stockColumns}
         data={stockItemsData}
         searchPlaceholder="Search products..."
+        exportFileName="stock"
         action={
           <NewStockItemDrawer
             trigger={

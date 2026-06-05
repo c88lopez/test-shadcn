@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { logout } from "@/lib/auth"
+import { useAppSettings } from "@/lib/app-settings"
 
 import {
   Sidebar,
@@ -38,11 +39,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
-const clubs = [
-  { id: 1, name: "GQG", initials: "GQ" },
-  { id: 2, name: "Chance", initials: "CH" },
-]
 
 const navCourtManagement = [
   { title: "Dashboard", url: "/", icon: IconDashboard },
@@ -100,7 +96,15 @@ function NavGroup({
 
 export function AppSidebar() {
   const router = useRouter()
-  const [activeClub, setActiveClub] = useState(clubs[0])
+  const { general } = useAppSettings()
+
+  // The primary club reflects the configured club profile (Settings → General).
+  const clubs = [
+    { id: 1, name: general.clubName, initials: general.clubInitials },
+    { id: 2, name: "Chance", initials: "CH" },
+  ]
+  const [activeClubId, setActiveClubId] = useState(1)
+  const activeClub = clubs.find((c) => c.id === activeClubId) ?? clubs[0]
 
   function handleSignOut() {
     logout()
@@ -132,7 +136,7 @@ export function AppSidebar() {
                 {clubs.map((club) => (
                   <DropdownMenuItem
                     key={club.id}
-                    onSelect={() => setActiveClub(club)}
+                    onSelect={() => setActiveClubId(club.id)}
                     className="gap-2"
                   >
                     <div className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground">

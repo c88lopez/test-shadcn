@@ -3,10 +3,17 @@ import { createFileRoute } from "@tanstack/react-router"
 import {
   IconChevronDown,
   IconChevronRight,
+  IconDownload,
   IconPlus,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -18,6 +25,9 @@ import {
 import { NewSaleDrawer } from "@/components/new-sale-drawer"
 import { saleTotal } from "@/lib/sales"
 import type { Sale } from "@/lib/sales"
+import { exportRecords } from "@/lib/export"
+import type { ExportFormat } from "@/lib/export"
+import { formatCurrency, useAppSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/inventory/sales-log")({
   component: SalesLogPage,
@@ -82,6 +92,7 @@ const salesData: Sale[] = [
 ]
 
 function SalesLogPage() {
+  const { general } = useAppSettings()
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const [filter, setFilter] = useState("")
 
@@ -102,6 +113,16 @@ function SalesLogPage() {
       )
     : salesData
 
+  function handleExport(format: ExportFormat) {
+    const records = filtered.map((sale) => ({
+      Date: sale.date,
+      Items: sale.items.map((i) => `${i.quantity}x ${i.item}`).join("; "),
+      "Item count": sale.items.length,
+      Total: saleTotal(sale),
+    }))
+    exportRecords(records, format, "sales-log")
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -118,14 +139,32 @@ function SalesLogPage() {
           onChange={(e) => setFilter(e.target.value)}
           className="max-w-sm"
         />
-        <NewSaleDrawer
-          trigger={
-            <Button size="sm">
-              <IconPlus className="size-4" />
-              New Sale
-            </Button>
-          }
-        />
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <IconDownload className="size-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("csv")}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("json")}>
+                Export as JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <NewSaleDrawer
+            trigger={
+              <Button size="sm">
+                <IconPlus className="size-4" />
+                New Sale
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-md border">
@@ -171,7 +210,7 @@ function SalesLogPage() {
                         {sale.items.length === 1 ? "item" : "items"}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${total.toFixed(2)}
+                        {formatCurrency(total, general)}
                       </TableCell>
                     </TableRow>
 
@@ -199,12 +238,12 @@ function SalesLogPage() {
                                   </TableCell>
                                   <TableCell>{line.quantity}</TableCell>
                                   <TableCell>
-                                    ${line.unitPrice.toFixed(2)}
+                                    {formatCurrency(line.unitPrice, general)}
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    $
-                                    {(line.quantity * line.unitPrice).toFixed(
-                                      2
+                                    {formatCurrency(
+                                      line.quantity * line.unitPrice,
+                                      general
                                     )}
                                   </TableCell>
                                 </TableRow>
