@@ -326,10 +326,7 @@ function CourtTimeline({
                         onMouseEnter={() => onHover(r.id)}
                         onMouseLeave={() => onHover(null)}
                         className={cn(
-                          "absolute top-2.5 bottom-2.5 z-10 flex items-center overflow-hidden rounded px-2 ring-offset-2 ring-offset-background transition-shadow",
-                          r.paid
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-border bg-secondary text-secondary-foreground",
+                          "absolute top-2.5 bottom-2.5 z-10 flex items-center overflow-hidden rounded bg-primary px-2 text-primary-foreground ring-offset-2 ring-offset-background transition-shadow",
                           highlighted && "z-20 ring-2 ring-ring"
                         )}
                         style={{

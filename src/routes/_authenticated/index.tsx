@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { IconCalendar, IconChartBar } from "@tabler/icons-react"
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -66,6 +68,20 @@ const weeklyChartConfig = {
   reservations: { label: "Reservations", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
+const subscribersData = [
+  { month: "Dec", subscribers: 142 },
+  { month: "Jan", subscribers: 158 },
+  { month: "Feb", subscribers: 165 },
+  { month: "Mar", subscribers: 179 },
+  { month: "Apr", subscribers: 188 },
+  { month: "May", subscribers: 203 },
+  { month: "Jun", subscribers: 217 },
+]
+
+const subscribersChartConfig = {
+  subscribers: { label: "Subscribers", color: "var(--chart-1)" },
+} satisfies ChartConfig
+
 const todayReservations = [
   { court: 1, account: "Maria García", time: "09:00 – 10:30", paid: true },
   { court: 3, account: "Carlos López", time: "10:00 – 11:30", paid: false },
@@ -77,6 +93,8 @@ const todayReservations = [
 
 const todayTotal = todayReservations.length
 const weeklyTotal = weeklyData.reduce((sum, d) => sum + d.reservations, 0)
+const subscribersTotal = subscribersData[subscribersData.length - 1].subscribers
+const subscribersGrowth = subscribersTotal - subscribersData[0].subscribers
 
 function Dashboard() {
   return (
@@ -188,6 +206,60 @@ function Dashboard() {
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Court subscribers */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Court Subscribers</CardTitle>
+          <CardDescription>
+            {subscribersTotal} active members · +{subscribersGrowth} in the last
+            7 months
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer
+            config={subscribersChartConfig}
+            className="h-[220px] w-full"
+          >
+            <AreaChart
+              data={subscribersData}
+              margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient
+                  id="fillSubscribers"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="5%"
+                    stopColor="var(--chart-1)"
+                    stopOpacity={0.4}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--chart-1)"
+                    stopOpacity={0.05}
+                  />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} />
+              <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                dataKey="subscribers"
+                type="monotone"
+                stroke="var(--chart-1)"
+                strokeWidth={2}
+                fill="url(#fillSubscribers)"
+              />
+            </AreaChart>
           </ChartContainer>
         </CardContent>
       </Card>
