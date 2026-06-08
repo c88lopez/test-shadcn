@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -39,19 +39,18 @@ import { useAppSettings } from "@/lib/app-settings"
 export { ROLE_DESCRIPTIONS, USER_ROLES }
 export type { UserRole }
 
-const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  role: z.enum(USER_ROLES, { error: "Role is required" }),
-})
-
-type FormValues = z.infer<typeof schema>
-type FormInput = Omit<FormValues, "role"> & { role?: UserRole }
+type FormInput = {
+  name: string
+  email: string
+  role?: UserRole
+  password?: string
+}
 
 export interface UserFormData {
   name: string
   email: string
   role: UserRole
+  password?: string
 }
 
 interface Props {
@@ -59,7 +58,7 @@ interface Props {
   user?: UserFormData
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  onSave?: (data: UserFormData) => void
+  onSave?: (data: UserFormData) => Promise<void>
 }
 
 export function NewUserDrawer({
@@ -76,8 +75,28 @@ export function NewUserDrawer({
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
   const { security } = useAppSettings()
+  const minLength = security.passwordMinLength
+
+  const schema = useMemo(() => {
+    const base = {
+      name: z.string().min(1, "Name is required"),
+      email: z.string().email("Invalid email address"),
+      role: z.enum(USER_ROLES, { error: "Role is required" }),
+    }
+    if (isEditing) return z.object(base)
+    return z.object({
+      ...base,
+      password: z.string().min(minLength, `At least ${minLength} characters`),
+    })
+  }, [isEditing, minLength])
+
   // New users start at the configured default role (Settings → Users → Security).
-  const blankUser = { name: "", email: "", role: security.defaultRole }
+  const blankUser = {
+    name: "",
+    email: "",
+    role: security.defaultRole,
+    password: "",
+  }
 
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
@@ -86,26 +105,33 @@ export function NewUserDrawer({
 
   useEffect(() => {
     if (open) {
-      form.reset(user ?? { name: "", email: "", role: security.defaultRole })
+      form.reset(
+        user ?? {
+          name: "",
+          email: "",
+          role: security.defaultRole,
+          password: "",
+        }
+      )
       reset()
     }
   }, [open, user, form, reset, security.defaultRole])
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () => onSave?.(values as UserFormData) ?? Promise.resolve(),
       onSuccess: () => {
-        onSave?.(values as UserFormData)
         toast.success(isEditing ? "User updated" : "User created", {
           description: `${values.name} has been saved successfully.`,
         })
         schedule(() => setOpen(false), 900)
       },
-      onError: () => {
-        toast.error("Something went wrong", {
-          description: "The user could not be saved. Please try again.",
-        })
+      onError: (error) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "The user could not be saved. Please try again."
+        toast.error("Could not save user", { description: message })
       },
     })
   }
@@ -184,6 +210,30 @@ export function NewUserDrawer({
                 </FormItem>
               )}
             />
+
+            {!isEditing && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Temporary Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        autoComplete="new-password"
+                        placeholder="Set an initial password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      The user can change this after their first sign-in.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <DrawerFooter className="px-0 pt-4">
               <DrawerSubmitButton

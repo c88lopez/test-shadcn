@@ -1,8 +1,9 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { eq } from "drizzle-orm"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
-import { player, reservation } from "@/db/schema"
+import { player, reservation, user } from "@/db/schema"
 import { seedPlayers, reservationSeeds } from "@/db/seed-data"
 
 // Standalone seed: creates an initial admin user through Better Auth so the
@@ -29,6 +30,55 @@ async function seedAdmin() {
       throw err
     }
   }
+  // Ensure the admin always has the Owner role (idempotent).
+  await db.update(user).set({ role: "Owner" }).where(eq(user.email, email))
+}
+
+async function ensureUser(opts: {
+  email: string
+  name: string
+  password: string
+  role: string
+  status?: string
+}) {
+  const existing = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.email, opts.email))
+    .limit(1)
+  if (existing.length > 0) return false
+  await seedAuth.api.signUpEmail({
+    body: { email: opts.email, password: opts.password, name: opts.name },
+  })
+  await db
+    .update(user)
+    .set({ role: opts.role, status: opts.status ?? "active" })
+    .where(eq(user.email, opts.email))
+  return true
+}
+
+async function seedTeam() {
+  const team = [
+    { name: "Ana Martínez", email: "ana@padelclub.es", role: "Admin" },
+    { name: "Diego Ruiz", email: "diego@padelclub.es", role: "Manager" },
+    { name: "Laura Fernández", email: "laura@padelclub.es", role: "Coach" },
+    {
+      name: "Pedro Sánchez",
+      email: "pedro@padelclub.es",
+      role: "Front Desk",
+      status: "archived",
+    },
+  ]
+  let created = 0
+  for (const member of team) {
+    const added = await ensureUser({ ...member, password: "padel1234" })
+    if (added) created++
+  }
+  console.log(
+    created > 0
+      ? `✓ Seeded ${created} team member(s)`
+      : "• Team members already seeded, skipping."
+  )
 }
 
 async function seedPlayerRoster() {
@@ -60,6 +110,7 @@ async function seedReservationSchedule() {
 async function main() {
   try {
     await seedAdmin()
+    await seedTeam()
     await seedPlayerRoster()
     await seedReservationSchedule()
   } catch (err) {

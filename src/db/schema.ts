@@ -19,6 +19,9 @@ export const user = pgTable("user", {
     .$defaultFn(() => false)
     .notNull(),
   image: text("image"),
+  // App-specific fields (declared as Better Auth additionalFields in auth.ts).
+  role: text("role").notNull().default("Front Desk"),
+  status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at")
     .$defaultFn(() => new Date())
     .notNull(),
@@ -26,6 +29,8 @@ export const user = pgTable("user", {
     .$defaultFn(() => new Date())
     .notNull(),
 })
+
+export type User = typeof user.$inferSelect
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),

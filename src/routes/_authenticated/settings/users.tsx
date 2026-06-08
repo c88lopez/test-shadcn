@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { useMemo, useState } from "react"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -41,74 +41,85 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { NewUserDrawer, USER_ROLES } from "@/components/new-user-drawer"
-import type { UserFormData, UserRole } from "@/components/new-user-drawer"
+import type { UserRole } from "@/components/new-user-drawer"
 import { cn } from "@/lib/utils"
 import { clampNumber, setAppSettings, useAppSettings } from "@/lib/app-settings"
 import type { SecuritySettings } from "@/lib/app-settings"
+import {
+  createUser,
+  deleteUser,
+  listUsers,
+  resetUserPassword,
+  setUserArchived,
+  updateUser,
+} from "@/lib/users.functions"
 
 export const Route = createFileRoute("/_authenticated/settings/users")({
+  loader: async () => ({ users: await listUsers() }),
   component: UsersSettingsPage,
 })
 
-type UserStatus = "active" | "archived"
-
-interface User extends UserFormData {
-  id: number
-  status: UserStatus
+interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  status: string
 }
 
-const seedUsers: User[] = [
-  {
-    id: 1,
-    name: "Cristian Lopez",
-    email: "cristian@coperniq.io",
-    role: "Owner",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Ana Martínez",
-    email: "ana@padelclub.es",
-    role: "Admin",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Diego Ruiz",
-    email: "diego@padelclub.es",
-    role: "Manager",
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Laura Fernández",
-    email: "laura@padelclub.es",
-    role: "Coach",
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "Pedro Sánchez",
-    email: "pedro@padelclub.es",
-    role: "Front Desk",
-    status: "archived",
-  },
-]
-
-function UserActions({
-  user,
-  onUpdate,
-  onToggleArchive,
-  onDelete,
-}: {
-  user: User
-  onUpdate: (id: number, data: UserFormData) => void
-  onToggleArchive: (id: number) => void
-  onDelete: (id: number) => void
-}) {
+function UserActions({ user }: { user: User }) {
+  const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const isArchived = user.status === "archived"
+
+  async function handleResetPassword() {
+    try {
+      const { tempPassword } = await resetUserPassword({
+        data: { id: user.id },
+      })
+      toast.success("Temporary password set", {
+        description: `${user.email} — ${tempPassword}`,
+        duration: 10000,
+      })
+    } catch (error) {
+      toast.error("Could not reset password", {
+        description: error instanceof Error ? error.message : "Try again.",
+      })
+    }
+  }
+
+  async function handleToggleArchive() {
+    try {
+      await setUserArchived({
+        data: { id: user.id, archived: !isArchived },
+      })
+      toast.success(isArchived ? "User restored" : "User archived", {
+        description: `${user.name} is now ${isArchived ? "active" : "archived"}.`,
+      })
+      router.invalidate()
+    } catch (error) {
+      toast.error("Could not update user", {
+        description: error instanceof Error ? error.message : "Try again.",
+      })
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      await deleteUser({ data: { id: user.id } })
+      toast.success("User deleted", {
+        description: `${user.name} was removed.`,
+      })
+      router.invalidate()
+    } catch (error) {
+      toast.error("Could not delete user", {
+        description: error instanceof Error ? error.message : "Try again.",
+      })
+    } finally {
+      setConfirmOpen(false)
+    }
+  }
 
   return (
     <>
@@ -116,7 +127,17 @@ function UserActions({
         user={{ name: user.name, email: user.email, role: user.role }}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSave={(data) => onUpdate(user.id, data)}
+        onSave={async (data) => {
+          await updateUser({
+            data: {
+              id: user.id,
+              name: data.name,
+              email: data.email,
+              role: data.role,
+            },
+          })
+          router.invalidate()
+        }}
       />
 
       <DropdownMenu>
@@ -129,16 +150,10 @@ function UserActions({
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() =>
-              toast.success("Password reset link sent", {
-                description: user.email,
-              })
-            }
-          >
+          <DropdownMenuItem onClick={handleResetPassword}>
             Reset password
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onToggleArchive(user.id)}>
+          <DropdownMenuItem onClick={handleToggleArchive}>
             {isArchived ? "Restore" : "Archive"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -164,10 +179,7 @@ function UserActions({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
-              onClick={() => {
-                onDelete(user.id)
-                setConfirmOpen(false)
-              }}
+              onClick={handleDelete}
             >
               Delete
             </AlertDialogAction>
@@ -288,55 +300,12 @@ function SecuritySection() {
 }
 
 function UsersSettingsPage() {
-  const [users, setUsers] = useState<User[]>(seedUsers)
-
-  const addUser = useCallback((data: UserFormData) => {
-    setUsers((prev) => [
-      ...prev,
-      {
-        ...data,
-        id: Math.max(0, ...prev.map((u) => u.id)) + 1,
-        status: "active",
-      },
-    ])
-  }, [])
-
-  const updateUser = useCallback((id: number, data: UserFormData) => {
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...data } : u)))
-  }, [])
-
-  const toggleArchive = useCallback(
-    (id: number) => {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === id
-            ? { ...u, status: u.status === "archived" ? "active" : "archived" }
-            : u
-        )
-      )
-      const target = users.find((u) => u.id === id)
-      if (target) {
-        const willArchive = target.status === "active"
-        toast.success(willArchive ? "User archived" : "User restored", {
-          description: `${target.name} is now ${willArchive ? "archived" : "active"}.`,
-        })
-      }
-    },
-    [users]
-  )
-
-  const deleteUser = useCallback(
-    (id: number) => {
-      setUsers((prev) => prev.filter((u) => u.id !== id))
-      const target = users.find((u) => u.id === id)
-      if (target) {
-        toast.success("User deleted", {
-          description: `${target.name} was removed.`,
-        })
-      }
-    },
-    [users]
-  )
+  const router = useRouter()
+  const { users: rawUsers } = Route.useLoaderData()
+  const users: User[] = rawUsers.map((u) => ({
+    ...u,
+    role: u.role as UserRole,
+  }))
 
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -372,7 +341,7 @@ function UsersSettingsPage() {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) =>
-          row.getValue<UserStatus>("status") === "active" ? (
+          row.getValue<string>("status") === "active" ? (
             <Badge variant="default">Active</Badge>
           ) : (
             <Badge variant="outline" className="text-muted-foreground">
@@ -384,17 +353,10 @@ function UsersSettingsPage() {
         id: "actions",
         enableSorting: false,
         meta: { className: "text-right" },
-        cell: ({ row }) => (
-          <UserActions
-            user={row.original}
-            onUpdate={updateUser}
-            onToggleArchive={toggleArchive}
-            onDelete={deleteUser}
-          />
-        ),
+        cell: ({ row }) => <UserActions user={row.original} />,
       },
     ],
-    [updateUser, toggleArchive, deleteUser]
+    []
   )
 
   return (
@@ -413,7 +375,17 @@ function UsersSettingsPage() {
         exportFileName="users"
         action={
           <NewUserDrawer
-            onSave={addUser}
+            onSave={async (data) => {
+              await createUser({
+                data: {
+                  name: data.name,
+                  email: data.email,
+                  role: data.role,
+                  password: data.password ?? "",
+                },
+              })
+              router.invalidate()
+            }}
             trigger={
               <Button size="sm">
                 <IconPlus className="size-4" />

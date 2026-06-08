@@ -14,6 +14,13 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    additionalFields: {
+      // Managed server-side via users.functions.ts, never from client input.
+      role: { type: "string", required: false, input: false },
+      status: { type: "string", required: false, input: false },
+    },
+  },
   // tanstackStartCookies must be the last plugin so it can wrap cookie handling.
   plugins: [tanstackStartCookies()],
 })
