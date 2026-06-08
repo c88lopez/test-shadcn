@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { logout } from "@/lib/auth"
+import { authClient, useSession } from "@/lib/auth-client"
 import { useAppSettings } from "@/lib/app-settings"
 
 import {
@@ -94,9 +94,22 @@ function NavGroup({
   )
 }
 
+function initialsFromName(name: string | undefined | null) {
+  if (!name) return "?"
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
+}
+
 export function AppSidebar() {
   const router = useRouter()
   const { general } = useAppSettings()
+  const { data: sessionData } = useSession()
+  const sessionUser = sessionData?.user
 
   // The primary club reflects the configured club profile (Settings → General).
   const clubs = [
@@ -106,8 +119,8 @@ export function AppSidebar() {
   const [activeClubId, setActiveClubId] = useState(1)
   const activeClub = clubs.find((c) => c.id === activeClubId) ?? clubs[0]
 
-  function handleSignOut() {
-    logout()
+  async function handleSignOut() {
+    await authClient.signOut()
     router.navigate({ to: "/login" })
   }
 
@@ -186,17 +199,20 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="h-12 data-[state=open]:bg-sidebar-accent">
                   <Avatar className="size-7 rounded-md">
-                    <AvatarImage src="" alt="Cristian Lopez" />
+                    <AvatarImage
+                      src={sessionUser?.image ?? ""}
+                      alt={sessionUser?.name ?? ""}
+                    />
                     <AvatarFallback className="rounded-md text-xs">
-                      CL
+                      {initialsFromName(sessionUser?.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left leading-tight">
                     <span className="truncate text-sm font-medium">
-                      Cristian Lopez
+                      {sessionUser?.name ?? "Account"}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
-                      cristian@coperniq.io
+                      {sessionUser?.email ?? ""}
                     </span>
                   </div>
                   <IconDotsVertical className="ml-auto size-4 shrink-0" />

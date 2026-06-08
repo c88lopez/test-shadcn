@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { DrawerSubmitButton } from "@/components/drawer-submit-button"
 import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
+import { createPlayer, updatePlayer } from "@/lib/players.functions"
 import {
   Drawer,
   DrawerClose,
@@ -61,9 +62,10 @@ export interface PlayerData {
 
 interface Props {
   trigger?: React.ReactNode
-  player?: PlayerData
+  player?: PlayerData & { id?: string }
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
 }
 
 export function NewPlayerDrawer({
@@ -71,6 +73,7 @@ export function NewPlayerDrawer({
   player,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  onSaved,
 }: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
@@ -111,14 +114,24 @@ export function NewPlayerDrawer({
   const categories = gender === "Female" ? femaleCategories : maleCategories
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
+    const payload = {
+      fullName: values.fullName,
+      email: values.email,
+      phone: values.phone,
+      age: values.age as number,
+      gender: values.gender as "Male" | "Female",
+      category: values.category,
+    }
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () =>
+        player?.id
+          ? updatePlayer({ data: { id: player.id, ...payload } })
+          : createPlayer({ data: payload }),
       onSuccess: () => {
-        console.log(isEditing ? "Update player:" : "New player:", values)
         toast.success(isEditing ? "Player updated" : "Player created", {
           description: `${values.fullName} has been saved successfully.`,
         })
+        onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {

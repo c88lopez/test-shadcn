@@ -9,6 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { DrawerSubmitButton } from "@/components/drawer-submit-button"
 import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
+import { useAppSettings } from "@/lib/app-settings"
+import {
+  createReservation,
+  updateReservation,
+} from "@/lib/reservations.functions"
 import {
   Drawer,
   DrawerClose,
@@ -64,9 +69,10 @@ export interface ReservationData {
 
 interface Props {
   trigger?: React.ReactNode
-  reservation?: ReservationData
+  reservation?: ReservationData & { id?: string }
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
 }
 
 export function NewReservationDrawer({
@@ -74,11 +80,15 @@ export function NewReservationDrawer({
   reservation,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  onSaved,
 }: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!reservation
+
+  const { reservations: reservationSettings } = useAppSettings()
+  const courts = reservationSettings.courts.filter((c) => c.active)
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
@@ -109,26 +119,35 @@ export function NewReservationDrawer({
   }, [open, reservation, form, reset])
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
+    const payload = {
+      court: Number(values.court),
+      player: values.player,
+      date: format(values.date as Date, "yyyy-MM-dd"),
+      startTime: values.time,
+      durationMinutes: Number(values.duration),
+      paymentStatus: values.paymentStatus as "paid" | "partial" | "unpaid",
+    }
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () =>
+        reservation?.id
+          ? updateReservation({ data: { id: reservation.id, ...payload } })
+          : createReservation({ data: payload }),
       onSuccess: () => {
-        console.log(
-          isEditing ? "Update reservation:" : "New reservation:",
-          values
-        )
         toast.success(
           isEditing ? "Reservation updated" : "Reservation created",
           {
             description: `Reservation for ${values.player} has been saved.`,
           }
         )
+        onSaved?.()
         schedule(() => setOpen(false), 900)
       },
-      onError: () => {
-        toast.error("Something went wrong", {
-          description: "The reservation could not be saved. Please try again.",
-        })
+      onError: (error) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "The reservation could not be saved. Please try again."
+        toast.error("Could not save reservation", { description: message })
       },
     })
   }
@@ -175,9 +194,9 @@ export function NewReservationDrawer({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6].map((n) => (
-                        <SelectItem key={n} value={String(n)}>
-                          Court {n}
+                      {courts.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
