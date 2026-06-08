@@ -12,7 +12,7 @@ import { applyUiSettings, loadUiSettings } from "@/lib/ui-settings"
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const session = await getSession()
-    if (!session) {
+    if (!session || session.user.status === "archived") {
       throw redirect({ to: "/login" })
     }
     return { user: session.user }
