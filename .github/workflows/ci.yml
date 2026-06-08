@@ -87,6 +87,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Log test database URL
+        run: echo "DATABASE_URL_TEST=$DATABASE_URL_TEST"
+
       - name: Run integration tests
         run: bun run test:integration
 
