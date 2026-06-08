@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconMinus, IconPlus, IconZoomIn } from "@tabler/icons-react"
+import { format, parseISO } from "date-fns"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
 import { NewReservationDrawer } from "@/components/new-reservation-drawer"
-import type { ReservationData } from "@/components/new-reservation-drawer"
 import { RowActions } from "@/components/row-actions"
 import { cn } from "@/lib/utils"
+import {
+  deleteReservation,
+  listReservations,
+} from "@/lib/reservations.functions"
+import type { Reservation as DbReservation } from "@/db/schema"
 import {
   formatHour,
   formatTimeRange,
@@ -17,140 +23,32 @@ import {
 } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/reservations")({
+  loader: async () => ({ reservations: await listReservations() }),
   component: ReservationsPage,
 })
 
-interface Reservation {
-  id: number
+// Table/timeline row: a DB reservation plus a derived "HH:MM – HH:MM" range.
+type ReservationRow = DbReservation & { timeRange: string }
+
+interface TimelineReservation {
+  id: string
   court: number
   reservedTo: string
-  reservedBy: string
   time: string
   paid: boolean
 }
 
-const reservations: Reservation[] = [
-  {
-    id: 1,
-    court: 1,
-    reservedTo: "Maria García",
-    reservedBy: "Admin",
-    time: "09:00 – 10:30",
-    paid: true,
-  },
-  {
-    id: 2,
-    court: 3,
-    reservedTo: "Carlos López",
-    reservedBy: "Carlos López",
-    time: "10:00 – 11:00",
-    paid: false,
-  },
-  {
-    id: 3,
-    court: 2,
-    reservedTo: "Ana Martínez",
-    reservedBy: "Admin",
-    time: "11:00 – 12:30",
-    paid: true,
-  },
-  {
-    id: 4,
-    court: 1,
-    reservedTo: "Pedro Sánchez",
-    reservedBy: "Pedro Sánchez",
-    time: "12:00 – 13:30",
-    paid: true,
-  },
-  {
-    id: 5,
-    court: 4,
-    reservedTo: "Laura Fernández",
-    reservedBy: "Admin",
-    time: "16:00 – 17:30",
-    paid: false,
-  },
-  {
-    id: 6,
-    court: 2,
-    reservedTo: "Diego Ruiz",
-    reservedBy: "Diego Ruiz",
-    time: "18:00 – 19:30",
-    paid: true,
-  },
-  {
-    id: 7,
-    court: 5,
-    reservedTo: "Sofía Torres",
-    reservedBy: "Admin",
-    time: "08:00 – 09:30",
-    paid: true,
-  },
-  {
-    id: 8,
-    court: 6,
-    reservedTo: "Javier Moreno",
-    reservedBy: "Javier Moreno",
-    time: "09:30 – 11:00",
-    paid: false,
-  },
-  {
-    id: 9,
-    court: 3,
-    reservedTo: "Isabel Jiménez",
-    reservedBy: "Admin",
-    time: "13:00 – 14:30",
-    paid: true,
-  },
-  {
-    id: 10,
-    court: 1,
-    reservedTo: "Miguel Álvarez",
-    reservedBy: "Miguel Álvarez",
-    time: "15:00 – 16:30",
-    paid: true,
-  },
-  {
-    id: 11,
-    court: 4,
-    reservedTo: "Elena Romero",
-    reservedBy: "Admin",
-    time: "17:30 – 19:00",
-    paid: false,
-  },
-  {
-    id: 12,
-    court: 2,
-    reservedTo: "Antonio Díaz",
-    reservedBy: "Antonio Díaz",
-    time: "19:30 – 21:00",
-    paid: true,
-  },
-  {
-    id: 13,
-    court: 6,
-    reservedTo: "Carmen López",
-    reservedBy: "Admin",
-    time: "11:00 – 12:30",
-    paid: true,
-  },
-  {
-    id: 14,
-    court: 5,
-    reservedTo: "Francisco Pérez",
-    reservedBy: "Francisco Pérez",
-    time: "14:00 – 15:30",
-    paid: false,
-  },
-  {
-    id: 15,
-    court: 3,
-    reservedTo: "Lucía González",
-    reservedBy: "Admin",
-    time: "20:00 – 21:30",
-    paid: true,
-  },
-]
+function endTime(startTime: string, durationMinutes: number): string {
+  const [h, m] = startTime.split(":").map(Number)
+  const total = h * 60 + m + durationMinutes
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(
+    total % 60
+  ).padStart(2, "0")}`
+}
+
+function buildRange(r: DbReservation): string {
+  return `${r.startTime} – ${endTime(r.startTime, r.durationMinutes)}`
+}
 
 // --- Timeline ---
 
@@ -174,11 +72,13 @@ function toPx(minutes: number, pxPerHour: number, startHour: number): number {
 }
 
 function CourtTimeline({
+  reservations,
   hoveredId,
   onHover,
 }: {
-  hoveredId: number | null
-  onHover: (id: number | null) => void
+  reservations: TimelineReservation[]
+  hoveredId: string | null
+  onHover: (id: string | null) => void
 }) {
   const { reservations: reservationSettings, general } = useAppSettings()
   const dayHours = todayHours(reservationSettings)
@@ -377,73 +277,91 @@ function TimeCell({ time }: { time: string }) {
   return <>{formatTimeRange(time, general.timeFormat)}</>
 }
 
-function toReservationData(r: Reservation): ReservationData {
-  const startTime = r.time.split(" – ")[0]
+function toReservationData(r: ReservationRow) {
   return {
-    player: r.reservedTo,
+    id: r.id,
+    player: r.player,
     court: String(r.court),
-    date: new Date(),
-    time: startTime,
-    duration: "90",
-    paymentStatus: r.paid ? "paid" : "unpaid",
+    date: parseISO(r.date),
+    time: r.startTime,
+    duration: String(r.durationMinutes),
+    paymentStatus: r.paymentStatus,
   }
 }
 
-function ReservationActions({ reservation }: { reservation: Reservation }) {
+function ReservationActions({ reservation }: { reservation: ReservationRow }) {
+  const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
+
+  async function handleDelete() {
+    try {
+      await deleteReservation({ data: { id: reservation.id } })
+      toast.success("Reservation deleted", {
+        description: `${reservation.player} · ${reservation.timeRange}`,
+      })
+      router.invalidate()
+    } catch {
+      toast.error("Could not delete reservation", {
+        description: "Please try again.",
+      })
+    }
+  }
+
   return (
     <>
       <NewReservationDrawer
         reservation={toReservationData(reservation)}
         open={editOpen}
         onOpenChange={setEditOpen}
+        onSaved={() => router.invalidate()}
       />
-      <RowActions
-        onEdit={() => setEditOpen(true)}
-        onDuplicate={() =>
-          console.log("[dummy] duplicate reservation", reservation.id)
-        }
-        onDelete={() =>
-          console.log("[dummy] delete reservation", reservation.id)
-        }
-      />
+      <RowActions onEdit={() => setEditOpen(true)} onDelete={handleDelete} />
     </>
   )
 }
 
-const columns: ColumnDef<Reservation>[] = [
+const PAYMENT_BADGE: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "outline" }
+> = {
+  paid: { label: "Paid", variant: "default" },
+  partial: { label: "Partial", variant: "secondary" },
+  unpaid: { label: "Unpaid", variant: "outline" },
+}
+
+const columns: ColumnDef<ReservationRow>[] = [
   {
     accessorKey: "court",
     header: "Court",
     cell: ({ row }) => `Court ${row.getValue("court")}`,
   },
   {
-    accessorKey: "reservedTo",
+    accessorKey: "player",
     header: "Reserved To",
   },
   {
-    accessorKey: "reservedBy",
+    accessorKey: "bookedBy",
     header: "Reserved By",
   },
   {
-    accessorKey: "time",
+    accessorKey: "timeRange",
     header: "Time",
-    cell: ({ row }) => <TimeCell time={row.getValue<string>("time")} />,
+    cell: ({ row }) => <TimeCell time={row.getValue<string>("timeRange")} />,
   },
   {
-    accessorKey: "paid",
+    accessorKey: "paymentStatus",
     header: "Status",
     meta: { className: "w-[384px] text-center" },
-    cell: ({ row }) =>
-      row.getValue("paid") ? (
+    cell: ({ row }) => {
+      const badge =
+        PAYMENT_BADGE[row.getValue<string>("paymentStatus")] ??
+        PAYMENT_BADGE.unpaid
+      return (
         <div className="flex justify-center">
-          <Badge variant="default">Paid</Badge>
+          <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>
-      ) : (
-        <div className="flex justify-center">
-          <Badge variant="outline">Unpaid</Badge>
-        </div>
-      ),
+      )
+    },
   },
   {
     id: "actions",
@@ -456,7 +374,25 @@ const columns: ColumnDef<Reservation>[] = [
 // --- Page ---
 
 function ReservationsPage() {
-  const [hoveredId, setHoveredId] = useState<number | null>(null)
+  const router = useRouter()
+  const { reservations } = Route.useLoaderData()
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
+  const rows: ReservationRow[] = reservations.map((r) => ({
+    ...r,
+    timeRange: buildRange(r),
+  }))
+
+  const todayISO = format(new Date(), "yyyy-MM-dd")
+  const todayReservations: TimelineReservation[] = rows
+    .filter((r) => r.date === todayISO)
+    .map((r) => ({
+      id: r.id,
+      court: r.court,
+      reservedTo: r.player,
+      time: r.timeRange,
+      paid: r.paymentStatus === "paid",
+    }))
 
   return (
     <div className="flex flex-col gap-8">
@@ -468,6 +404,7 @@ function ReservationsPage() {
           </p>
         </div>
         <NewReservationDrawer
+          onSaved={() => router.invalidate()}
           trigger={
             <Button size="sm">
               <IconPlus className="size-4" />
@@ -479,14 +416,18 @@ function ReservationsPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Today's Timeline</h2>
-        <CourtTimeline hoveredId={hoveredId} onHover={setHoveredId} />
+        <CourtTimeline
+          reservations={todayReservations}
+          hoveredId={hoveredId}
+          onHover={setHoveredId}
+        />
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">All Reservations</h2>
         <DataTable
           columns={columns}
-          data={reservations}
+          data={rows}
           searchPlaceholder="Search reservations..."
           onRowHover={(r) => setHoveredId(r ? r.id : null)}
           isRowHighlighted={(r) => r.id === hoveredId}

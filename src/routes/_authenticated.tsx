@@ -6,15 +6,16 @@ import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/components/app-sidebar"
 import { CommandPalette } from "@/components/command-palette"
 import { NotificationsDrawer } from "@/components/notifications-drawer"
-import { isAuthenticated } from "@/lib/auth"
+import { getSession } from "@/lib/auth.functions"
 import { applyUiSettings, loadUiSettings } from "@/lib/ui-settings"
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: () => {
-    if (typeof window === "undefined") return
-    if (!isAuthenticated()) {
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (!session) {
       throw redirect({ to: "/login" })
     }
+    return { user: session.user }
   },
   component: AuthenticatedLayout,
 })

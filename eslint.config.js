@@ -15,6 +15,14 @@ export default [
     },
   },
   {
-    ignores: ["eslint.config.js", ".prettierrc", "src/components/ui/**"],
+    ignores: [
+      "eslint.config.js",
+      ".prettierrc",
+      "src/components/ui/**",
+      ".vercel/**",
+      ".output/**",
+      "dist/**",
+      "drizzle/**",
+    ],
   },
 ]

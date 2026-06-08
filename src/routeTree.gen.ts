@@ -19,6 +19,7 @@ import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
 import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
 import { Route as AuthenticatedSettingsUiRouteImport } from './routes/_authenticated/settings/ui'
 import { Route as AuthenticatedSettingsReservationsRouteImport } from './routes/_authenticated/settings/reservations'
@@ -83,6 +84,11 @@ const AuthenticatedCoachesIndexRoute =
     path: '/coaches/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsUsersRoute =
   AuthenticatedSettingsUsersRouteImport.update({
     id: '/users',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/settings/reservations': typeof AuthenticatedSettingsReservationsRoute
   '/settings/ui': typeof AuthenticatedSettingsUiRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/settings/reservations': typeof AuthenticatedSettingsReservationsRoute
   '/settings/ui': typeof AuthenticatedSettingsUiRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/coaches': typeof AuthenticatedCoachesIndexRoute
   '/inventory': typeof AuthenticatedInventoryIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/reservations': typeof AuthenticatedSettingsReservationsRoute
   '/_authenticated/settings/ui': typeof AuthenticatedSettingsUiRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/settings/reservations'
     | '/settings/ui'
     | '/settings/users'
+    | '/api/auth/$'
     | '/coaches/'
     | '/inventory/'
     | '/settings/'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/settings/reservations'
     | '/settings/ui'
     | '/settings/users'
+    | '/api/auth/$'
     | '/coaches'
     | '/inventory'
     | '/settings'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/reservations'
     | '/_authenticated/settings/ui'
     | '/_authenticated/settings/users'
+    | '/api/auth/$'
     | '/_authenticated/coaches/'
     | '/_authenticated/inventory/'
     | '/_authenticated/settings/'
@@ -264,6 +276,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/coaches/'
       preLoaderRoute: typeof AuthenticatedCoachesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings/users': {
       id: '/_authenticated/settings/users'
@@ -464,6 +484,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
