@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { toast } from "sonner"
+import { ensurePermission } from "@/lib/route-guards"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -27,6 +28,8 @@ import {
 import type { GeneralSettings, TimeFormat, WeekStart } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/settings/general")({
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.user.role, "settings:manage"),
   component: GeneralSettingsPage,
 })
 

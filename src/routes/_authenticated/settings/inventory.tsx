@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { ensurePermission } from "@/lib/route-guards"
 import {
   Card,
   CardContent,
@@ -18,6 +19,8 @@ import {
 } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/settings/inventory")({
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.user.role, "settings:manage"),
   component: InventorySettingsPage,
 })
 

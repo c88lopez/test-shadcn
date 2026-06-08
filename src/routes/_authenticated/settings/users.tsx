@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { ensurePermission } from "@/lib/route-guards"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -55,6 +56,8 @@ import {
 } from "@/lib/users.functions"
 
 export const Route = createFileRoute("/_authenticated/settings/users")({
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.user.role, "users:manage"),
   loader: async () => ({ users: await listUsers() }),
   component: UsersSettingsPage,
 })

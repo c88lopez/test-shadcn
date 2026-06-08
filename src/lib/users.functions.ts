@@ -4,7 +4,7 @@ import { z } from "zod"
 import { db } from "@/db"
 import { account, user } from "@/db/schema"
 import { auth } from "@/lib/auth"
-import { requireSession } from "@/lib/auth.server"
+import { requirePermission } from "@/lib/auth.server"
 import { USER_ROLES } from "@/lib/users"
 
 const roleSchema = z.enum(USER_ROLES)
@@ -35,7 +35,7 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 export const listUsers = createServerFn({ method: "GET" }).handler(async () => {
-  await requireSession()
+  await requirePermission("users:manage")
   const rows = await db
     .select({
       id: user.id,
@@ -53,7 +53,7 @@ export const listUsers = createServerFn({ method: "GET" }).handler(async () => {
 export const createUser = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => createInput.parse(data))
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("users:manage")
 
     const existing = await db
       .select({ id: user.id })
@@ -91,7 +91,7 @@ export const createUser = createServerFn({ method: "POST" })
 export const updateUser = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => updateInput.parse(data))
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("users:manage")
 
     const clash = await db
       .select({ id: user.id })
@@ -119,7 +119,7 @@ export const resetUserPassword = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("users:manage")
     const tempPassword = generateTempPassword()
     const hashed = await hashPassword(tempPassword)
     const updated = await db
@@ -138,7 +138,7 @@ export const setUserArchived = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1), archived: z.boolean() }).parse(data)
   )
   .handler(async ({ data }) => {
-    const session = await requireSession()
+    const session = await requirePermission("users:manage")
     if (data.archived && data.id === session.user.id) {
       throw new Error("You cannot archive your own account.")
     }
@@ -157,7 +157,7 @@ export const deleteUser = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    const session = await requireSession()
+    const session = await requirePermission("users:manage")
     if (data.id === session.user.id) {
       throw new Error("You cannot delete your own account.")
     }

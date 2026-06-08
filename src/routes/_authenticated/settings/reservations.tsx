@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
+import { ensurePermission } from "@/lib/route-guards"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,6 +37,8 @@ import type {
 } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/settings/reservations")({
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.user.role, "settings:manage"),
   component: ReservationSettingsPage,
 })
 

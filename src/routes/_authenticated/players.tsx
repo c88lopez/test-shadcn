@@ -23,6 +23,7 @@ import { DataTable } from "@/components/data-table"
 import { NewPlayerDrawer } from "@/components/new-player-drawer"
 import { RowActions } from "@/components/row-actions"
 import { deletePlayer, listPlayers } from "@/lib/players.functions"
+import { useCan } from "@/hooks/use-permissions"
 import type { Player as DbPlayer } from "@/db/schema"
 
 export const Route = createFileRoute("/_authenticated/players")({
@@ -133,6 +134,7 @@ const levelVariant: Record<string, "default" | "secondary" | "outline"> = {
 
 function PlayerActions({ player }: { player: Player }) {
   const router = useRouter()
+  const canManage = useCan("players:manage")
   const [editOpen, setEditOpen] = useState(false)
 
   async function handleDelete() {
@@ -146,6 +148,8 @@ function PlayerActions({ player }: { player: Player }) {
       })
     }
   }
+
+  if (!canManage) return null
 
   return (
     <>
@@ -206,6 +210,7 @@ const columns: ColumnDef<Player>[] = [
 
 function PlayersPage() {
   const router = useRouter()
+  const canManage = useCan("players:manage")
   const { players } = Route.useLoaderData()
 
   const maleCount = players.filter((p) => p.gender === "Male").length
@@ -324,15 +329,17 @@ function PlayersPage() {
         data={players}
         searchPlaceholder="Search players..."
         action={
-          <NewPlayerDrawer
-            onSaved={() => router.invalidate()}
-            trigger={
-              <Button size="sm">
-                <IconPlus className="size-4" />
-                New Player
-              </Button>
-            }
-          />
+          canManage ? (
+            <NewPlayerDrawer
+              onSaved={() => router.invalidate()}
+              trigger={
+                <Button size="sm">
+                  <IconPlus className="size-4" />
+                  New Player
+                </Button>
+              }
+            />
+          ) : undefined
         }
       />
     </div>
