@@ -41,24 +41,11 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { getCurrencySymbol } from "@/lib/app-settings"
-
-export const stockItemNames = [
-  "Water Bottle (500ml)",
-  "Energy Drink",
-  "Sports Juice",
-  "Isotonic Drink",
-  "Padel Racket (Basic)",
-  "Padel Racket (Pro)",
-  "Ball Pack (3 units)",
-  "Overgrip Tape",
-  "Wristband",
-  "Sports Towel",
-  "Padel Bag",
-  "Sports Socks",
-]
+import { createSale } from "@/lib/sales.functions"
+import type { StockItem } from "@/db/schema"
 
 const lineItemSchema = z.object({
-  item: z.string().min(1, "Item is required"),
+  stockItemId: z.string().min(1, "Item is required"),
   quantity: z.coerce.number().int().positive("Must be at least 1"),
   unitPrice: z.coerce.number().positive("Price must be greater than 0"),
 })
@@ -71,7 +58,15 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
-export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
+const EMPTY_LINE = { stockItemId: "", quantity: 1, unitPrice: 0 }
+
+interface Props {
+  trigger: React.ReactNode
+  stockItems: StockItem[]
+  onSaved?: () => void
+}
+
+export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
   const [open, setOpen] = useState(false)
   const currencySymbol = getCurrencySymbol()
 
@@ -79,9 +74,7 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
 
   const form = useForm<FormInput>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      items: [{ item: "", quantity: 1, unitPrice: 0 }],
-    },
+    defaultValues: { items: [{ ...EMPTY_LINE }] },
   })
 
   const { fields, append, remove } = useFieldArray({
@@ -91,26 +84,35 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
 
   useEffect(() => {
     if (open) {
-      form.reset({ items: [{ item: "", quantity: 1, unitPrice: 0 }] })
+      form.reset({ items: [{ ...EMPTY_LINE }] })
       reset()
     }
   }, [open, form, reset])
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
+    const payload = {
+      date: format(values.date as Date, "yyyy-MM-dd"),
+      items: values.items.map((i) => ({
+        stockItemId: i.stockItemId,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+      })),
+    }
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () => createSale({ data: payload }),
       onSuccess: () => {
-        console.log("New sale:", values)
         const count = values.items.length
         toast.success("Sale recorded", {
-          description: `${count} ${count === 1 ? "item" : "items"} have been saved.`,
+          description: `${count} ${count === 1 ? "item" : "items"} saved and stock updated.`,
         })
+        onSaved?.()
         schedule(() => setOpen(false), 900)
       },
-      onError: () => {
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : undefined
         toast.error("Something went wrong", {
-          description: "The sale could not be saved. Please try again.",
+          description:
+            message ?? "The sale could not be saved. Please try again.",
         })
       },
     })
@@ -171,9 +173,7 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    append({ item: "", quantity: 1, unitPrice: 0 })
-                  }
+                  onClick={() => append({ ...EMPTY_LINE })}
                 >
                   <IconPlus className="size-3.5" />
                   Add Item
@@ -204,12 +204,24 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
 
                   <FormField
                     control={form.control}
-                    name={`items.${index}.item`}
+                    name={`items.${index}.stockItemId`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Product</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value)
+                            // Pre-fill the unit price from the selected product.
+                            const product = stockItems.find(
+                              (s) => s.id === value
+                            )
+                            if (product) {
+                              form.setValue(
+                                `items.${index}.unitPrice`,
+                                product.price
+                              )
+                            }
+                          }}
                           value={field.value}
                         >
                           <FormControl>
@@ -218,9 +230,9 @@ export function NewSaleDrawer({ trigger }: { trigger: React.ReactNode }) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {stockItemNames.map((name) => (
-                              <SelectItem key={name} value={name}>
-                                {name}
+                            {stockItems.map((product) => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name} ({product.stock} in stock)
                               </SelectItem>
                             ))}
                           </SelectContent>

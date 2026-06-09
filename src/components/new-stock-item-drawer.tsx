@@ -2,7 +2,12 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { DrawerSubmitButton } from "@/components/drawer-submit-button"
+import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
+import { createStockItem, updateStockItem } from "@/lib/inventory.functions"
+import { getCurrencySymbol } from "@/lib/app-settings"
 import {
   Drawer,
   DrawerClose,
@@ -47,35 +52,76 @@ export interface StockItemData {
 
 interface Props {
   trigger?: React.ReactNode
-  item?: StockItemData
+  item?: StockItemData & { id?: string }
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
 }
+
+const EMPTY: FormValues = { name: "", category: "", price: 0, stock: 0 }
 
 export function NewStockItemDrawer({
   trigger,
   item,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  onSaved,
 }: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!item
+  const currencySymbol = getCurrencySymbol()
+
+  const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: item ?? { name: "", category: "", price: 0, stock: 0 },
+    defaultValues: item
+      ? {
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          stock: item.stock,
+        }
+      : EMPTY,
   })
 
   useEffect(() => {
-    if (open) form.reset(item ?? { name: "", category: "", price: 0, stock: 0 })
-  }, [open, item, form])
+    if (open) {
+      form.reset(
+        item
+          ? {
+              name: item.name,
+              category: item.category,
+              price: item.price,
+              stock: item.stock,
+            }
+          : EMPTY
+      )
+      reset()
+    }
+  }, [open, item, form, reset])
 
   function onSubmit(values: FormValues) {
-    console.log(isEditing ? "Update stock item:" : "New stock item:", values)
-    form.reset()
-    setOpen(false)
+    run({
+      action: () =>
+        item?.id
+          ? updateStockItem({ data: { id: item.id, ...values } })
+          : createStockItem({ data: values }),
+      onSuccess: () => {
+        toast.success(isEditing ? "Item updated" : "Item created", {
+          description: `${values.name} has been saved successfully.`,
+        })
+        onSaved?.()
+        schedule(() => setOpen(false), 900)
+      },
+      onError: () => {
+        toast.error("Something went wrong", {
+          description: "The item could not be saved. Please try again.",
+        })
+      },
+    })
   }
 
   return (
@@ -134,7 +180,7 @@ export function NewStockItemDrawer({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price ($)</FormLabel>
+                  <FormLabel>Price ({currencySymbol})</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -164,11 +210,15 @@ export function NewStockItemDrawer({
             />
 
             <DrawerFooter className="px-0 pt-4">
-              <Button type="submit">
-                {isEditing ? "Save Changes" : "Add Item"}
-              </Button>
+              <DrawerSubmitButton
+                status={status}
+                progress={progress}
+                label={isEditing ? "Save Changes" : "Add Item"}
+              />
               <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={status === "submitting"}>
+                  Cancel
+                </Button>
               </DrawerClose>
             </DrawerFooter>
           </form>

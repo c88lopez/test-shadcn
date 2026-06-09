@@ -1,4 +1,4 @@
-import type { NewPlayer, NewReservation } from "@/db/schema"
+import type { NewPlayer, NewReservation, NewStockItem } from "@/db/schema"
 
 // Initial player roster used to seed an empty database. Mirrors the data that
 // previously lived inline in the Players route.
@@ -290,5 +290,101 @@ export const reservationSeeds: Omit<
     startTime: "20:00",
     durationMinutes: 90,
     paymentStatus: "paid",
+  },
+]
+
+// Initial stock catalogue used to seed an empty database. Mirrors the data that
+// previously lived inline in the inventory mock.
+export const stockSeeds: Omit<NewStockItem, "id" | "createdAt">[] = [
+  { name: "Water Bottle (500ml)", category: "Drinks", price: 1.5, stock: 120 },
+  { name: "Energy Drink", category: "Drinks", price: 2.5, stock: 48 },
+  { name: "Sports Juice", category: "Drinks", price: 2.0, stock: 60 },
+  { name: "Isotonic Drink", category: "Drinks", price: 2.2, stock: 35 },
+  {
+    name: "Padel Racket (Basic)",
+    category: "Equipment",
+    price: 49.99,
+    stock: 8,
+  },
+  {
+    name: "Padel Racket (Pro)",
+    category: "Equipment",
+    price: 149.99,
+    stock: 4,
+  },
+  {
+    name: "Ball Pack (3 units)",
+    category: "Equipment",
+    price: 6.99,
+    stock: 55,
+  },
+  { name: "Overgrip Tape", category: "Accessories", price: 3.5, stock: 80 },
+  { name: "Wristband", category: "Accessories", price: 4.0, stock: 40 },
+  { name: "Sports Towel", category: "Accessories", price: 8.99, stock: 22 },
+  { name: "Padel Bag", category: "Equipment", price: 34.99, stock: 6 },
+  { name: "Sports Socks", category: "Accessories", price: 5.99, stock: 50 },
+]
+
+// Historical sales to seed. `daysAgo` is resolved to a date at seed time. These
+// are recorded as history only; the stock levels above are treated as current.
+export interface SaleSeedLine {
+  item: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface SaleSeed {
+  daysAgo: number
+  items: SaleSeedLine[]
+}
+
+export const saleSeeds: SaleSeed[] = [
+  {
+    daysAgo: 1,
+    items: [
+      { item: "Water Bottle (500ml)", quantity: 6, unitPrice: 1.5 },
+      { item: "Energy Drink", quantity: 3, unitPrice: 2.5 },
+    ],
+  },
+  {
+    daysAgo: 1,
+    items: [{ item: "Ball Pack (3 units)", quantity: 2, unitPrice: 6.99 }],
+  },
+  {
+    daysAgo: 2,
+    items: [
+      { item: "Overgrip Tape", quantity: 4, unitPrice: 3.5 },
+      { item: "Padel Racket (Basic)", quantity: 1, unitPrice: 49.99 },
+      { item: "Water Bottle (500ml)", quantity: 8, unitPrice: 1.5 },
+    ],
+  },
+  {
+    daysAgo: 3,
+    items: [
+      { item: "Sports Juice", quantity: 5, unitPrice: 2.0 },
+      { item: "Isotonic Drink", quantity: 4, unitPrice: 2.2 },
+      { item: "Sports Towel", quantity: 2, unitPrice: 8.99 },
+    ],
+  },
+  {
+    daysAgo: 4,
+    items: [
+      { item: "Padel Racket (Pro)", quantity: 1, unitPrice: 149.99 },
+      { item: "Ball Pack (3 units)", quantity: 3, unitPrice: 6.99 },
+    ],
+  },
+  {
+    daysAgo: 5,
+    items: [
+      { item: "Energy Drink", quantity: 6, unitPrice: 2.5 },
+      { item: "Padel Bag", quantity: 1, unitPrice: 34.99 },
+    ],
+  },
+  {
+    daysAgo: 6,
+    items: [
+      { item: "Sports Socks", quantity: 4, unitPrice: 5.99 },
+      { item: "Wristband", quantity: 3, unitPrice: 4.0 },
+    ],
   },
 ]

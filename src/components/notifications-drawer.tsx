@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/drawer"
 import { cn } from "@/lib/utils"
 import { useAppSettings } from "@/lib/app-settings"
-import { stockItems } from "@/lib/inventory-data"
+import type { StockItem } from "@/db/schema"
 
 interface Notification {
   id: string
@@ -19,7 +19,11 @@ interface Notification {
   tone: "warning" | "default"
 }
 
-export function NotificationsDrawer() {
+export function NotificationsDrawer({
+  stockItems,
+}: {
+  stockItems: StockItem[]
+}) {
   const { inventory, notifications: prefs } = useAppSettings()
 
   // Low-stock notifications are derived live from inventory + the configured
@@ -35,7 +39,7 @@ export function NotificationsDrawer() {
         description: `Only ${item.stock} left (threshold ${inventory.lowStockThreshold}).`,
         tone: "warning",
       }))
-  }, [inventory.lowStockThreshold, prefs.inApp.lowStock])
+  }, [inventory.lowStockThreshold, prefs.inApp.lowStock, stockItems])
 
   const count = notifications.length
 

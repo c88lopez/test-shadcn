@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import {
   IconChevronDown,
   IconChevronRight,
@@ -24,78 +24,29 @@ import {
 } from "@/components/ui/table"
 import { NewSaleDrawer } from "@/components/new-sale-drawer"
 import { saleTotal } from "@/lib/sales"
-import type { Sale } from "@/lib/sales"
+import { listSales } from "@/lib/sales.functions"
+import { listStockItems } from "@/lib/inventory.functions"
 import { exportRecords } from "@/lib/export"
 import type { ExportFormat } from "@/lib/export"
 import { formatCurrency } from "@/lib/app-settings"
+import { useCan } from "@/hooks/use-permissions"
 
 export const Route = createFileRoute("/_authenticated/inventory/sales-log")({
+  loader: async () => ({
+    sales: await listSales(),
+    stockItems: await listStockItems(),
+  }),
   component: SalesLogPage,
 })
 
-const salesData: Sale[] = [
-  {
-    id: 1,
-    date: "2026-06-03",
-    items: [
-      { item: "Water Bottle (500ml)", quantity: 6, unitPrice: 1.5 },
-      { item: "Energy Drink", quantity: 3, unitPrice: 2.5 },
-    ],
-  },
-  {
-    id: 2,
-    date: "2026-06-03",
-    items: [{ item: "Ball Pack (3 units)", quantity: 2, unitPrice: 6.99 }],
-  },
-  {
-    id: 3,
-    date: "2026-06-02",
-    items: [
-      { item: "Overgrip Tape", quantity: 4, unitPrice: 3.5 },
-      { item: "Padel Racket (Basic)", quantity: 1, unitPrice: 49.99 },
-      { item: "Water Bottle (500ml)", quantity: 8, unitPrice: 1.5 },
-    ],
-  },
-  {
-    id: 4,
-    date: "2026-06-01",
-    items: [
-      { item: "Sports Juice", quantity: 5, unitPrice: 2.0 },
-      { item: "Isotonic Drink", quantity: 4, unitPrice: 2.2 },
-      { item: "Sports Towel", quantity: 2, unitPrice: 8.99 },
-    ],
-  },
-  {
-    id: 5,
-    date: "2026-05-31",
-    items: [
-      { item: "Padel Racket (Pro)", quantity: 1, unitPrice: 149.99 },
-      { item: "Ball Pack (3 units)", quantity: 3, unitPrice: 6.99 },
-    ],
-  },
-  {
-    id: 6,
-    date: "2026-05-30",
-    items: [
-      { item: "Energy Drink", quantity: 6, unitPrice: 2.5 },
-      { item: "Padel Bag", quantity: 1, unitPrice: 34.99 },
-    ],
-  },
-  {
-    id: 7,
-    date: "2026-05-29",
-    items: [
-      { item: "Sports Socks", quantity: 4, unitPrice: 5.99 },
-      { item: "Wristband", quantity: 3, unitPrice: 4.0 },
-    ],
-  },
-]
-
 function SalesLogPage() {
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  const router = useRouter()
+  const canManage = useCan("inventory:manage")
+  const { sales: salesData, stockItems } = Route.useLoaderData()
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState("")
 
-  const toggle = (id: number) =>
+  const toggle = (id: string) =>
     setExpandedRows((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
@@ -155,14 +106,18 @@ function SalesLogPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <NewSaleDrawer
-            trigger={
-              <Button size="sm">
-                <IconPlus className="size-4" />
-                New Sale
-              </Button>
-            }
-          />
+          {canManage && (
+            <NewSaleDrawer
+              stockItems={stockItems}
+              onSaved={() => router.invalidate()}
+              trigger={
+                <Button size="sm">
+                  <IconPlus className="size-4" />
+                  New Sale
+                </Button>
+              }
+            />
+          )}
         </div>
       </div>
 

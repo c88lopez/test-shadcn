@@ -5,6 +5,7 @@ import {
   boolean,
   integer,
   date,
+  doublePrecision,
 } from "drizzle-orm/pg-core"
 
 // Better Auth core tables. These match the schema Better Auth's drizzle adapter
@@ -110,3 +111,53 @@ export const reservation = pgTable("reservation", {
 
 export type Reservation = typeof reservation.$inferSelect
 export type NewReservation = typeof reservation.$inferInsert
+
+export const stockItem = pgTable("stock_item", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  price: doublePrecision("price").notNull(),
+  stock: integer("stock").notNull().default(0),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type StockItem = typeof stockItem.$inferSelect
+export type NewStockItem = typeof stockItem.$inferInsert
+
+export const sale = pgTable("sale", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  date: date("date").notNull(),
+  soldBy: text("sold_by").notNull(),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type Sale = typeof sale.$inferSelect
+export type NewSale = typeof sale.$inferInsert
+
+export const saleItem = pgTable("sale_item", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  saleId: text("sale_id")
+    .notNull()
+    .references(() => sale.id, { onDelete: "cascade" }),
+  // Snapshot the product name/price so the sale record stays accurate even if
+  // the underlying stock item is later renamed or deleted.
+  stockItemId: text("stock_item_id").references(() => stockItem.id, {
+    onDelete: "set null",
+  }),
+  name: text("name").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: doublePrecision("unit_price").notNull(),
+})
+
+export type SaleItem = typeof saleItem.$inferSelect
+export type NewSaleItem = typeof saleItem.$inferInsert
