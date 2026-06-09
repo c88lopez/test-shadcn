@@ -15,6 +15,7 @@ import {
   listReservations,
 } from "@/lib/reservations.functions"
 import type { Reservation as DbReservation } from "@/db/schema"
+import { useCan } from "@/hooks/use-permissions"
 import {
   formatHour,
   formatTimeRange,
@@ -291,6 +292,7 @@ function toReservationData(r: ReservationRow) {
 
 function ReservationActions({ reservation }: { reservation: ReservationRow }) {
   const router = useRouter()
+  const canManage = useCan("reservations:manage")
   const [editOpen, setEditOpen] = useState(false)
 
   async function handleDelete() {
@@ -306,6 +308,8 @@ function ReservationActions({ reservation }: { reservation: ReservationRow }) {
       })
     }
   }
+
+  if (!canManage) return null
 
   return (
     <>
@@ -375,6 +379,7 @@ const columns: ColumnDef<ReservationRow>[] = [
 
 function ReservationsPage() {
   const router = useRouter()
+  const canManage = useCan("reservations:manage")
   const { reservations } = Route.useLoaderData()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
@@ -403,15 +408,17 @@ function ReservationsPage() {
             Manage court reservations.
           </p>
         </div>
-        <NewReservationDrawer
-          onSaved={() => router.invalidate()}
-          trigger={
-            <Button size="sm">
-              <IconPlus className="size-4" />
-              New Reservation
-            </Button>
-          }
-        />
+        {canManage && (
+          <NewReservationDrawer
+            onSaved={() => router.invalidate()}
+            trigger={
+              <Button size="sm">
+                <IconPlus className="size-4" />
+                New Reservation
+              </Button>
+            }
+          />
+        )}
       </div>
 
       <section className="flex flex-col gap-3">

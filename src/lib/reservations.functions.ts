@@ -3,7 +3,7 @@ import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { reservation } from "@/db/schema"
-import { requireSession } from "@/lib/auth.server"
+import { requirePermission, requireSession } from "@/lib/auth.server"
 import { findOverlap, timeToMin } from "@/lib/reservation-overlap"
 
 const reservationInput = z.object({
@@ -63,7 +63,7 @@ export const listReservations = createServerFn({ method: "GET" }).handler(
 export const createReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => reservationInput.parse(data))
   .handler(async ({ data }) => {
-    const session = await requireSession()
+    const session = await requirePermission("reservations:manage")
     const conflict = await findConflict(data)
     if (conflict) conflictError(conflict)
     const [created] = await db
@@ -78,7 +78,7 @@ export const updateReservation = createServerFn({ method: "POST" })
     reservationInput.extend({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("reservations:manage")
     const { id, ...values } = data
     const conflict = await findConflict({ ...values, excludeId: id })
     if (conflict) conflictError(conflict)
@@ -95,7 +95,7 @@ export const deleteReservation = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("reservations:manage")
     await db.delete(reservation).where(eq(reservation.id, data.id))
     return { id: data.id }
   })

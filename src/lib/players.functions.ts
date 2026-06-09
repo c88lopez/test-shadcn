@@ -3,7 +3,7 @@ import { eq, asc } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { player } from "@/db/schema"
-import { requireSession } from "@/lib/auth.server"
+import { requirePermission, requireSession } from "@/lib/auth.server"
 
 const playerInput = z.object({
   fullName: z.string().min(1),
@@ -24,7 +24,7 @@ export const listPlayers = createServerFn({ method: "GET" }).handler(
 export const createPlayer = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => playerInput.parse(data))
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("players:manage")
     const [created] = await db.insert(player).values(data).returning()
     return created
   })
@@ -34,7 +34,7 @@ export const updatePlayer = createServerFn({ method: "POST" })
     playerInput.extend({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("players:manage")
     const { id, ...values } = data
     const [updated] = await db
       .update(player)
@@ -49,7 +49,7 @@ export const deletePlayer = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requireSession()
+    await requirePermission("players:manage")
     await db.delete(player).where(eq(player.id, data.id))
     return { id: data.id }
   })

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { IconBrandWhatsapp, IconMail } from "@tabler/icons-react"
+import { ensurePermission } from "@/lib/route-guards"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,6 +21,8 @@ import {
 import type { NotificationSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/settings/notifications")({
+  beforeLoad: ({ context }) =>
+    ensurePermission(context.user.role, "settings:manage"),
   component: NotificationsSettingsPage,
 })
 
