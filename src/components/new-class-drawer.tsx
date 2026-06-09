@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { toast } from "sonner"
 import { IconCalendar } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -40,17 +40,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-
-export const coachNames = [
-  "Marcos Delgado",
-  "Elena Vidal",
-  "Rubén Fernández",
-  "Patricia Ríos",
-  "Jorge Salinas",
-]
+import { createClass, updateClass } from "@/lib/classes.functions"
+import type { Coach } from "@/db/schema"
 
 const schema = z.object({
-  coach: z.string().min(1, "Coach is required"),
+  coachId: z.string().min(1, "Coach is required"),
   court: z.string().min(1, "Court is required"),
   date: z.date({ error: "Date is required" }),
   time: z.string().min(1, "Time is required"),
@@ -60,37 +54,83 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
-export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
+export interface ClassData {
+  id?: string
+  coachId: string | null
+  court: number
+  date: string
+  startTime: string
+  durationMinutes: number
+}
+
+interface Props {
+  trigger?: React.ReactNode
+  coaches: Coach[]
+  coachClass?: ClassData
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
+}
+
+const EMPTY: FormInput = { coachId: "", court: "", time: "", duration: "" }
+
+function toFormValues(c: ClassData): FormInput {
+  return {
+    coachId: c.coachId ?? "",
+    court: String(c.court),
+    date: parseISO(c.date),
+    time: c.startTime,
+    duration: String(c.durationMinutes),
+  }
+}
+
+export function NewClassDrawer({
+  trigger,
+  coaches,
+  coachClass,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  onSaved,
+}: Props) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
+  const isEditing = !!coachClass
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormInput>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      coach: "",
-      court: "",
-      time: "",
-      duration: "",
-    },
+    resolver: zodFormResolver<FormInput>(schema),
+    defaultValues: coachClass ? toFormValues(coachClass) : EMPTY,
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ coach: "", court: "", time: "", duration: "" })
+      form.reset(coachClass ? toFormValues(coachClass) : EMPTY)
       reset()
     }
-  }, [open, form, reset])
+  }, [open, coachClass, form, reset])
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
+    const payload = {
+      coachId: values.coachId,
+      court: Number(values.court),
+      date: format(values.date as Date, "yyyy-MM-dd"),
+      startTime: values.time,
+      durationMinutes: Number(values.duration),
+    }
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () =>
+        coachClass?.id
+          ? updateClass({ data: { id: coachClass.id, ...payload } })
+          : createClass({ data: payload }),
       onSuccess: () => {
-        console.log("New class:", values)
-        toast.success("Class scheduled", {
-          description: `Class with ${values.coach} has been saved.`,
+        const coachName =
+          coaches.find((c) => c.id === values.coachId)?.name ?? "coach"
+        toast.success(isEditing ? "Class updated" : "Class scheduled", {
+          description: `Class with ${coachName} has been saved.`,
         })
+        onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
@@ -103,10 +143,10 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
 
   return (
     <Drawer direction="right" open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>New Class</DrawerTitle>
+          <DrawerTitle>{isEditing ? "Edit Class" : "New Class"}</DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -115,7 +155,7 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
           >
             <FormField
               control={form.control}
-              name="coach"
+              name="coachId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Coach</FormLabel>
@@ -126,9 +166,9 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {coachNames.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
+                      {coaches.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -242,7 +282,7 @@ export function NewClassDrawer({ trigger }: { trigger: React.ReactNode }) {
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label="Schedule Class"
+                label={isEditing ? "Save Changes" : "Schedule Class"}
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>

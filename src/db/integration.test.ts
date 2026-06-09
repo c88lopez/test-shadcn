@@ -7,6 +7,8 @@ import { Pool } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import * as schema from "@/db/schema"
 import {
+  coach,
+  coachClass,
   player,
   reservation,
   sale,
@@ -16,6 +18,7 @@ import {
 } from "@/db/schema"
 import { findOverlap } from "@/lib/reservation-overlap"
 import { findStockShortages } from "@/lib/inventory"
+import { classStatus } from "@/lib/classes"
 
 // Integration tests that exercise the real schema/migrations against a live
 // Postgres. They only run when DATABASE_URL_TEST points at a throwaway database
@@ -41,6 +44,8 @@ describe.skipIf(!TEST_URL)("database integration", () => {
     await db.delete(saleItem)
     await db.delete(sale)
     await db.delete(stockItem)
+    await db.delete(coachClass)
+    await db.delete(coach)
     await db.delete(reservation)
     await db.delete(player)
     await db.delete(user)
@@ -248,6 +253,88 @@ describe.skipIf(!TEST_URL)("database integration", () => {
       expect(
         findStockShortages([{ stockItemId: racket.id, quantity: 3 }], levels)
       ).toHaveLength(1)
+    })
+  })
+
+  describe("coaches & classes", () => {
+    it("supports coach create / list / update / delete", async () => {
+      const [created] = await db
+        .insert(coach)
+        .values({
+          name: "Test Coach",
+          phone: "+34 600 000 000",
+          birthday: "1990-01-01",
+        })
+        .returning()
+      expect(created.id).toBeTruthy()
+
+      await db
+        .update(coach)
+        .set({ phone: "+34 611 111 111" })
+        .where(eq(coach.id, created.id))
+      const [updated] = await db
+        .select()
+        .from(coach)
+        .where(eq(coach.id, created.id))
+      expect(updated.phone).toBe("+34 611 111 111")
+
+      await db.delete(coach).where(eq(coach.id, created.id))
+      expect(await db.select().from(coach)).toHaveLength(0)
+    })
+
+    it("allows a coach without a birthday", async () => {
+      const [created] = await db
+        .insert(coach)
+        .values({ name: "No Birthday", phone: "+34 600 000 002" })
+        .returning()
+      expect(created.birthday).toBeNull()
+    })
+
+    it("nulls a class's coach when the coach is deleted", async () => {
+      const [c] = await db
+        .insert(coach)
+        .values({
+          name: "Temp Coach",
+          phone: "+34 600 000 001",
+          birthday: "1991-02-02",
+        })
+        .returning()
+      const [cls] = await db
+        .insert(coachClass)
+        .values({
+          coachId: c.id,
+          court: 1,
+          date: "2026-03-01",
+          startTime: "10:00",
+          durationMinutes: 90,
+        })
+        .returning()
+      expect(cls.coachId).toBe(c.id)
+
+      await db.delete(coach).where(eq(coach.id, c.id))
+      const [orphan] = await db
+        .select()
+        .from(coachClass)
+        .where(eq(coachClass.id, cls.id))
+      expect(orphan.coachId).toBeNull()
+
+      // Derived status reflects schedule vs. now.
+      expect(
+        classStatus(
+          orphan.date,
+          orphan.startTime,
+          orphan.durationMinutes,
+          new Date("2026-03-01T09:00:00")
+        )
+      ).toBe("Upcoming")
+      expect(
+        classStatus(
+          orphan.date,
+          orphan.startTime,
+          orphan.durationMinutes,
+          new Date("2026-03-01T12:00:00")
+        )
+      ).toBe("Completed")
     })
   })
 })

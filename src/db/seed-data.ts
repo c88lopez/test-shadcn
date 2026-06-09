@@ -1,4 +1,9 @@
-import type { NewPlayer, NewReservation, NewStockItem } from "@/db/schema"
+import type {
+  NewCoach,
+  NewPlayer,
+  NewReservation,
+  NewStockItem,
+} from "@/db/schema"
 
 // Initial player roster used to seed an empty database. Mirrors the data that
 // previously lived inline in the Players route.
@@ -337,6 +342,70 @@ export interface SaleSeed {
   daysAgo: number
   items: SaleSeedLine[]
 }
+
+export const coachSeeds: Omit<NewCoach, "id" | "createdAt">[] = [
+  { name: "Marcos Delgado", phone: "+34 611 234 567", birthday: "1985-03-12" },
+  { name: "Elena Vidal", phone: "+34 622 345 678", birthday: "1990-07-24" },
+  { name: "Rubén Fernández", phone: "+34 633 456 789", birthday: "1988-11-05" },
+  { name: "Patricia Ríos", phone: "+34 644 567 890", birthday: "1993-02-18" },
+  { name: "Jorge Salinas", phone: "+34 655 678 901", birthday: "1979-09-30" },
+]
+
+// Classes to seed. `coach` is resolved to a coach id and `offsetDays` to a date
+// (relative to today) at seed time, giving a spread of past/current/future
+// sessions so the derived status shows a mix of Completed/Ongoing/Upcoming.
+export interface ClassSeed {
+  coach: string
+  court: number
+  offsetDays: number
+  startTime: string
+  durationMinutes: number
+}
+
+export const classSeeds: ClassSeed[] = [
+  {
+    coach: "Marcos Delgado",
+    court: 1,
+    offsetDays: -2,
+    startTime: "09:00",
+    durationMinutes: 90,
+  },
+  {
+    coach: "Elena Vidal",
+    court: 3,
+    offsetDays: -1,
+    startTime: "10:30",
+    durationMinutes: 60,
+  },
+  {
+    coach: "Rubén Fernández",
+    court: 5,
+    offsetDays: 0,
+    startTime: "12:00",
+    durationMinutes: 90,
+  },
+  {
+    coach: "Patricia Ríos",
+    court: 2,
+    offsetDays: 0,
+    startTime: "18:00",
+    durationMinutes: 60,
+  },
+  {
+    coach: "Jorge Salinas",
+    court: 4,
+    offsetDays: 1,
+    startTime: "10:00",
+    durationMinutes: 120,
+  },
+  {
+    coach: "Marcos Delgado",
+    court: 6,
+    offsetDays: 2,
+    startTime: "17:00",
+    durationMinutes: 90,
+  },
+]
 
 export const saleSeeds: SaleSeed[] = [
   {

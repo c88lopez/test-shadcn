@@ -1,0 +1,1 @@
+ALTER TABLE "coach" ALTER COLUMN "birthday" DROP NOT NULL;

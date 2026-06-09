@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
 import {
+  coach,
+  coachClass,
   player,
   reservation,
   sale,
@@ -16,6 +18,8 @@ import {
   reservationSeeds,
   stockSeeds,
   saleSeeds,
+  coachSeeds,
+  classSeeds,
 } from "@/db/seed-data"
 
 // Standalone seed: creates an initial admin user through Better Auth so the
@@ -153,6 +157,30 @@ async function seedInventory() {
   console.log(`✓ Seeded ${saleSeeds.length} sales`)
 }
 
+async function seedCoaching() {
+  const existing = await db.select({ id: coach.id }).from(coach).limit(1)
+  if (existing.length > 0) {
+    console.log("• Coaches already seeded, skipping.")
+    return
+  }
+  const inserted = await db.insert(coach).values(coachSeeds).returning()
+  const idByName = new Map(inserted.map((c) => [c.name, c.id]))
+  console.log(`✓ Seeded ${inserted.length} coaches`)
+
+  await db.insert(coachClass).values(
+    classSeeds.map((seed) => ({
+      coachId: idByName.get(seed.coach) ?? null,
+      court: seed.court,
+      date: new Date(Date.now() + seed.offsetDays * 86_400_000)
+        .toISOString()
+        .slice(0, 10),
+      startTime: seed.startTime,
+      durationMinutes: seed.durationMinutes,
+    }))
+  )
+  console.log(`✓ Seeded ${classSeeds.length} classes`)
+}
+
 async function main() {
   try {
     await seedAdmin()
@@ -160,6 +188,7 @@ async function main() {
     await seedPlayerRoster()
     await seedReservationSchedule()
     await seedInventory()
+    await seedCoaching()
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error("Seed failed:", message)

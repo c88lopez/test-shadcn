@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -83,7 +83,7 @@ export function NewPlayerDrawer({
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormInput>({
-    resolver: zodResolver(schema),
+    resolver: zodFormResolver<FormInput>(schema),
     defaultValues: player ?? {
       fullName: "",
       email: "",
