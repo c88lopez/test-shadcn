@@ -161,3 +161,37 @@ export const saleItem = pgTable("sale_item", {
 
 export type SaleItem = typeof saleItem.$inferSelect
 export type NewSaleItem = typeof saleItem.$inferInsert
+
+export const coach = pgTable("coach", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  birthday: date("birthday"),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type Coach = typeof coach.$inferSelect
+export type NewCoach = typeof coach.$inferInsert
+
+export const coachClass = pgTable("coach_class", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  coachId: text("coach_id").references(() => coach.id, {
+    onDelete: "set null",
+  }),
+  court: integer("court").notNull(),
+  date: date("date").notNull(),
+  startTime: text("start_time").notNull(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type CoachClass = typeof coachClass.$inferSelect
+export type NewCoachClass = typeof coachClass.$inferInsert

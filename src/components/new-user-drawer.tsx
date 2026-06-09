@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -99,7 +99,7 @@ export function NewUserDrawer({
   }
 
   const form = useForm<FormInput>({
-    resolver: zodResolver(schema),
+    resolver: zodFormResolver<FormInput>(schema),
     defaultValues: user ?? blankUser,
   })
 

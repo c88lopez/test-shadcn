@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -93,7 +93,7 @@ export function NewReservationDrawer({
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormInput>({
-    resolver: zodResolver(schema),
+    resolver: zodFormResolver<FormInput>(schema),
     defaultValues: reservation ?? {
       player: "",
       court: "",

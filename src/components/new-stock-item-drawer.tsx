@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -76,7 +76,7 @@ export function NewStockItemDrawer({
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodFormResolver<FormValues>(schema),
     defaultValues: item
       ? {
           name: item.name,

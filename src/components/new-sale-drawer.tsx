@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -73,7 +73,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormInput>({
-    resolver: zodResolver(schema),
+    resolver: zodFormResolver<FormInput>(schema),
     defaultValues: { items: [{ ...EMPTY_LINE }] },
   })
 

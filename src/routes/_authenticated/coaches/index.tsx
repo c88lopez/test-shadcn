@@ -1,112 +1,112 @@
 import { useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
-import { differenceInYears } from "date-fns"
+import { differenceInYears, parseISO } from "date-fns"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { NewCoachDrawer } from "@/components/new-coach-drawer"
-import type { CoachData } from "@/components/new-coach-drawer"
 import { RowActions } from "@/components/row-actions"
+import { deleteCoach, listCoaches } from "@/lib/coaches.functions"
+import { useCan } from "@/hooks/use-permissions"
+import type { Coach } from "@/db/schema"
 
 export const Route = createFileRoute("/_authenticated/coaches/")({
+  loader: async () => ({ coaches: await listCoaches() }),
   component: CoachesPage,
 })
 
-interface Coach extends CoachData {
-  id: number
-}
-
-const coaches: Coach[] = [
-  {
-    id: 1,
-    name: "Marcos Delgado",
-    phone: "+34 611 234 567",
-    birthday: new Date("1985-03-12"),
-  },
-  {
-    id: 2,
-    name: "Elena Vidal",
-    phone: "+34 622 345 678",
-    birthday: new Date("1990-07-24"),
-  },
-  {
-    id: 3,
-    name: "Rubén Fernández",
-    phone: "+34 633 456 789",
-    birthday: new Date("1988-11-05"),
-  },
-  {
-    id: 4,
-    name: "Patricia Ríos",
-    phone: "+34 644 567 890",
-    birthday: new Date("1993-02-18"),
-  },
-  {
-    id: 5,
-    name: "Jorge Salinas",
-    phone: "+34 655 678 901",
-    birthday: new Date("1979-09-30"),
-  },
-]
-
 function CoachActions({ coach }: { coach: Coach }) {
+  const router = useRouter()
+  const canManage = useCan("coaches:manage")
   const [editOpen, setEditOpen] = useState(false)
+
+  async function handleDelete() {
+    try {
+      await deleteCoach({ data: { id: coach.id } })
+      toast.success("Coach deleted", { description: coach.name })
+      router.invalidate()
+    } catch {
+      toast.error("Could not delete coach", {
+        description: "Please try again.",
+      })
+    }
+  }
+
+  if (!canManage) return null
+
   return (
     <>
       <NewCoachDrawer
-        coach={coach}
+        coach={{
+          id: coach.id,
+          name: coach.name,
+          phone: coach.phone,
+          birthday: coach.birthday ? parseISO(coach.birthday) : undefined,
+        }}
         open={editOpen}
         onOpenChange={setEditOpen}
+        onSaved={() => router.invalidate()}
       />
-      <RowActions
-        onEdit={() => setEditOpen(true)}
-        onDuplicate={() => console.log("[dummy] duplicate", coach.name)}
-        onDelete={() => console.log("[dummy] delete", coach.name)}
-      />
+      <RowActions onEdit={() => setEditOpen(true)} onDelete={handleDelete} />
     </>
   )
 }
 
-const columns: ColumnDef<Coach>[] = [
-  {
-    accessorKey: "name",
-    header: "Full Name",
-  },
-  {
-    accessorKey: "phone",
-    header: "Phone",
-    enableSorting: false,
-  },
-  {
-    accessorKey: "birthday",
-    header: "Birthday",
-    cell: ({ row }) => {
-      const date = row.getValue<Date>("birthday")
-      return date.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
+function buildColumns(canManage: boolean): ColumnDef<Coach>[] {
+  const columns: ColumnDef<Coach>[] = [
+    {
+      accessorKey: "name",
+      header: "Full Name",
     },
-  },
-  {
-    id: "age",
-    header: "Age",
-    cell: ({ row }) => {
-      const age = differenceInYears(new Date(), row.original.birthday)
-      return `${age} yrs`
+    {
+      accessorKey: "phone",
+      header: "Phone",
+      enableSorting: false,
     },
-  },
-  {
-    id: "actions",
-    enableSorting: false,
-    meta: { className: "text-right" },
-    cell: ({ row }) => <CoachActions coach={row.original} />,
-  },
-]
+    {
+      accessorKey: "birthday",
+      header: "Birthday",
+      cell: ({ row }) => {
+        const birthday = row.getValue<string | null>("birthday")
+        return birthday
+          ? parseISO(birthday).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "—"
+      },
+    },
+    {
+      id: "age",
+      header: "Age",
+      cell: ({ row }) =>
+        row.original.birthday
+          ? `${differenceInYears(new Date(), parseISO(row.original.birthday))} yrs`
+          : "—",
+    },
+  ]
+
+  if (canManage) {
+    columns.push({
+      id: "actions",
+      enableSorting: false,
+      meta: { className: "text-right" },
+      cell: ({ row }) => <CoachActions coach={row.original} />,
+    })
+  }
+
+  return columns
+}
 
 function CoachesPage() {
+  const router = useRouter()
+  const canManage = useCan("coaches:manage")
+  const { coaches } = Route.useLoaderData()
+  const columns = buildColumns(canManage)
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -120,15 +120,19 @@ function CoachesPage() {
         columns={columns}
         data={coaches}
         searchPlaceholder="Search coaches..."
+        exportFileName="coaches"
         action={
-          <NewCoachDrawer
-            trigger={
-              <Button size="sm">
-                <IconPlus className="size-4" />
-                New Coach
-              </Button>
-            }
-          />
+          canManage ? (
+            <NewCoachDrawer
+              onSaved={() => router.invalidate()}
+              trigger={
+                <Button size="sm">
+                  <IconPlus className="size-4" />
+                  New Coach
+                </Button>
+              }
+            />
+          ) : undefined
         }
       />
     </div>

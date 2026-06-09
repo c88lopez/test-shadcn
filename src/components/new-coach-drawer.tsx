@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -33,27 +33,28 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { createCoach, updateCoach } from "@/lib/coaches.functions"
 
 const schema = z.object({
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required"),
-  birthday: z.date({ error: "Birthday is required" }),
+  birthday: z.date().optional(),
 })
 
-type FormValues = z.infer<typeof schema>
-type FormInput = Omit<FormValues, "birthday"> & { birthday?: Date }
+type FormInput = z.infer<typeof schema>
 
 export interface CoachData {
   name: string
   phone: string
-  birthday: Date
+  birthday?: Date
 }
 
 interface Props {
   trigger?: React.ReactNode
-  coach?: CoachData
+  coach?: CoachData & { id?: string }
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
 }
 
 export function NewCoachDrawer({
@@ -61,6 +62,7 @@ export function NewCoachDrawer({
   coach,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  onSaved,
 }: Props) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
@@ -70,7 +72,7 @@ export function NewCoachDrawer({
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
 
   const form = useForm<FormInput>({
-    resolver: zodResolver(schema),
+    resolver: zodFormResolver<FormInput>(schema),
     defaultValues: coach ?? { name: "", phone: "" },
   })
 
@@ -82,14 +84,21 @@ export function NewCoachDrawer({
   }, [open, coach, form, reset])
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
+    const payload = {
+      name: values.name,
+      phone: values.phone,
+      birthday: values.birthday ? format(values.birthday, "yyyy-MM-dd") : null,
+    }
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () =>
+        coach?.id
+          ? updateCoach({ data: { id: coach.id, ...payload } })
+          : createCoach({ data: payload }),
       onSuccess: () => {
-        console.log(isEditing ? "Update coach:" : "New coach:", values)
         toast.success(isEditing ? "Coach updated" : "Coach created", {
           description: `${values.name} has been saved successfully.`,
         })
+        onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
@@ -146,7 +155,7 @@ export function NewCoachDrawer({
               name="birthday"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Birthday</FormLabel>
+                  <FormLabel>Birthday (optional)</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>

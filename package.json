@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.2.7",
-    "@hookform/resolvers": "^3",
+    "@hookform/resolvers": "^5.4.0",
     "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/vite": "^4",
     "@tanstack/react-devtools": "latest",
