@@ -3,8 +3,20 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { eq } from "drizzle-orm"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
-import { player, reservation, user } from "@/db/schema"
-import { seedPlayers, reservationSeeds } from "@/db/seed-data"
+import {
+  player,
+  reservation,
+  sale,
+  saleItem,
+  stockItem,
+  user,
+} from "@/db/schema"
+import {
+  seedPlayers,
+  reservationSeeds,
+  stockSeeds,
+  saleSeeds,
+} from "@/db/seed-data"
 
 // Standalone seed: creates an initial admin user through Better Auth so the
 // password is hashed the same way as a real sign-up. Uses a cookie-less auth
@@ -107,12 +119,47 @@ async function seedReservationSchedule() {
   console.log(`✓ Seeded ${reservationSeeds.length} reservations for ${today}`)
 }
 
+async function seedInventory() {
+  const existing = await db
+    .select({ id: stockItem.id })
+    .from(stockItem)
+    .limit(1)
+  if (existing.length > 0) {
+    console.log("• Inventory already seeded, skipping.")
+    return
+  }
+  const inserted = await db.insert(stockItem).values(stockSeeds).returning()
+  const idByName = new Map(inserted.map((s) => [s.name, s.id]))
+  console.log(`✓ Seeded ${inserted.length} stock items`)
+
+  for (const seed of saleSeeds) {
+    const date = new Date(Date.now() - seed.daysAgo * 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+    const [createdSale] = await db
+      .insert(sale)
+      .values({ date, soldBy: "Club Admin" })
+      .returning()
+    await db.insert(saleItem).values(
+      seed.items.map((line) => ({
+        saleId: createdSale.id,
+        stockItemId: idByName.get(line.item) ?? null,
+        name: line.item,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+      }))
+    )
+  }
+  console.log(`✓ Seeded ${saleSeeds.length} sales`)
+}
+
 async function main() {
   try {
     await seedAdmin()
     await seedTeam()
     await seedPlayerRoster()
     await seedReservationSchedule()
+    await seedInventory()
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error("Seed failed:", message)

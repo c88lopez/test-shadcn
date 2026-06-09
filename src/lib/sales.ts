@@ -5,8 +5,9 @@ export interface SaleLineItem {
 }
 
 export interface Sale {
-  id: number
+  id: string
   date: string
+  soldBy?: string
   items: SaleLineItem[]
 }
 

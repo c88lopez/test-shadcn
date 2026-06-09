@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { CommandPalette } from "@/components/command-palette"
 import { NotificationsDrawer } from "@/components/notifications-drawer"
 import { getSession } from "@/lib/auth.functions"
+import { listStockItems } from "@/lib/inventory.functions"
 import { applyUiSettings, loadUiSettings } from "@/lib/ui-settings"
 
 export const Route = createFileRoute("/_authenticated")({
@@ -17,10 +18,13 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { user: session.user }
   },
+  loader: async () => ({ stockItems: await listStockItems() }),
   component: AuthenticatedLayout,
 })
 
 function AuthenticatedLayout() {
+  const { stockItems } = Route.useLoaderData()
+
   useEffect(() => {
     applyUiSettings(loadUiSettings())
   }, [])
@@ -35,7 +39,7 @@ function AuthenticatedLayout() {
             <Separator orientation="vertical" />
             <CommandPalette />
             <div className="ml-auto">
-              <NotificationsDrawer />
+              <NotificationsDrawer stockItems={stockItems} />
             </div>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">

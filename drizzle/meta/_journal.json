@@ -8,6 +8,13 @@
       "when": 1780956010128,
       "tag": "0000_loving_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780971873909,
+      "tag": "0001_rare_junta",
+      "breakpoints": true
     }
   ]
 }

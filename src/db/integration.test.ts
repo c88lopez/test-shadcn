@@ -1,13 +1,21 @@
 import { randomUUID } from "node:crypto"
-import { and, eq } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/node-postgres"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import { migrate } from "drizzle-orm/node-postgres/migrator"
 import { Pool } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import * as schema from "@/db/schema"
-import { player, reservation, user } from "@/db/schema"
+import {
+  player,
+  reservation,
+  sale,
+  saleItem,
+  stockItem,
+  user,
+} from "@/db/schema"
 import { findOverlap } from "@/lib/reservation-overlap"
+import { findStockShortages } from "@/lib/inventory"
 
 // Integration tests that exercise the real schema/migrations against a live
 // Postgres. They only run when DATABASE_URL_TEST points at a throwaway database
@@ -30,6 +38,9 @@ describe.skipIf(!TEST_URL)("database integration", () => {
   })
 
   beforeEach(async () => {
+    await db.delete(saleItem)
+    await db.delete(sale)
+    await db.delete(stockItem)
     await db.delete(reservation)
     await db.delete(player)
     await db.delete(user)
@@ -143,6 +154,100 @@ describe.skipIf(!TEST_URL)("database integration", () => {
         await sameCourtSlots(2)
       )
       expect(conflict).toBeUndefined()
+    })
+  })
+
+  describe("inventory", () => {
+    it("supports stock item create / list / update / delete", async () => {
+      const [created] = await db
+        .insert(stockItem)
+        .values({
+          name: "Test Drink",
+          category: "Drinks",
+          price: 2.5,
+          stock: 30,
+        })
+        .returning()
+      expect(created.id).toBeTruthy()
+      expect(created.price).toBe(2.5)
+
+      await db
+        .update(stockItem)
+        .set({ stock: 25 })
+        .where(eq(stockItem.id, created.id))
+      const [updated] = await db
+        .select()
+        .from(stockItem)
+        .where(eq(stockItem.id, created.id))
+      expect(updated.stock).toBe(25)
+
+      await db.delete(stockItem).where(eq(stockItem.id, created.id))
+      expect(await db.select().from(stockItem)).toHaveLength(0)
+    })
+
+    it("decrements stock when a sale is recorded and cascades item deletes", async () => {
+      const [drink] = await db
+        .insert(stockItem)
+        .values({
+          name: "Energy Drink",
+          category: "Drinks",
+          price: 2.5,
+          stock: 10,
+        })
+        .returning()
+
+      const [createdSale] = await db
+        .insert(sale)
+        .values({ date: "2026-02-01", soldBy: "Front Desk" })
+        .returning()
+      await db.insert(saleItem).values({
+        saleId: createdSale.id,
+        stockItemId: drink.id,
+        name: drink.name,
+        quantity: 3,
+        unitPrice: 2.5,
+      })
+      await db
+        .update(stockItem)
+        .set({ stock: sql`${stockItem.stock} - ${3}` })
+        .where(eq(stockItem.id, drink.id))
+
+      const [afterSale] = await db
+        .select()
+        .from(stockItem)
+        .where(eq(stockItem.id, drink.id))
+      expect(afterSale.stock).toBe(7)
+
+      // Deleting the sale cascades to its line items.
+      await db.delete(sale).where(eq(sale.id, createdSale.id))
+      expect(await db.select().from(saleItem)).toHaveLength(0)
+    })
+
+    it("detects shortages against live stock levels", async () => {
+      const [racket] = await db
+        .insert(stockItem)
+        .values({
+          name: "Padel Racket (Pro)",
+          category: "Equipment",
+          price: 149.99,
+          stock: 2,
+        })
+        .returning()
+
+      const levels = await db
+        .select({
+          id: stockItem.id,
+          name: stockItem.name,
+          stock: stockItem.stock,
+        })
+        .from(stockItem)
+
+      expect(
+        findStockShortages([{ stockItemId: racket.id, quantity: 2 }], levels)
+      ).toEqual([])
+      expect(
+        findStockShortages([{ stockItemId: racket.id, quantity: 3 }], levels)
+      ).toHaveLength(1)
     })
   })
 })
