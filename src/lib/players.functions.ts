@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
-import { eq, asc } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { player } from "@/db/schema"
-import { requirePermission, requireSession } from "@/lib/auth.server"
+import { currentClubId, requireClubId } from "@/lib/auth.server"
 
 const playerInput = z.object({
   fullName: z.string().min(1),
@@ -16,16 +16,23 @@ const playerInput = z.object({
 
 export const listPlayers = createServerFn({ method: "GET" }).handler(
   async () => {
-    await requireSession()
-    return db.select().from(player).orderBy(asc(player.fullName))
+    const clubId = await currentClubId()
+    return db
+      .select()
+      .from(player)
+      .where(eq(player.clubId, clubId))
+      .orderBy(asc(player.fullName))
   }
 )
 
 export const createPlayer = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => playerInput.parse(data))
   .handler(async ({ data }) => {
-    await requirePermission("players:manage")
-    const [created] = await db.insert(player).values(data).returning()
+    const clubId = await requireClubId("players:manage")
+    const [created] = await db
+      .insert(player)
+      .values({ ...data, clubId })
+      .returning()
     return created
   })
 
@@ -34,12 +41,12 @@ export const updatePlayer = createServerFn({ method: "POST" })
     playerInput.extend({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("players:manage")
+    const clubId = await requireClubId("players:manage")
     const { id, ...values } = data
     const [updated] = await db
       .update(player)
       .set(values)
-      .where(eq(player.id, id))
+      .where(and(eq(player.id, id), eq(player.clubId, clubId)))
       .returning()
     return updated
   })
@@ -49,7 +56,9 @@ export const deletePlayer = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("players:manage")
-    await db.delete(player).where(eq(player.id, data.id))
+    const clubId = await requireClubId("players:manage")
+    await db
+      .delete(player)
+      .where(and(eq(player.id, data.id), eq(player.clubId, clubId)))
     return { id: data.id }
   })

@@ -34,28 +34,44 @@ import {
 } from "@/components/ui/select"
 import { ROLE_DESCRIPTIONS, USER_ROLES } from "@/lib/users"
 import type { UserRole } from "@/lib/users"
+import { SUPER_ADMIN_ROLE } from "@/lib/permissions"
 import { useAppSettings } from "@/lib/app-settings"
 
 export { ROLE_DESCRIPTIONS, USER_ROLES }
 export type { UserRole }
 
+type DrawerRole = UserRole | typeof SUPER_ADMIN_ROLE
+
+function describeRole(role: string | undefined): string | undefined {
+  if (!role) return undefined
+  if (role === SUPER_ADMIN_ROLE)
+    return "Platform-wide access across all clubs. Not tied to a single club."
+  return ROLE_DESCRIPTIONS[role as UserRole]
+}
+
 type FormInput = {
   name: string
   email: string
-  role?: UserRole
+  role?: DrawerRole
   password?: string
+  clubId?: string | null
 }
 
 export interface UserFormData {
   name: string
   email: string
-  role: UserRole
+  role: DrawerRole
   password?: string
+  clubId?: string | null
 }
 
 interface Props {
   trigger?: React.ReactNode
   user?: UserFormData
+  /** When true, the actor may assign clubs and the Super Admin role. */
+  canManageClubs?: boolean
+  /** Clubs available for assignment (only used when canManageClubs). */
+  clubs?: { id: string; name: string }[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onSave?: (data: UserFormData) => Promise<void>
@@ -64,6 +80,8 @@ interface Props {
 export function NewUserDrawer({
   trigger,
   user,
+  canManageClubs = false,
+  clubs = [],
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   onSave,
@@ -77,25 +95,40 @@ export function NewUserDrawer({
   const { security } = useAppSettings()
   const minLength = security.passwordMinLength
 
+  const roleOptions: DrawerRole[] = canManageClubs
+    ? [...USER_ROLES, SUPER_ADMIN_ROLE]
+    : [...USER_ROLES]
+
   const schema = useMemo(() => {
     const base = {
       name: z.string().min(1, "Name is required"),
       email: z.string().email("Invalid email address"),
-      role: z.enum(USER_ROLES, { error: "Role is required" }),
+      role: z.enum(roleOptions as [string, ...string[]], {
+        error: "Role is required",
+      }),
+      clubId: z.string().nullish(),
     }
-    if (isEditing) return z.object(base)
-    return z.object({
-      ...base,
-      password: z.string().min(minLength, `At least ${minLength} characters`),
+    const obj = isEditing
+      ? z.object(base)
+      : z.object({
+          ...base,
+          password: z.string().min(minLength, `At least ${minLength} chars`),
+        })
+    // Super-admins must pick a club for any non-super-admin user.
+    if (!canManageClubs) return obj
+    return obj.refine((v) => v.role === SUPER_ADMIN_ROLE || !!v.clubId, {
+      message: "Select a club",
+      path: ["clubId"],
     })
-  }, [isEditing, minLength])
+  }, [isEditing, minLength, canManageClubs, roleOptions])
 
   // New users start at the configured default role (Settings → Users → Security).
   const blankUser = {
     name: "",
     email: "",
-    role: security.defaultRole,
+    role: security.defaultRole as DrawerRole,
     password: "",
+    clubId: null,
   }
 
   const form = useForm<FormInput>({
@@ -103,19 +136,14 @@ export function NewUserDrawer({
     defaultValues: user ?? blankUser,
   })
 
+  const selectedRole = form.watch("role")
+
   useEffect(() => {
     if (open) {
-      form.reset(
-        user ?? {
-          name: "",
-          email: "",
-          role: security.defaultRole,
-          password: "",
-        }
-      )
+      form.reset(user ?? blankUser)
       reset()
     }
-  }, [open, user, form, reset, security.defaultRole])
+  }, [open, user])
 
   function onSubmit(values: FormInput) {
     run({
@@ -194,7 +222,7 @@ export function NewUserDrawer({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {USER_ROLES.map((role) => (
+                      {roleOptions.map((role) => (
                         <SelectItem key={role} value={role}>
                           {role}
                         </SelectItem>
@@ -203,13 +231,43 @@ export function NewUserDrawer({
                   </Select>
                   {field.value && (
                     <FormDescription>
-                      {ROLE_DESCRIPTIONS[field.value]}
+                      {describeRole(field.value)}
                     </FormDescription>
                   )}
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {canManageClubs && selectedRole !== SUPER_ADMIN_ROLE && (
+              <FormField
+                control={form.control}
+                name="clubId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Club</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select club" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clubs.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {!isEditing && (
               <FormField

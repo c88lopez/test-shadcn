@@ -1,9 +1,13 @@
 import { createServerFn } from "@tanstack/react-start"
-import { desc, inArray, sql } from "drizzle-orm"
+import { and, desc, eq, inArray, sql } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { sale, saleItem, stockItem } from "@/db/schema"
-import { requirePermission, requireSession } from "@/lib/auth.server"
+import {
+  currentClubId,
+  requirePermission,
+  resolveActiveClubId,
+} from "@/lib/auth.server"
 import { findStockShortages } from "@/lib/inventory"
 import type { SaleLineItem } from "@/lib/sales"
 
@@ -29,12 +33,20 @@ export interface SaleRecord {
 
 export const listSales = createServerFn({ method: "GET" }).handler(
   async (): Promise<SaleRecord[]> => {
-    await requireSession()
+    const clubId = await currentClubId()
     const sales = await db
       .select()
       .from(sale)
+      .where(eq(sale.clubId, clubId))
       .orderBy(desc(sale.date), desc(sale.createdAt))
-    const lines = await db.select().from(saleItem)
+    const saleIds = sales.map((s) => s.id)
+    const lines =
+      saleIds.length > 0
+        ? await db
+            .select()
+            .from(saleItem)
+            .where(inArray(saleItem.saleId, saleIds))
+        : []
 
     const linesBySale = new Map<string, SaleLineItem[]>()
     for (const line of lines) {
@@ -60,6 +72,8 @@ export const createSale = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => saleInput.parse(data))
   .handler(async ({ data }) => {
     const session = await requirePermission("inventory:manage")
+    const clubId = await resolveActiveClubId(session.user)
+    if (!clubId) throw new Error("This action requires a club context.")
 
     return db.transaction(async (tx) => {
       const ids = [...new Set(data.items.map((i) => i.stockItemId))]
@@ -70,7 +84,7 @@ export const createSale = createServerFn({ method: "POST" })
           stock: stockItem.stock,
         })
         .from(stockItem)
-        .where(inArray(stockItem.id, ids))
+        .where(and(inArray(stockItem.id, ids), eq(stockItem.clubId, clubId)))
 
       const shortages = findStockShortages(data.items, levels)
       if (shortages.length > 0) {
@@ -83,7 +97,7 @@ export const createSale = createServerFn({ method: "POST" })
       const nameById = new Map(levels.map((l) => [l.id, l.name]))
       const [createdSale] = await tx
         .insert(sale)
-        .values({ date: data.date, soldBy: session.user.name })
+        .values({ date: data.date, soldBy: session.user.name, clubId })
         .returning()
 
       await tx.insert(saleItem).values(

@@ -3,7 +3,12 @@ import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { reservation } from "@/db/schema"
-import { requirePermission, requireSession } from "@/lib/auth.server"
+import {
+  currentClubId,
+  requireClubId,
+  requirePermission,
+  resolveActiveClubId,
+} from "@/lib/auth.server"
 import { findOverlap, timeToMin } from "@/lib/reservation-overlap"
 
 const reservationInput = z.object({
@@ -15,19 +20,26 @@ const reservationInput = z.object({
   paymentStatus: z.enum(["paid", "partial", "unpaid"]),
 })
 
-// Returns an overlapping reservation on the same court+date, if any.
-async function findConflict(input: {
-  court: number
-  date: string
-  startTime: string
-  durationMinutes: number
-  excludeId?: string
-}) {
+// Returns an overlapping reservation on the same court+date within the club.
+async function findConflict(
+  clubId: string,
+  input: {
+    court: number
+    date: string
+    startTime: string
+    durationMinutes: number
+    excludeId?: string
+  }
+) {
   const sameSlot = await db
     .select()
     .from(reservation)
     .where(
-      and(eq(reservation.court, input.court), eq(reservation.date, input.date))
+      and(
+        eq(reservation.clubId, clubId),
+        eq(reservation.court, input.court),
+        eq(reservation.date, input.date)
+      )
     )
   return findOverlap(input, sameSlot, input.excludeId)
 }
@@ -48,10 +60,11 @@ function conflictError(conflict: {
 
 export const listReservations = createServerFn({ method: "GET" }).handler(
   async () => {
-    await requireSession()
+    const clubId = await currentClubId()
     return db
       .select()
       .from(reservation)
+      .where(eq(reservation.clubId, clubId))
       .orderBy(
         asc(reservation.date),
         asc(reservation.court),
@@ -64,11 +77,13 @@ export const createReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => reservationInput.parse(data))
   .handler(async ({ data }) => {
     const session = await requirePermission("reservations:manage")
-    const conflict = await findConflict(data)
+    const clubId = await resolveActiveClubId(session.user)
+    if (!clubId) throw new Error("This action requires a club context.")
+    const conflict = await findConflict(clubId, data)
     if (conflict) conflictError(conflict)
     const [created] = await db
       .insert(reservation)
-      .values({ ...data, bookedBy: session.user.name })
+      .values({ ...data, bookedBy: session.user.name, clubId })
       .returning()
     return created
   })
@@ -78,14 +93,14 @@ export const updateReservation = createServerFn({ method: "POST" })
     reservationInput.extend({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("reservations:manage")
+    const clubId = await requireClubId("reservations:manage")
     const { id, ...values } = data
-    const conflict = await findConflict({ ...values, excludeId: id })
+    const conflict = await findConflict(clubId, { ...values, excludeId: id })
     if (conflict) conflictError(conflict)
     const [updated] = await db
       .update(reservation)
       .set(values)
-      .where(eq(reservation.id, id))
+      .where(and(eq(reservation.id, id), eq(reservation.clubId, clubId)))
       .returning()
     return updated
   })
@@ -95,7 +110,9 @@ export const deleteReservation = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("reservations:manage")
-    await db.delete(reservation).where(eq(reservation.id, data.id))
+    const clubId = await requireClubId("reservations:manage")
+    await db
+      .delete(reservation)
+      .where(and(eq(reservation.id, data.id), eq(reservation.clubId, clubId)))
     return { id: data.id }
   })

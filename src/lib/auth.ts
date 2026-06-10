@@ -33,6 +33,8 @@ export const auth = betterAuth({
       // Managed server-side via users.functions.ts, never from client input.
       role: { type: "string", required: false, input: false },
       status: { type: "string", required: false, input: false },
+      // Tenant the user belongs to (null for platform super-admins).
+      clubId: { type: "string", required: false, input: false },
     },
   },
   hooks: {
