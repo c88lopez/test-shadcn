@@ -33,70 +33,42 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { getOverviewStats } from "@/lib/stats.functions"
+import { useAppSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/")({
+  loader: async () => ({ stats: await getOverviewStats() }),
   component: Dashboard,
 })
-
-const courts = { total: 6, occupied: 4 }
-
-const courtsChartData = [
-  { status: "Occupied", count: courts.occupied, fill: "var(--chart-1)" },
-  {
-    status: "Available",
-    count: courts.total - courts.occupied,
-    fill: "var(--chart-2)",
-  },
-]
 
 const courtsChartConfig = {
   occupied: { label: "Occupied", color: "var(--chart-1)" },
   available: { label: "Available", color: "var(--chart-2)" },
 } satisfies ChartConfig
 
-const weeklyData = [
-  { day: "Mon", reservations: 8 },
-  { day: "Tue", reservations: 12 },
-  { day: "Wed", reservations: 7 },
-  { day: "Thu", reservations: 15 },
-  { day: "Fri", reservations: 20 },
-  { day: "Sat", reservations: 18 },
-  { day: "Sun", reservations: 10 },
-]
-
 const weeklyChartConfig = {
   reservations: { label: "Reservations", color: "var(--chart-1)" },
 } satisfies ChartConfig
-
-const subscribersData = [
-  { month: "Dec", subscribers: 142 },
-  { month: "Jan", subscribers: 158 },
-  { month: "Feb", subscribers: 165 },
-  { month: "Mar", subscribers: 179 },
-  { month: "Apr", subscribers: 188 },
-  { month: "May", subscribers: 203 },
-  { month: "Jun", subscribers: 217 },
-]
 
 const subscribersChartConfig = {
   subscribers: { label: "Subscribers", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-const todayReservations = [
-  { court: 1, account: "Maria García", time: "09:00 – 10:30", paid: true },
-  { court: 3, account: "Carlos López", time: "10:00 – 11:30", paid: false },
-  { court: 2, account: "Ana Martínez", time: "11:00 – 12:30", paid: true },
-  { court: 1, account: "Pedro Sánchez", time: "12:00 – 13:30", paid: true },
-  { court: 4, account: "Laura Fernández", time: "16:00 – 17:30", paid: false },
-  { court: 2, account: "Diego Ruiz", time: "18:00 – 19:30", paid: true },
-]
-
-const todayTotal = todayReservations.length
-const weeklyTotal = weeklyData.reduce((sum, d) => sum + d.reservations, 0)
-const subscribersTotal = subscribersData[subscribersData.length - 1].subscribers
-const subscribersGrowth = subscribersTotal - subscribersData[0].subscribers
-
 function Dashboard() {
+  const { stats } = Route.useLoaderData()
+  const settings = useAppSettings()
+
+  const totalCourts = settings.reservations.courts.filter(
+    (c) => c.active
+  ).length
+  const occupied = Math.min(stats.courtsOccupiedNow, totalCourts)
+  const available = Math.max(totalCourts - occupied, 0)
+
+  const courtsChartData = [
+    { status: "Occupied", count: occupied, fill: "var(--chart-1)" },
+    { status: "Available", count: available, fill: "var(--chart-2)" },
+  ]
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -134,11 +106,11 @@ function Dashboard() {
             <div className="flex gap-4 text-sm">
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full bg-[var(--chart-1)]" />
-                {courts.occupied} Occupied
+                {occupied} Occupied
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full bg-[var(--chart-2)]" />
-                {courts.total - courts.occupied} Available
+                {available} Available
               </span>
             </div>
           </CardContent>
@@ -157,7 +129,7 @@ function Dashboard() {
               <IconCalendar className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-4xl font-bold">{todayTotal}</p>
+              <p className="text-4xl font-bold">{stats.todayTotal}</p>
               <p className="text-sm text-muted-foreground">reservations</p>
             </div>
           </CardContent>
@@ -174,7 +146,7 @@ function Dashboard() {
               <IconChartBar className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-4xl font-bold">{weeklyTotal}</p>
+              <p className="text-4xl font-bold">{stats.weeklyTotal}</p>
               <p className="text-sm text-muted-foreground">reservations</p>
             </div>
           </CardContent>
@@ -193,7 +165,7 @@ function Dashboard() {
             className="h-[220px] w-full"
           >
             <BarChart
-              data={weeklyData}
+              data={stats.weekly}
               margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
             >
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -215,8 +187,8 @@ function Dashboard() {
         <CardHeader>
           <CardTitle>Court Subscribers</CardTitle>
           <CardDescription>
-            {subscribersTotal} active members · +{subscribersGrowth} in the last
-            7 months
+            {stats.subscribersTotal} active members · +{stats.subscribersGrowth}{" "}
+            in the last 7 months
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -225,7 +197,7 @@ function Dashboard() {
             className="h-[220px] w-full"
           >
             <AreaChart
-              data={subscribersData}
+              data={stats.subscribers}
               margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
             >
               <defs>
@@ -281,20 +253,33 @@ function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {todayReservations.map((r, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">Court {r.court}</TableCell>
-                  <TableCell>{r.account}</TableCell>
-                  <TableCell>{r.time}</TableCell>
-                  <TableCell className="text-right">
-                    {r.paid ? (
-                      <Badge variant="default">Paid</Badge>
-                    ) : (
-                      <Badge variant="outline">Unpaid</Badge>
-                    )}
+              {stats.today.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    No reservations scheduled for today.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                stats.today.map((r, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">
+                      Court {r.court}
+                    </TableCell>
+                    <TableCell>{r.player}</TableCell>
+                    <TableCell>{r.time}</TableCell>
+                    <TableCell className="text-right">
+                      {r.paid ? (
+                        <Badge variant="default">Paid</Badge>
+                      ) : (
+                        <Badge variant="outline">Unpaid</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

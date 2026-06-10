@@ -26,47 +26,23 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { formatCurrency, getCurrencySymbol } from "@/lib/app-settings"
+import { getSalesStats } from "@/lib/stats.functions"
 
 export const Route = createFileRoute("/_authenticated/inventory/dashboard")({
+  loader: async () => ({ stats: await getSalesStats() }),
   component: InventoryDashboard,
 })
 
-const dailyRevenue = [
-  { day: "Mon", revenue: 87.5 },
-  { day: "Tue", revenue: 124.0 },
-  { day: "Wed", revenue: 95.0 },
-  { day: "Thu", revenue: 210.98 },
-  { day: "Fri", revenue: 178.5 },
-  { day: "Sat", revenue: 245.0 },
-  { day: "Sun", revenue: 160.0 },
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
 ]
-
-const revenueByCategory = [
-  { category: "Drinks", revenue: 76.3, fill: "var(--chart-1)" },
-  { category: "Equipment", revenue: 355.92, fill: "var(--chart-2)" },
-  { category: "Accessories", revenue: 67.94, fill: "var(--chart-3)" },
-]
-
-const topProducts = [
-  { name: "Padel Racket (Pro)", sales: 149.99 },
-  { name: "Padel Racket (Basic)", sales: 99.98 },
-  { name: "Padel Bag", sales: 69.98 },
-  { name: "Ball Pack", sales: 55.92 },
-  { name: "Energy Drink", sales: 22.5 },
-]
-
-const totalRevenue = dailyRevenue.reduce((s, d) => s + d.revenue, 0)
-const totalOrders = 15
-const bestSeller = "Padel Racket (Pro)"
-const bestSellerRevenue = 149.99
-
-const categoryChartConfig = {
-  drinks: { label: "Drinks", color: "var(--chart-1)" },
-  equipment: { label: "Equipment", color: "var(--chart-2)" },
-  accessories: { label: "Accessories", color: "var(--chart-3)" },
-} satisfies ChartConfig
 
 function InventoryDashboard() {
+  const { stats } = Route.useLoaderData()
   const symbol = getCurrencySymbol()
 
   const revenueChartConfig = {
@@ -76,6 +52,15 @@ function InventoryDashboard() {
   const topProductsConfig = {
     sales: { label: `Revenue (${symbol})`, color: "var(--chart-2)" },
   } satisfies ChartConfig
+
+  const revenueByCategory = stats.revenueByCategory.map((c, i) => ({
+    ...c,
+    fill: CHART_COLORS[i % CHART_COLORS.length],
+  }))
+
+  const categoryChartConfig = Object.fromEntries(
+    revenueByCategory.map((c) => [c.category, { label: c.category }])
+  ) satisfies ChartConfig
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,7 +87,7 @@ function InventoryDashboard() {
             <div>
               <p className="text-4xl font-bold">
                 {symbol}
-                {totalRevenue.toFixed(0)}
+                {stats.totalRevenue.toFixed(0)}
               </p>
               <p className="text-sm text-muted-foreground">this week</p>
             </div>
@@ -119,7 +104,7 @@ function InventoryDashboard() {
               <IconShoppingCart className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-4xl font-bold">{totalOrders}</p>
+              <p className="text-4xl font-bold">{stats.totalOrders}</p>
               <p className="text-sm text-muted-foreground">orders</p>
             </div>
           </CardContent>
@@ -135,9 +120,13 @@ function InventoryDashboard() {
               <IconTrendingUp className="size-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-lg leading-tight font-bold">{bestSeller}</p>
+              <p className="text-lg leading-tight font-bold">
+                {stats.bestSeller?.name ?? "—"}
+              </p>
               <p className="text-sm text-muted-foreground">
-                {formatCurrency(bestSellerRevenue)}
+                {stats.bestSeller
+                  ? formatCurrency(stats.bestSeller.sales)
+                  : "No sales this week"}
               </p>
             </div>
           </CardContent>
@@ -158,7 +147,7 @@ function InventoryDashboard() {
             className="h-[220px] w-full"
           >
             <AreaChart
-              data={dailyRevenue}
+              data={stats.dailyRevenue}
               margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
             >
               <defs>
@@ -210,37 +199,48 @@ function InventoryDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <ChartContainer
-              config={categoryChartConfig}
-              className="h-[180px] w-[180px]"
-            >
-              <PieChart>
-                <Pie
-                  data={revenueByCategory}
-                  dataKey="revenue"
-                  nameKey="category"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
+            {revenueByCategory.length === 0 ? (
+              <p className="py-12 text-sm text-muted-foreground">
+                No sales this week.
+              </p>
+            ) : (
+              <>
+                <ChartContainer
+                  config={categoryChartConfig}
+                  className="h-[180px] w-[180px]"
                 >
-                  {revenueByCategory.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
+                  <PieChart>
+                    <Pie
+                      data={revenueByCategory}
+                      dataKey="revenue"
+                      nameKey="category"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                    >
+                      {revenueByCategory.map((entry) => (
+                        <Cell key={entry.category} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  </PieChart>
+                </ChartContainer>
+                <div className="flex flex-wrap justify-center gap-4 text-sm">
+                  {revenueByCategory.map((c) => (
+                    <span
+                      key={c.category}
+                      className="flex items-center gap-1.5"
+                    >
+                      <span
+                        className="size-2.5 rounded-full"
+                        style={{ background: c.fill }}
+                      />
+                      {c.category} · {formatCurrency(c.revenue)}
+                    </span>
                   ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-              </PieChart>
-            </ChartContainer>
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              {revenueByCategory.map((c) => (
-                <span key={c.category} className="flex items-center gap-1.5">
-                  <span
-                    className="size-2.5 rounded-full"
-                    style={{ background: c.fill }}
-                  />
-                  {c.category} · {formatCurrency(c.revenue)}
-                </span>
-              ))}
-            </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -251,38 +251,44 @@ function InventoryDashboard() {
             <CardDescription>Revenue by product this week</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={topProductsConfig}
-              className="h-[220px] w-full"
-            >
-              <BarChart
-                data={topProducts}
-                layout="vertical"
-                margin={{ top: 0, right: 4, left: 0, bottom: 0 }}
+            {stats.topProducts.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                No sales this week.
+              </p>
+            ) : (
+              <ChartContainer
+                config={topProductsConfig}
+                className="h-[220px] w-full"
               >
-                <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-                <XAxis
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => `${symbol}${v}`}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tickLine={false}
-                  axisLine={false}
-                  width={130}
-                  tick={{ fontSize: 12 }}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar
-                  dataKey="sales"
-                  fill="var(--chart-2)"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
+                <BarChart
+                  data={stats.topProducts}
+                  layout="vertical"
+                  margin={{ top: 0, right: 4, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                  <XAxis
+                    type="number"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `${symbol}${v}`}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    width={130}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    dataKey="sales"
+                    fill="var(--chart-2)"
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
       </div>
