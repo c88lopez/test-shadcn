@@ -7,7 +7,7 @@ import type {
 
 // Initial player roster used to seed an empty database. Mirrors the data that
 // previously lived inline in the Players route.
-export const seedPlayers: Omit<NewPlayer, "id" | "createdAt">[] = [
+export const seedPlayers: Omit<NewPlayer, "id" | "createdAt" | "clubId">[] = [
   {
     fullName: "Carlos López",
     email: "carlos.lopez@email.com",
@@ -174,7 +174,7 @@ export const seedPlayers: Omit<NewPlayer, "id" | "createdAt">[] = [
 // No two share a court+time, so they satisfy conflict detection.
 export const reservationSeeds: Omit<
   NewReservation,
-  "id" | "createdAt" | "date"
+  "id" | "createdAt" | "date" | "clubId"
 >[] = [
   {
     court: 1,
@@ -300,7 +300,7 @@ export const reservationSeeds: Omit<
 
 // Initial stock catalogue used to seed an empty database. Mirrors the data that
 // previously lived inline in the inventory mock.
-export const stockSeeds: Omit<NewStockItem, "id" | "createdAt">[] = [
+export const stockSeeds: Omit<NewStockItem, "id" | "createdAt" | "clubId">[] = [
   { name: "Water Bottle (500ml)", category: "Drinks", price: 1.5, stock: 120 },
   { name: "Energy Drink", category: "Drinks", price: 2.5, stock: 48 },
   { name: "Sports Juice", category: "Drinks", price: 2.0, stock: 60 },
@@ -343,7 +343,7 @@ export interface SaleSeed {
   items: SaleSeedLine[]
 }
 
-export const coachSeeds: Omit<NewCoach, "id" | "createdAt">[] = [
+export const coachSeeds: Omit<NewCoach, "id" | "createdAt" | "clubId">[] = [
   { name: "Marcos Delgado", phone: "+34 611 234 567", birthday: "1985-03-12" },
   { name: "Elena Vidal", phone: "+34 622 345 678", birthday: "1990-07-24" },
   { name: "Rubén Fernández", phone: "+34 633 456 789", birthday: "1988-11-05" },

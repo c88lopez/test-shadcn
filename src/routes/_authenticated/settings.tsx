@@ -3,6 +3,7 @@ import {
   IconBell,
   IconBox,
   IconBuildingStore,
+  IconBuildings,
   IconCalendarCog,
   IconPalette,
   IconUsers,
@@ -52,15 +53,23 @@ const navItems: {
     icon: IconUsers,
     permission: "users:manage",
   },
+  {
+    to: "/settings/clubs",
+    label: "Clubs",
+    icon: IconBuildings,
+    permission: "clubs:manage",
+  },
   { to: "/settings/ui", label: "UI", icon: IconPalette },
 ]
 
 function SettingsLayout() {
   const canSettings = useCan("settings:manage")
   const canUsers = useCan("users:manage")
+  const canClubs = useCan("clubs:manage")
   const visibleItems = navItems.filter((item) => {
     if (item.permission === "settings:manage") return canSettings
     if (item.permission === "users:manage") return canUsers
+    if (item.permission === "clubs:manage") return canClubs
     return true
   })
 

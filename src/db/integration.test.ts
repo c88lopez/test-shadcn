@@ -7,6 +7,7 @@ import { Pool } from "pg"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import * as schema from "@/db/schema"
 import {
+  club,
   coach,
   coachClass,
   player,
@@ -26,6 +27,9 @@ import { classStatus } from "@/lib/classes"
 // default `bun run test` needs no database.
 const TEST_URL = process.env.DATABASE_URL_TEST
 
+// Default club seeded by migration 0004; all domain rows are scoped to it.
+const CLUB_ID = "00000000-0000-0000-0000-000000000001"
+
 describe.skipIf(!TEST_URL)("database integration", () => {
   let pool: Pool
   let db: NodePgDatabase<typeof schema>
@@ -34,6 +38,10 @@ describe.skipIf(!TEST_URL)("database integration", () => {
     pool = new Pool({ connectionString: TEST_URL })
     db = drizzle(pool, { schema })
     await migrate(db, { migrationsFolder: "drizzle" })
+    await db
+      .insert(club)
+      .values({ id: CLUB_ID, name: "Default Club", slug: "default" })
+      .onConflictDoNothing()
   })
 
   afterAll(async () => {
@@ -62,6 +70,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           age: 30,
           gender: "Male",
           category: "B",
+          clubId: CLUB_ID,
         })
         .returning()
       expect(created.id).toBeTruthy()
@@ -124,6 +133,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
         startTime,
         durationMinutes: duration,
         paymentStatus: "paid",
+        clubId: CLUB_ID,
       })
     }
 
@@ -171,6 +181,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           category: "Drinks",
           price: 2.5,
           stock: 30,
+          clubId: CLUB_ID,
         })
         .returning()
       expect(created.id).toBeTruthy()
@@ -198,12 +209,13 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           category: "Drinks",
           price: 2.5,
           stock: 10,
+          clubId: CLUB_ID,
         })
         .returning()
 
       const [createdSale] = await db
         .insert(sale)
-        .values({ date: "2026-02-01", soldBy: "Front Desk" })
+        .values({ date: "2026-02-01", soldBy: "Front Desk", clubId: CLUB_ID })
         .returning()
       await db.insert(saleItem).values({
         saleId: createdSale.id,
@@ -236,6 +248,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           category: "Equipment",
           price: 149.99,
           stock: 2,
+          clubId: CLUB_ID,
         })
         .returning()
 
@@ -264,6 +277,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           name: "Test Coach",
           phone: "+34 600 000 000",
           birthday: "1990-01-01",
+          clubId: CLUB_ID,
         })
         .returning()
       expect(created.id).toBeTruthy()
@@ -285,7 +299,11 @@ describe.skipIf(!TEST_URL)("database integration", () => {
     it("allows a coach without a birthday", async () => {
       const [created] = await db
         .insert(coach)
-        .values({ name: "No Birthday", phone: "+34 600 000 002" })
+        .values({
+          name: "No Birthday",
+          phone: "+34 600 000 002",
+          clubId: CLUB_ID,
+        })
         .returning()
       expect(created.birthday).toBeNull()
     })
@@ -297,6 +315,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           name: "Temp Coach",
           phone: "+34 600 000 001",
           birthday: "1991-02-02",
+          clubId: CLUB_ID,
         })
         .returning()
       const [cls] = await db
@@ -307,6 +326,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           date: "2026-03-01",
           startTime: "10:00",
           durationMinutes: 90,
+          clubId: CLUB_ID,
         })
         .returning()
       expect(cls.coachId).toBe(c.id)

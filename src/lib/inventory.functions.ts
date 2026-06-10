@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { stockItem } from "@/db/schema"
-import { requirePermission, requireSession } from "@/lib/auth.server"
+import { currentClubId, requireClubId } from "@/lib/auth.server"
 
 const stockItemInput = z.object({
   name: z.string().min(1),
@@ -14,16 +14,23 @@ const stockItemInput = z.object({
 
 export const listStockItems = createServerFn({ method: "GET" }).handler(
   async () => {
-    await requireSession()
-    return db.select().from(stockItem).orderBy(asc(stockItem.name))
+    const clubId = await currentClubId()
+    return db
+      .select()
+      .from(stockItem)
+      .where(eq(stockItem.clubId, clubId))
+      .orderBy(asc(stockItem.name))
   }
 )
 
 export const createStockItem = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => stockItemInput.parse(data))
   .handler(async ({ data }) => {
-    await requirePermission("inventory:manage")
-    const [created] = await db.insert(stockItem).values(data).returning()
+    const clubId = await requireClubId("inventory:manage")
+    const [created] = await db
+      .insert(stockItem)
+      .values({ ...data, clubId })
+      .returning()
     return created
   })
 
@@ -32,12 +39,12 @@ export const updateStockItem = createServerFn({ method: "POST" })
     stockItemInput.extend({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("inventory:manage")
+    const clubId = await requireClubId("inventory:manage")
     const { id, ...values } = data
     const [updated] = await db
       .update(stockItem)
       .set(values)
-      .where(eq(stockItem.id, id))
+      .where(and(eq(stockItem.id, id), eq(stockItem.clubId, clubId)))
       .returning()
     return updated
   })
@@ -49,11 +56,11 @@ export const setStockLevel = createServerFn({ method: "POST" })
       .parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("inventory:manage")
+    const clubId = await requireClubId("inventory:manage")
     const [updated] = await db
       .update(stockItem)
       .set({ stock: data.stock })
-      .where(eq(stockItem.id, data.id))
+      .where(and(eq(stockItem.id, data.id), eq(stockItem.clubId, clubId)))
       .returning()
     return updated
   })
@@ -63,7 +70,9 @@ export const deleteStockItem = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("inventory:manage")
-    await db.delete(stockItem).where(eq(stockItem.id, data.id))
+    const clubId = await requireClubId("inventory:manage")
+    await db
+      .delete(stockItem)
+      .where(and(eq(stockItem.id, data.id), eq(stockItem.clubId, clubId)))
     return { id: data.id }
   })

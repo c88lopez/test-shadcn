@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { coach, coachClass } from "@/db/schema"
-import { requirePermission, requireSession } from "@/lib/auth.server"
+import { currentClubId, requireClubId } from "@/lib/auth.server"
 
 const classInput = z.object({
   coachId: z.string().min(1),
@@ -25,7 +25,7 @@ export interface ClassRecord {
 
 export const listClasses = createServerFn({ method: "GET" }).handler(
   async (): Promise<ClassRecord[]> => {
-    await requireSession()
+    const clubId = await currentClubId()
     const rows = await db
       .select({
         id: coachClass.id,
@@ -38,6 +38,7 @@ export const listClasses = createServerFn({ method: "GET" }).handler(
       })
       .from(coachClass)
       .leftJoin(coach, eq(coachClass.coachId, coach.id))
+      .where(eq(coachClass.clubId, clubId))
       .orderBy(asc(coachClass.date), asc(coachClass.startTime))
 
     return rows.map((row) => ({
@@ -50,8 +51,11 @@ export const listClasses = createServerFn({ method: "GET" }).handler(
 export const createClass = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => classInput.parse(data))
   .handler(async ({ data }) => {
-    await requirePermission("coaches:manage")
-    const [created] = await db.insert(coachClass).values(data).returning()
+    const clubId = await requireClubId("coaches:manage")
+    const [created] = await db
+      .insert(coachClass)
+      .values({ ...data, clubId })
+      .returning()
     return created
   })
 
@@ -60,12 +64,12 @@ export const updateClass = createServerFn({ method: "POST" })
     classInput.extend({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("coaches:manage")
+    const clubId = await requireClubId("coaches:manage")
     const { id, ...values } = data
     const [updated] = await db
       .update(coachClass)
       .set(values)
-      .where(eq(coachClass.id, id))
+      .where(and(eq(coachClass.id, id), eq(coachClass.clubId, clubId)))
       .returning()
     return updated
   })
@@ -75,7 +79,9 @@ export const deleteClass = createServerFn({ method: "POST" })
     z.object({ id: z.string().min(1) }).parse(data)
   )
   .handler(async ({ data }) => {
-    await requirePermission("coaches:manage")
-    await db.delete(coachClass).where(eq(coachClass.id, data.id))
+    const clubId = await requireClubId("coaches:manage")
+    await db
+      .delete(coachClass)
+      .where(and(eq(coachClass.id, data.id), eq(coachClass.clubId, clubId)))
     return { id: data.id }
   })

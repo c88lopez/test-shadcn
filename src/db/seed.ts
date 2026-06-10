@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import { db } from "@/db"
 import * as schema from "@/db/schema"
 import {
+  club,
   coach,
   coachClass,
   player,
@@ -13,6 +14,7 @@ import {
   stockItem,
   user,
 } from "@/db/schema"
+import { SUPER_ADMIN_ROLE } from "@/lib/permissions"
 import {
   seedPlayers,
   reservationSeeds,
@@ -30,9 +32,25 @@ const seedAuth = betterAuth({
   emailAndPassword: { enabled: true },
 })
 
+// Fixed id matching the one inserted by migration 0004 for the seed/backfill.
+const DEFAULT_CLUB_ID = "00000000-0000-0000-0000-000000000001"
+
 const email = process.env.SEED_ADMIN_EMAIL ?? "admin@club.test"
 const password = process.env.SEED_ADMIN_PASSWORD ?? "admin1234"
 const name = process.env.SEED_ADMIN_NAME ?? "Club Admin"
+
+const superEmail = process.env.SEED_SUPERADMIN_EMAIL ?? "super@club.test"
+const superPassword = process.env.SEED_SUPERADMIN_PASSWORD ?? "super1234"
+
+async function seedClubs() {
+  // The Default Club row is created by the migration; ensure it exists when
+  // seeding a fresh database too.
+  await db
+    .insert(club)
+    .values({ id: DEFAULT_CLUB_ID, name: "Default Club", slug: "default" })
+    .onConflictDoNothing()
+  console.log("✓ Default Club ready")
+}
 
 async function seedAdmin() {
   try {
@@ -46,8 +64,26 @@ async function seedAdmin() {
       throw err
     }
   }
-  // Ensure the admin always has the Owner role (idempotent).
-  await db.update(user).set({ role: "Owner" }).where(eq(user.email, email))
+  // Ensure the admin always has the Owner role in the Default Club (idempotent).
+  await db
+    .update(user)
+    .set({ role: "Owner", clubId: DEFAULT_CLUB_ID })
+    .where(eq(user.email, email))
+}
+
+async function seedSuperAdmin() {
+  const added = await ensureUser({
+    email: superEmail,
+    name: "Platform Super Admin",
+    password: superPassword,
+    role: SUPER_ADMIN_ROLE,
+    clubId: null,
+  })
+  console.log(
+    added
+      ? `✓ Seeded super admin: ${superEmail} / ${superPassword}`
+      : `• Super admin ${superEmail} already exists, skipping.`
+  )
 }
 
 async function ensureUser(opts: {
@@ -56,6 +92,7 @@ async function ensureUser(opts: {
   password: string
   role: string
   status?: string
+  clubId?: string | null
 }) {
   const existing = await db
     .select({ id: user.id })
@@ -68,7 +105,11 @@ async function ensureUser(opts: {
   })
   await db
     .update(user)
-    .set({ role: opts.role, status: opts.status ?? "active" })
+    .set({
+      role: opts.role,
+      status: opts.status ?? "active",
+      clubId: opts.clubId === undefined ? DEFAULT_CLUB_ID : opts.clubId,
+    })
     .where(eq(user.email, opts.email))
   return true
 }
@@ -103,7 +144,9 @@ async function seedPlayerRoster() {
     console.log("• Players already seeded, skipping.")
     return
   }
-  await db.insert(player).values(seedPlayers)
+  await db
+    .insert(player)
+    .values(seedPlayers.map((p) => ({ ...p, clubId: DEFAULT_CLUB_ID })))
   console.log(`✓ Seeded ${seedPlayers.length} players`)
 }
 
@@ -117,9 +160,13 @@ async function seedReservationSchedule() {
     return
   }
   const today = new Date().toISOString().slice(0, 10)
-  await db
-    .insert(reservation)
-    .values(reservationSeeds.map((r) => ({ ...r, date: today })))
+  await db.insert(reservation).values(
+    reservationSeeds.map((r) => ({
+      ...r,
+      date: today,
+      clubId: DEFAULT_CLUB_ID,
+    }))
+  )
   console.log(`✓ Seeded ${reservationSeeds.length} reservations for ${today}`)
 }
 
@@ -132,7 +179,10 @@ async function seedInventory() {
     console.log("• Inventory already seeded, skipping.")
     return
   }
-  const inserted = await db.insert(stockItem).values(stockSeeds).returning()
+  const inserted = await db
+    .insert(stockItem)
+    .values(stockSeeds.map((s) => ({ ...s, clubId: DEFAULT_CLUB_ID })))
+    .returning()
   const idByName = new Map(inserted.map((s) => [s.name, s.id]))
   console.log(`✓ Seeded ${inserted.length} stock items`)
 
@@ -142,7 +192,7 @@ async function seedInventory() {
       .slice(0, 10)
     const [createdSale] = await db
       .insert(sale)
-      .values({ date, soldBy: "Club Admin" })
+      .values({ date, soldBy: "Club Admin", clubId: DEFAULT_CLUB_ID })
       .returning()
     await db.insert(saleItem).values(
       seed.items.map((line) => ({
@@ -163,7 +213,10 @@ async function seedCoaching() {
     console.log("• Coaches already seeded, skipping.")
     return
   }
-  const inserted = await db.insert(coach).values(coachSeeds).returning()
+  const inserted = await db
+    .insert(coach)
+    .values(coachSeeds.map((c) => ({ ...c, clubId: DEFAULT_CLUB_ID })))
+    .returning()
   const idByName = new Map(inserted.map((c) => [c.name, c.id]))
   console.log(`✓ Seeded ${inserted.length} coaches`)
 
@@ -176,6 +229,7 @@ async function seedCoaching() {
         .slice(0, 10),
       startTime: seed.startTime,
       durationMinutes: seed.durationMinutes,
+      clubId: DEFAULT_CLUB_ID,
     }))
   )
   console.log(`✓ Seeded ${classSeeds.length} classes`)
@@ -183,7 +237,9 @@ async function seedCoaching() {
 
 async function main() {
   try {
+    await seedClubs()
     await seedAdmin()
+    await seedSuperAdmin()
     await seedTeam()
     await seedPlayerRoster()
     await seedReservationSchedule()

@@ -46,6 +46,8 @@ import type { UserRole } from "@/components/new-user-drawer"
 import { cn } from "@/lib/utils"
 import { clampNumber, setAppSettings, useAppSettings } from "@/lib/app-settings"
 import type { SecuritySettings } from "@/lib/app-settings"
+import { can } from "@/lib/permissions"
+import { listClubOptions } from "@/lib/clubs.functions"
 import {
   createUser,
   deleteUser,
@@ -55,10 +57,19 @@ import {
   updateUser,
 } from "@/lib/users.functions"
 
+type ClubOption = { id: string; name: string }
+
 export const Route = createFileRoute("/_authenticated/settings/users")({
   beforeLoad: ({ context }) =>
     ensurePermission(context.user.role, "users:manage"),
-  loader: async () => ({ users: await listUsers() }),
+  loader: async ({ context }) => {
+    const canManageClubs = can(context.user.role, "clubs:manage")
+    const [users, clubs] = await Promise.all([
+      listUsers(),
+      canManageClubs ? listClubOptions() : Promise.resolve([] as ClubOption[]),
+    ])
+    return { users, clubs, canManageClubs }
+  },
   component: UsersSettingsPage,
 })
 
@@ -68,9 +79,19 @@ interface User {
   email: string
   role: UserRole
   status: string
+  clubId: string | null
+  clubName: string | null
 }
 
-function UserActions({ user }: { user: User }) {
+function UserActions({
+  user,
+  clubs,
+  canManageClubs,
+}: {
+  user: User
+  clubs: ClubOption[]
+  canManageClubs: boolean
+}) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -127,7 +148,14 @@ function UserActions({ user }: { user: User }) {
   return (
     <>
       <NewUserDrawer
-        user={{ name: user.name, email: user.email, role: user.role }}
+        user={{
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          clubId: user.clubId,
+        }}
+        canManageClubs={canManageClubs}
+        clubs={clubs}
         open={editOpen}
         onOpenChange={setEditOpen}
         onSave={async (data) => {
@@ -137,6 +165,7 @@ function UserActions({ user }: { user: User }) {
               name: data.name,
               email: data.email,
               role: data.role,
+              clubId: data.clubId,
             },
           })
           router.invalidate()
@@ -304,7 +333,7 @@ function SecuritySection() {
 
 function UsersSettingsPage() {
   const router = useRouter()
-  const { users: rawUsers } = Route.useLoaderData()
+  const { users: rawUsers, clubs, canManageClubs } = Route.useLoaderData()
   const users: User[] = rawUsers.map((u) => ({
     ...u,
     role: u.role as UserRole,
@@ -352,14 +381,33 @@ function UsersSettingsPage() {
             </Badge>
           ),
       },
+      ...(canManageClubs
+        ? [
+            {
+              accessorKey: "clubName",
+              header: "Club",
+              cell: ({ row }) => (
+                <span className="text-muted-foreground">
+                  {row.original.clubName ?? "— Platform —"}
+                </span>
+              ),
+            } satisfies ColumnDef<User>,
+          ]
+        : []),
       {
         id: "actions",
         enableSorting: false,
         meta: { className: "text-right" },
-        cell: ({ row }) => <UserActions user={row.original} />,
+        cell: ({ row }) => (
+          <UserActions
+            user={row.original}
+            clubs={clubs}
+            canManageClubs={canManageClubs}
+          />
+        ),
       },
     ],
-    []
+    [clubs, canManageClubs]
   )
 
   return (
@@ -378,6 +426,8 @@ function UsersSettingsPage() {
         exportFileName="users"
         action={
           <NewUserDrawer
+            canManageClubs={canManageClubs}
+            clubs={clubs}
             onSave={async (data) => {
               await createUser({
                 data: {
@@ -385,6 +435,7 @@ function UsersSettingsPage() {
                   email: data.email,
                   role: data.role,
                   password: data.password ?? "",
+                  clubId: data.clubId,
                 },
               })
               router.invalidate()

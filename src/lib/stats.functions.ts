@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { addDays, endOfMonth, format, startOfWeek, subMonths } from "date-fns"
 import { db } from "@/db"
 import { player, reservation, sale, saleItem, stockItem } from "@/db/schema"
-import { requireSession } from "@/lib/auth.server"
+import { currentClubId } from "@/lib/auth.server"
 import { endTime } from "@/lib/classes"
 import {
   busiestCourt,
@@ -28,7 +28,7 @@ function currentWeek(now: Date): DayBucket[] {
 
 export const getOverviewStats = createServerFn({ method: "GET" }).handler(
   async () => {
-    await requireSession()
+    const clubId = await currentClubId()
     const now = new Date()
     const days = currentWeek(now)
     const weekDates = days.map((d) => d.date)
@@ -45,7 +45,12 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
         paymentStatus: reservation.paymentStatus,
       })
       .from(reservation)
-      .where(inArray(reservation.date, weekDates))
+      .where(
+        and(
+          eq(reservation.clubId, clubId),
+          inArray(reservation.date, weekDates)
+        )
+      )
 
     const months = Array.from({ length: 7 }, (_, i) => {
       const d = subMonths(now, 6 - i)
@@ -54,6 +59,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
     const players = await db
       .select({ createdAt: player.createdAt })
       .from(player)
+      .where(eq(player.clubId, clubId))
 
     const weekly = reservationsPerDay(weekRes, days)
     const subscribers = cumulativePlayersByMonth(players, months)
@@ -86,7 +92,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 
 export const getSalesStats = createServerFn({ method: "GET" }).handler(
   async () => {
-    await requireSession()
+    const clubId = await currentClubId()
     const now = new Date()
     const days = currentWeek(now)
     const weekDates = days.map((d) => d.date)
@@ -103,7 +109,7 @@ export const getSalesStats = createServerFn({ method: "GET" }).handler(
       .from(saleItem)
       .innerJoin(sale, eq(saleItem.saleId, sale.id))
       .leftJoin(stockItem, eq(saleItem.stockItemId, stockItem.id))
-      .where(inArray(sale.date, weekDates))
+      .where(and(eq(sale.clubId, clubId), inArray(sale.date, weekDates)))
 
     const products = topProducts(lines, 5)
     const orders = new Set(lines.map((l) => l.saleId)).size
@@ -121,7 +127,7 @@ export const getSalesStats = createServerFn({ method: "GET" }).handler(
 
 export const getPlayerStats = createServerFn({ method: "GET" }).handler(
   async () => {
-    await requireSession()
+    const clubId = await currentClubId()
     const rows = await db
       .select({
         court: reservation.court,
@@ -132,6 +138,7 @@ export const getPlayerStats = createServerFn({ method: "GET" }).handler(
         paymentStatus: reservation.paymentStatus,
       })
       .from(reservation)
+      .where(eq(reservation.clubId, clubId))
 
     return {
       topReservationPlayer: topReservationPlayer(rows),
