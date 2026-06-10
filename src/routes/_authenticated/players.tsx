@@ -3,7 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
   IconPlus,
-  IconTrophy,
+  IconLayoutGrid,
   IconUsers,
   IconCalendar,
   IconMedal,
@@ -23,11 +23,15 @@ import { DataTable } from "@/components/data-table"
 import { NewPlayerDrawer } from "@/components/new-player-drawer"
 import { RowActions } from "@/components/row-actions"
 import { deletePlayer, listPlayers } from "@/lib/players.functions"
+import { getPlayerStats } from "@/lib/stats.functions"
 import { useCan } from "@/hooks/use-permissions"
 import type { Player as DbPlayer } from "@/db/schema"
 
 export const Route = createFileRoute("/_authenticated/players")({
-  loader: async () => ({ players: await listPlayers() }),
+  loader: async () => ({
+    players: await listPlayers(),
+    stats: await getPlayerStats(),
+  }),
   component: PlayersPage,
 })
 
@@ -58,61 +62,6 @@ const CATEGORY_FILL: Record<string, string> = {
   D7: "var(--chart-4)",
   D8: "var(--chart-5)",
 }
-
-// --- Mock stats data (would come from server once reservations/tournaments
-// are migrated). Kept illustrative for now. ---
-const reservationCounts: Record<string, number> = {
-  "Carlos López": 18,
-  "Pedro Sánchez": 12,
-  "Diego Ruiz": 9,
-  "Javier Moreno": 14,
-  "Miguel Álvarez": 21,
-  "Antonio Díaz": 7,
-  "Francisco Pérez": 11,
-  "Roberto Martín": 16,
-  "Alejandro Castro": 19,
-  "Sergio Navarro": 8,
-  "Maria García": 22,
-  "Ana Martínez": 6,
-  "Laura Fernández": 13,
-  "Sofía Torres": 17,
-  "Isabel Jiménez": 10,
-  "Elena Romero": 5,
-  "Carmen López": 15,
-  "Lucía González": 20,
-  "Patricia Sanz": 9,
-  "Marta Iglesias": 14,
-}
-
-const tournamentCounts: Record<string, number> = {
-  "Carlos López": 4,
-  "Pedro Sánchez": 2,
-  "Diego Ruiz": 1,
-  "Javier Moreno": 3,
-  "Miguel Álvarez": 6,
-  "Antonio Díaz": 2,
-  "Francisco Pérez": 1,
-  "Roberto Martín": 5,
-  "Alejandro Castro": 4,
-  "Sergio Navarro": 2,
-  "Maria García": 7,
-  "Ana Martínez": 1,
-  "Laura Fernández": 3,
-  "Sofía Torres": 5,
-  "Isabel Jiménez": 2,
-  "Elena Romero": 1,
-  "Carmen López": 4,
-  "Lucía González": 6,
-  "Patricia Sanz": 2,
-  "Marta Iglesias": 3,
-}
-
-const topReservationPlayer = Object.entries(reservationCounts).sort(
-  (a, b) => b[1] - a[1]
-)[0]
-const topTournamentPlayer = Object.entries(tournamentCounts).sort(
-  (a, b) => b[1] - a[1]
-)[0]
 
 const categoryChartConfig = {
   count: { label: "Players" },
@@ -211,17 +160,21 @@ const columns: ColumnDef<Player>[] = [
 function PlayersPage() {
   const router = useRouter()
   const canManage = useCan("players:manage")
-  const { players } = Route.useLoaderData()
+  const { players, stats } = Route.useLoaderData()
 
   const maleCount = players.filter((p) => p.gender === "Male").length
   const femaleCount = players.filter((p) => p.gender === "Female").length
-  const c4Count = players.filter((p) => p.category === "C4").length
 
   const categoryDistribution = CATEGORY_ORDER.map((category) => ({
     category,
     count: players.filter((p) => p.category === category).length,
     fill: CATEGORY_FILL[category],
   }))
+
+  const topCategory = categoryDistribution.reduce(
+    (best, c) => (c.count > best.count ? c : best),
+    { category: "—", count: 0 }
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -256,42 +209,42 @@ function PlayersPage() {
           </CardHeader>
           <CardContent>
             <p className="truncate text-xl font-bold">
-              {topReservationPlayer[0]}
+              {stats.topReservationPlayer?.name ?? "—"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {topReservationPlayer[1]} reservations this season
+              {stats.topReservationPlayer
+                ? `${stats.topReservationPlayer.count} ${stats.topReservationPlayer.count === 1 ? "reservation" : "reservations"}`
+                : "No reservations yet"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Most Tournaments
-            </CardTitle>
-            <IconTrophy className="size-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Busiest Court</CardTitle>
+            <IconLayoutGrid className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="truncate text-xl font-bold">
-              {topTournamentPlayer[0]}
+              {stats.busiestCourt ? `Court ${stats.busiestCourt.court}` : "—"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {topTournamentPlayer[1]} tournaments played
+              {stats.busiestCourt
+                ? `${stats.busiestCourt.count} ${stats.busiestCourt.count === 1 ? "reservation" : "reservations"}`
+                : "No reservations yet"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Top Category (M)
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Top Category</CardTitle>
             <IconMedal className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">C4</p>
+            <p className="text-3xl font-bold">{topCategory.category}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {c4Count} players at highest level
+              {topCategory.count} players
             </p>
           </CardContent>
         </Card>
