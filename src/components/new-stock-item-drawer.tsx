@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -34,14 +36,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  category: z.string().min(1, "Category is required"),
-  price: z.coerce.number().positive("Price must be greater than 0"),
-  stock: z.coerce.number().int().min(0, "Stock cannot be negative"),
-})
+function makeSchema(t: TFunction) {
+  return z.object({
+    name: z.string().min(1, t("validation.nameRequired")),
+    category: z.string().min(1, t("validation.categoryRequired")),
+    price: z.coerce.number().positive(t("validation.pricePositive")),
+    stock: z.coerce.number().int().min(0, t("validation.stockNonNegative")),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 export interface StockItemData {
   name: string
@@ -67,6 +71,7 @@ export function NewStockItemDrawer({
   onOpenChange: controlledOnOpenChange,
   onSaved,
 }: Props) {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
@@ -74,6 +79,7 @@ export function NewStockItemDrawer({
   const currencySymbol = getCurrencySymbol()
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormValues>({
     resolver: zodFormResolver<FormValues>(schema),
@@ -110,15 +116,18 @@ export function NewStockItemDrawer({
           ? updateStockItem({ data: { id: item.id, ...values } })
           : createStockItem({ data: values }),
       onSuccess: () => {
-        toast.success(isEditing ? "Item updated" : "Item created", {
-          description: `${values.name} has been saved successfully.`,
-        })
+        toast.success(
+          isEditing ? t("forms.stock.updated") : t("forms.stock.created"),
+          {
+            description: t("common.savedSuccess", { name: values.name }),
+          }
+        )
         onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
-        toast.error("Something went wrong", {
-          description: "The item could not be saved. Please try again.",
+        toast.error(t("common.genericError"), {
+          description: t("forms.stock.errorDescription"),
         })
       },
     })
@@ -130,7 +139,7 @@ export function NewStockItemDrawer({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>
-            {isEditing ? "Edit Item" : "New Stock Item"}
+            {isEditing ? t("forms.stock.titleEdit") : t("forms.stock.titleNew")}
           </DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
@@ -143,9 +152,12 @@ export function NewStockItemDrawer({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Product Name</FormLabel>
+                  <FormLabel>{t("fields.productName")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Water Bottle (500ml)" {...field} />
+                    <Input
+                      placeholder={t("forms.stock.namePlaceholder")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -157,17 +169,25 @@ export function NewStockItemDrawer({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t("fields.category")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectCategoryA")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Drinks">Drinks</SelectItem>
-                      <SelectItem value="Equipment">Equipment</SelectItem>
-                      <SelectItem value="Accessories">Accessories</SelectItem>
+                      <SelectItem value="Drinks">
+                        {t("options.drinks")}
+                      </SelectItem>
+                      <SelectItem value="Equipment">
+                        {t("options.equipment")}
+                      </SelectItem>
+                      <SelectItem value="Accessories">
+                        {t("options.accessories")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -180,7 +200,9 @@ export function NewStockItemDrawer({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price ({currencySymbol})</FormLabel>
+                  <FormLabel>
+                    {t("forms.stock.priceLabel", { symbol: currencySymbol })}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -200,7 +222,7 @@ export function NewStockItemDrawer({
               name="stock"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stock</FormLabel>
+                  <FormLabel>{t("fields.stock")}</FormLabel>
                   <FormControl>
                     <Input type="number" min="0" placeholder="0" {...field} />
                   </FormControl>
@@ -213,11 +235,15 @@ export function NewStockItemDrawer({
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label={isEditing ? "Save Changes" : "Add Item"}
+                label={
+                  isEditing
+                    ? t("common.saveChanges")
+                    : t("forms.stock.submitNew")
+                }
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

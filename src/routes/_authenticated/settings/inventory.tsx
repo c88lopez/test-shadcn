@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { ensurePermission } from "@/lib/route-guards"
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/settings/inventory")({
 })
 
 function InventorySettingsPage() {
+  const { t } = useTranslation()
   const settings = useAppSettings()
   const { inventory } = settings
 
@@ -37,33 +39,39 @@ function InventorySettingsPage() {
 
   function reset() {
     setAppSettings({ ...settings, inventory: DEFAULT_APP_SETTINGS.inventory })
-    toast.success("Inventory settings reset to defaults")
+    toast.success(t("settings.inventory.resetToast"))
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium">Inventory</h2>
+          <h2 className="text-lg font-medium">
+            {t("settings.inventory.title")}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Stock thresholds and alerts.
+            {t("settings.inventory.description")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={reset}>
-          Reset to defaults
+          {t("common.resetToDefaults")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Low-stock threshold</CardTitle>
+          <CardTitle>
+            {t("settings.inventory.lowStockThreshold.title")}
+          </CardTitle>
           <CardDescription>
-            Items at or below this quantity are highlighted on the Stock page.
+            {t("settings.inventory.lowStockThreshold.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex max-w-xs flex-col gap-2">
-            <Label htmlFor="lowStockThreshold">Units</Label>
+            <Label htmlFor="lowStockThreshold">
+              {t("settings.inventory.units")}
+            </Label>
             <Input
               id="lowStockThreshold"
               type="number"

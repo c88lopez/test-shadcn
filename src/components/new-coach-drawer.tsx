@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
@@ -35,13 +37,15 @@ import {
 import { cn } from "@/lib/utils"
 import { createCoach, updateCoach } from "@/lib/coaches.functions"
 
-const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().min(1, "Phone is required"),
-  birthday: z.date().optional(),
-})
+function makeSchema(t: TFunction) {
+  return z.object({
+    name: z.string().min(1, t("validation.nameRequired")),
+    phone: z.string().min(1, t("validation.phoneRequired")),
+    birthday: z.date().optional(),
+  })
+}
 
-type FormInput = z.infer<typeof schema>
+type FormInput = z.infer<ReturnType<typeof makeSchema>>
 
 export interface CoachData {
   name: string
@@ -64,12 +68,14 @@ export function NewCoachDrawer({
   onOpenChange: controlledOnOpenChange,
   onSaved,
 }: Props) {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!coach
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
@@ -95,15 +101,18 @@ export function NewCoachDrawer({
           ? updateCoach({ data: { id: coach.id, ...payload } })
           : createCoach({ data: payload }),
       onSuccess: () => {
-        toast.success(isEditing ? "Coach updated" : "Coach created", {
-          description: `${values.name} has been saved successfully.`,
-        })
+        toast.success(
+          isEditing ? t("forms.coach.updated") : t("forms.coach.created"),
+          {
+            description: t("common.savedSuccess", { name: values.name }),
+          }
+        )
         onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
-        toast.error("Something went wrong", {
-          description: "The coach could not be saved. Please try again.",
+        toast.error(t("common.genericError"), {
+          description: t("forms.coach.errorDescription"),
         })
       },
     })
@@ -114,7 +123,9 @@ export function NewCoachDrawer({
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{isEditing ? "Edit Coach" : "New Coach"}</DrawerTitle>
+          <DrawerTitle>
+            {isEditing ? t("forms.coach.titleEdit") : t("forms.coach.titleNew")}
+          </DrawerTitle>
         </DrawerHeader>
 
         <Form {...form}>
@@ -127,9 +138,12 @@ export function NewCoachDrawer({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{t("fields.fullName")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Marcos Delgado" {...field} />
+                    <Input
+                      placeholder={t("forms.coach.namePlaceholder")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,9 +155,12 @@ export function NewCoachDrawer({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>{t("fields.phone")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+34 600 000 000" {...field} />
+                    <Input
+                      placeholder={t("forms.coach.phonePlaceholder")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -155,7 +172,7 @@ export function NewCoachDrawer({
               name="birthday"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Birthday (optional)</FormLabel>
+                  <FormLabel>{t("forms.coach.birthdayLabel")}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -169,7 +186,7 @@ export function NewCoachDrawer({
                           <IconCalendar className="mr-2 size-4" />
                           {field.value
                             ? format(field.value, "PPP")
-                            : "Pick a date"}
+                            : t("common.pickDate")}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -190,11 +207,15 @@ export function NewCoachDrawer({
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label={isEditing ? "Save Changes" : "Add Coach"}
+                label={
+                  isEditing
+                    ? t("common.saveChanges")
+                    : t("forms.coach.submitNew")
+                }
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

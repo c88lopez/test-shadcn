@@ -1,5 +1,7 @@
+import { useMemo } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import {
   Area,
   AreaChart,
@@ -42,18 +44,38 @@ const CHART_COLORS = [
   "var(--chart-5)",
 ]
 
+function buildRevenueChartConfig(t: TFunction, symbol: string): ChartConfig {
+  return {
+    revenue: {
+      label: t("pages.inventoryDashboard.revenueWithSymbol", { symbol }),
+      color: "var(--chart-1)",
+    },
+  }
+}
+
+function buildTopProductsConfig(t: TFunction, symbol: string): ChartConfig {
+  return {
+    sales: {
+      label: t("pages.inventoryDashboard.revenueWithSymbol", { symbol }),
+      color: "var(--chart-2)",
+    },
+  }
+}
+
 function InventoryDashboard() {
   const { t } = useTranslation()
   const { stats } = Route.useLoaderData()
   const symbol = getCurrencySymbol()
 
-  const revenueChartConfig = {
-    revenue: { label: `Revenue (${symbol})`, color: "var(--chart-1)" },
-  } satisfies ChartConfig
+  const revenueChartConfig = useMemo(
+    () => buildRevenueChartConfig(t, symbol),
+    [t, symbol]
+  )
 
-  const topProductsConfig = {
-    sales: { label: `Revenue (${symbol})`, color: "var(--chart-2)" },
-  } satisfies ChartConfig
+  const topProductsConfig = useMemo(
+    () => buildTopProductsConfig(t, symbol),
+    [t, symbol]
+  )
 
   const revenueByCategory = stats.revenueByCategory.map((c, i) => ({
     ...c,
@@ -80,9 +102,11 @@ function InventoryDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">
-              Weekly Revenue
+              {t("pages.inventoryDashboard.weeklyRevenue")}
             </CardTitle>
-            <CardDescription>Total product sales</CardDescription>
+            <CardDescription>
+              {t("pages.inventoryDashboard.totalProductSales")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-4 pt-2">
             <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
@@ -93,15 +117,21 @@ function InventoryDashboard() {
                 {symbol}
                 {stats.totalRevenue.toFixed(0)}
               </p>
-              <p className="text-sm text-muted-foreground">this week</p>
+              <p className="text-sm text-muted-foreground">
+                {t("pages.inventoryDashboard.thisWeek")}
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <CardDescription>Transactions this week</CardDescription>
+            <CardTitle className="text-sm font-medium">
+              {t("pages.inventoryDashboard.totalOrders")}
+            </CardTitle>
+            <CardDescription>
+              {t("pages.inventoryDashboard.transactionsThisWeek")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-4 pt-2">
             <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
@@ -109,15 +139,21 @@ function InventoryDashboard() {
             </div>
             <div>
               <p className="text-4xl font-bold">{stats.totalOrders}</p>
-              <p className="text-sm text-muted-foreground">orders</p>
+              <p className="text-sm text-muted-foreground">
+                {t("pages.inventoryDashboard.orders")}
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Best Seller</CardTitle>
-            <CardDescription>Top revenue product</CardDescription>
+            <CardTitle className="text-sm font-medium">
+              {t("pages.inventoryDashboard.bestSeller")}
+            </CardTitle>
+            <CardDescription>
+              {t("pages.inventoryDashboard.topRevenueProduct")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-4 pt-2">
             <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
@@ -130,7 +166,7 @@ function InventoryDashboard() {
               <p className="text-sm text-muted-foreground">
                 {stats.bestSeller
                   ? formatCurrency(stats.bestSeller.sales)
-                  : "No sales this week"}
+                  : t("pages.inventoryDashboard.noSalesThisWeek")}
               </p>
             </div>
           </CardContent>
@@ -140,9 +176,9 @@ function InventoryDashboard() {
       {/* Revenue trend */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Revenue</CardTitle>
+          <CardTitle>{t("pages.inventoryDashboard.dailyRevenue")}</CardTitle>
           <CardDescription>
-            Revenue from product sales this week
+            {t("pages.inventoryDashboard.dailyRevenueDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -197,15 +233,17 @@ function InventoryDashboard() {
         {/* Revenue by category */}
         <Card>
           <CardHeader>
-            <CardTitle>Revenue by Category</CardTitle>
+            <CardTitle>
+              {t("pages.inventoryDashboard.revenueByCategory")}
+            </CardTitle>
             <CardDescription>
-              Breakdown of sales by product type
+              {t("pages.inventoryDashboard.revenueByCategoryDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             {revenueByCategory.length === 0 ? (
               <p className="py-12 text-sm text-muted-foreground">
-                No sales this week.
+                {t("pages.inventoryDashboard.noSalesThisWeek")}
               </p>
             ) : (
               <>
@@ -251,13 +289,15 @@ function InventoryDashboard() {
         {/* Top products */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Products</CardTitle>
-            <CardDescription>Revenue by product this week</CardDescription>
+            <CardTitle>{t("pages.inventoryDashboard.topProducts")}</CardTitle>
+            <CardDescription>
+              {t("pages.inventoryDashboard.topProductsDescription")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {stats.topProducts.length === 0 ? (
               <p className="py-12 text-center text-sm text-muted-foreground">
-                No sales this week.
+                {t("pages.inventoryDashboard.noSalesThisWeek")}
               </p>
             ) : (
               <ChartContainer

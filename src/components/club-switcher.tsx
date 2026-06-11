@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { IconBuildings } from "@tabler/icons-react"
 import { toast } from "sonner"
 import {
@@ -20,6 +21,7 @@ export interface ClubContext {
 
 export function ClubSwitcher({ context }: { context: ClubContext }) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [pending, setPending] = useState(false)
 
   // Super-admins can switch the club they're acting as.
@@ -34,9 +36,11 @@ export function ClubSwitcher({ context }: { context: ClubContext }) {
             await setActiveClub({ data: { clubId } })
             await router.invalidate()
           } catch (error) {
-            toast.error("Could not switch club", {
+            toast.error(t("clubSwitcher.switchError"), {
               description:
-                error instanceof Error ? error.message : "Try again.",
+                error instanceof Error
+                  ? error.message
+                  : t("clubSwitcher.tryAgain"),
             })
           } finally {
             setPending(false)
@@ -45,7 +49,7 @@ export function ClubSwitcher({ context }: { context: ClubContext }) {
       >
         <SelectTrigger size="sm" className="w-[190px] gap-2">
           <IconBuildings className="size-4 shrink-0 text-muted-foreground" />
-          <SelectValue placeholder="Select club" />
+          <SelectValue placeholder={t("clubSwitcher.selectClub")} />
         </SelectTrigger>
         <SelectContent>
           {context.clubs.map((c) => (

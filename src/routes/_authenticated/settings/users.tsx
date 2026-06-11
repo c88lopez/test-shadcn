@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { ensurePermission } from "@/lib/route-guards"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react"
@@ -92,6 +94,7 @@ function UserActions({
   clubs: ClubOption[]
   canManageClubs: boolean
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -102,13 +105,17 @@ function UserActions({
       const { tempPassword } = await resetUserPassword({
         data: { id: user.id },
       })
-      toast.success("Temporary password set", {
-        description: `${user.email} — ${tempPassword}`,
+      toast.success(t("settings.users.tempPasswordSet"), {
+        description: t("settings.users.tempPasswordDescription", {
+          email: user.email,
+          password: tempPassword,
+        }),
         duration: 10000,
       })
     } catch (error) {
-      toast.error("Could not reset password", {
-        description: error instanceof Error ? error.message : "Try again.",
+      toast.error(t("settings.users.resetPasswordError"), {
+        description:
+          error instanceof Error ? error.message : t("common.tryAgain"),
       })
     }
   }
@@ -118,13 +125,21 @@ function UserActions({
       await setUserArchived({
         data: { id: user.id, archived: !isArchived },
       })
-      toast.success(isArchived ? "User restored" : "User archived", {
-        description: `${user.name} is now ${isArchived ? "active" : "archived"}.`,
-      })
+      toast.success(
+        isArchived
+          ? t("settings.users.userRestored")
+          : t("settings.users.userArchived"),
+        {
+          description: isArchived
+            ? t("settings.users.restoredDescription", { name: user.name })
+            : t("settings.users.archivedDescription", { name: user.name }),
+        }
+      )
       router.invalidate()
     } catch (error) {
-      toast.error("Could not update user", {
-        description: error instanceof Error ? error.message : "Try again.",
+      toast.error(t("settings.users.updateError"), {
+        description:
+          error instanceof Error ? error.message : t("common.tryAgain"),
       })
     }
   }
@@ -132,13 +147,16 @@ function UserActions({
   async function handleDelete() {
     try {
       await deleteUser({ data: { id: user.id } })
-      toast.success("User deleted", {
-        description: `${user.name} was removed.`,
+      toast.success(t("settings.users.deleted"), {
+        description: t("settings.users.deletedDescription", {
+          name: user.name,
+        }),
       })
       router.invalidate()
     } catch (error) {
-      toast.error("Could not delete user", {
-        description: error instanceof Error ? error.message : "Try again.",
+      toast.error(t("settings.users.deleteError"), {
+        description:
+          error instanceof Error ? error.message : t("common.tryAgain"),
       })
     } finally {
       setConfirmOpen(false)
@@ -180,20 +198,22 @@ function UserActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            Edit
+            {t("common.edit")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleResetPassword}>
-            Reset password
+            {t("settings.users.resetPassword")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleToggleArchive}>
-            {isArchived ? "Restore" : "Archive"}
+            {isArchived
+              ? t("settings.users.restore")
+              : t("settings.users.archive")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
             onClick={() => setConfirmOpen(true)}
           >
-            Delete
+            {t("common.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -201,19 +221,20 @@ function UserActions({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {user.name}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("settings.users.deleteTitle", { name: user.name })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the user and their access. This action
-              cannot be undone.
+              {t("settings.users.deleteDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
               onClick={handleDelete}
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -223,6 +244,7 @@ function UserActions({
 }
 
 function SecuritySection() {
+  const { t } = useTranslation()
   const settings = useAppSettings()
   const { security } = settings
 
@@ -233,15 +255,15 @@ function SecuritySection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Security</CardTitle>
+        <CardTitle>{t("settings.users.security.title")}</CardTitle>
         <CardDescription>
-          Defaults for new accounts, password policy and sessions.
+          {t("settings.users.security.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <Label>Default role for new users</Label>
+            <Label>{t("settings.users.security.defaultRole")}</Label>
             <Select
               value={security.defaultRole}
               onValueChange={(v) => update({ defaultRole: v as UserRole })}
@@ -259,7 +281,9 @@ function SecuritySection() {
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="sessionTimeout">Session timeout (minutes)</Label>
+            <Label htmlFor="sessionTimeout">
+              {t("settings.users.security.sessionTimeout")}
+            </Label>
             <Input
               id="sessionTimeout"
               type="number"
@@ -275,10 +299,14 @@ function SecuritySection() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium">Password policy</p>
+          <p className="text-sm font-medium">
+            {t("settings.users.security.passwordPolicy")}
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="minLength">Minimum length</Label>
+              <Label htmlFor="minLength">
+                {t("settings.users.security.minLength")}
+              </Label>
               <Input
                 id="minLength"
                 type="number"
@@ -290,7 +318,9 @@ function SecuritySection() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="expiryDays">Expiry (days, 0 = never)</Label>
+              <Label htmlFor="expiryDays">
+                {t("settings.users.security.expiry")}
+              </Label>
               <Input
                 id="expiryDays"
                 type="number"
@@ -304,21 +334,27 @@ function SecuritySection() {
           </div>
           <div className="flex flex-col divide-y rounded-md border">
             <div className="flex items-center justify-between px-3 py-2.5">
-              <span className="text-sm">Require an uppercase letter</span>
+              <span className="text-sm">
+                {t("settings.users.security.requireUppercase")}
+              </span>
               <Switch
                 checked={security.passwordRequireUppercase}
                 onCheckedChange={(c) => update({ passwordRequireUppercase: c })}
               />
             </div>
             <div className="flex items-center justify-between px-3 py-2.5">
-              <span className="text-sm">Require a number</span>
+              <span className="text-sm">
+                {t("settings.users.security.requireNumber")}
+              </span>
               <Switch
                 checked={security.passwordRequireNumber}
                 onCheckedChange={(c) => update({ passwordRequireNumber: c })}
               />
             </div>
             <div className="flex items-center justify-between px-3 py-2.5">
-              <span className="text-sm">Require a symbol</span>
+              <span className="text-sm">
+                {t("settings.users.security.requireSymbol")}
+              </span>
               <Switch
                 checked={security.passwordRequireSymbol}
                 onCheckedChange={(c) => update({ passwordRequireSymbol: c })}
@@ -331,7 +367,83 @@ function SecuritySection() {
   )
 }
 
+function buildColumns(
+  t: TFunction,
+  clubs: ClubOption[],
+  canManageClubs: boolean
+): ColumnDef<User>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: t("settings.users.colName"),
+      cell: ({ row }) => (
+        <span
+          className={cn(
+            "font-medium",
+            row.original.status === "archived" && "text-muted-foreground"
+          )}
+        >
+          {row.original.name}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: t("fields.email"),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.email}</span>
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: t("fields.role"),
+      cell: ({ row }) => (
+        <Badge variant="secondary">{row.getValue<UserRole>("role")}</Badge>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: t("common.status"),
+      cell: ({ row }) =>
+        row.getValue<string>("status") === "active" ? (
+          <Badge variant="default">{t("common.active")}</Badge>
+        ) : (
+          <Badge variant="outline" className="text-muted-foreground">
+            {t("settings.users.archived")}
+          </Badge>
+        ),
+    },
+    ...(canManageClubs
+      ? [
+          {
+            accessorKey: "clubName",
+            header: t("fields.club"),
+            cell: ({ row }) => (
+              <span className="text-muted-foreground">
+                {row.original.clubName ??
+                  t("settings.users.platformPlaceholder")}
+              </span>
+            ),
+          } satisfies ColumnDef<User>,
+        ]
+      : []),
+    {
+      id: "actions",
+      enableSorting: false,
+      meta: { className: "text-right" },
+      cell: ({ row }) => (
+        <UserActions
+          user={row.original}
+          clubs={clubs}
+          canManageClubs={canManageClubs}
+        />
+      ),
+    },
+  ]
+}
+
 function UsersSettingsPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { users: rawUsers, clubs, canManageClubs } = Route.useLoaderData()
   const users: User[] = rawUsers.map((u) => ({
@@ -339,90 +451,24 @@ function UsersSettingsPage() {
     role: u.role as UserRole,
   }))
 
-  const columns = useMemo<ColumnDef<User>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Name",
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              "font-medium",
-              row.original.status === "archived" && "text-muted-foreground"
-            )}
-          >
-            {row.original.name}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "email",
-        header: "Email",
-        cell: ({ row }) => (
-          <span className="text-muted-foreground">{row.original.email}</span>
-        ),
-      },
-      {
-        accessorKey: "role",
-        header: "Role",
-        cell: ({ row }) => (
-          <Badge variant="secondary">{row.getValue<UserRole>("role")}</Badge>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) =>
-          row.getValue<string>("status") === "active" ? (
-            <Badge variant="default">Active</Badge>
-          ) : (
-            <Badge variant="outline" className="text-muted-foreground">
-              Archived
-            </Badge>
-          ),
-      },
-      ...(canManageClubs
-        ? [
-            {
-              accessorKey: "clubName",
-              header: "Club",
-              cell: ({ row }) => (
-                <span className="text-muted-foreground">
-                  {row.original.clubName ?? "— Platform —"}
-                </span>
-              ),
-            } satisfies ColumnDef<User>,
-          ]
-        : []),
-      {
-        id: "actions",
-        enableSorting: false,
-        meta: { className: "text-right" },
-        cell: ({ row }) => (
-          <UserActions
-            user={row.original}
-            clubs={clubs}
-            canManageClubs={canManageClubs}
-          />
-        ),
-      },
-    ],
-    [clubs, canManageClubs]
+  const columns = useMemo(
+    () => buildColumns(t, clubs, canManageClubs),
+    [t, clubs, canManageClubs]
   )
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-medium">Users</h2>
+        <h2 className="text-lg font-medium">{t("settings.users.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Invite teammates, assign roles and manage access.
+          {t("settings.users.description")}
         </p>
       </div>
 
       <DataTable
         columns={columns}
         data={users}
-        searchPlaceholder="Search users..."
+        searchPlaceholder={t("settings.users.searchPlaceholder")}
         exportFileName="users"
         action={
           <NewUserDrawer
@@ -443,7 +489,7 @@ function UsersSettingsPage() {
             trigger={
               <Button size="sm">
                 <IconPlus className="size-4" />
-                New User
+                {t("settings.users.newButton")}
               </Button>
             }
           />

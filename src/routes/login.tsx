@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { IconLoader2 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,7 @@ import { authClient } from "@/lib/auth-client"
 export const Route = createFileRoute("/login")({ component: LoginPage })
 
 function LoginPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,7 +31,7 @@ function LoginPage() {
     const result = await authClient.signIn.email({ email, password })
     setLoading(false)
     if (result.error) {
-      setError(result.error.message ?? "Invalid email or password.")
+      setError(result.error.message ?? t("auth.invalidCredentials"))
       return
     }
     await router.navigate({ to: "/" })
@@ -39,13 +41,13 @@ function LoginPage() {
     <div className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <CardTitle className="text-xl">{t("auth.welcomeBack")}</CardTitle>
+          <CardDescription>{t("auth.signInToAccount")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -56,7 +58,7 @@ function LoginPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -69,7 +71,7 @@ function LoginPage() {
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <IconLoader2 className="size-4 animate-spin" />}
-              Sign in
+              {t("auth.signIn")}
             </Button>
           </form>
         </CardContent>

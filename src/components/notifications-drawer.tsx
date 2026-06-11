@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { IconAlertTriangle, IconBell } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,8 +15,9 @@ import type { StockItem } from "@/db/schema"
 
 interface Notification {
   id: string
-  title: string
-  description: string
+  name: string
+  stock: number
+  threshold: number
   tone: "warning" | "default"
 }
 
@@ -24,6 +26,7 @@ export function NotificationsDrawer({
 }: {
   stockItems: StockItem[]
 }) {
+  const { t } = useTranslation()
   const { inventory, notifications: prefs } = useAppSettings()
 
   // Low-stock notifications are derived live from inventory + the configured
@@ -35,8 +38,9 @@ export function NotificationsDrawer({
       .sort((a, b) => a.stock - b.stock)
       .map((item) => ({
         id: `low-stock-${item.id}`,
-        title: `Low stock: ${item.name}`,
-        description: `Only ${item.stock} left (threshold ${inventory.lowStockThreshold}).`,
+        name: item.name,
+        stock: item.stock,
+        threshold: inventory.lowStockThreshold,
         tone: "warning",
       }))
   }, [inventory.lowStockThreshold, prefs.inApp.lowStock, stockItems])
@@ -52,21 +56,24 @@ export function NotificationsDrawer({
             <span className="absolute top-1 right-1 flex size-2 rounded-full bg-destructive ring-2 ring-background" />
           )}
           <span className="sr-only">
-            Notifications{count > 0 ? ` (${count} unread)` : ""}
+            {t("notifications.title")}
+            {count > 0 ? ` (${t("notifications.unread", { count })})` : ""}
           </span>
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="flex flex-row items-center justify-between">
-          <DrawerTitle>Notifications</DrawerTitle>
+          <DrawerTitle>{t("notifications.title")}</DrawerTitle>
           {count > 0 && (
-            <span className="text-xs text-muted-foreground">{count} new</span>
+            <span className="text-xs text-muted-foreground">
+              {t("notifications.new", { count })}
+            </span>
           )}
         </DrawerHeader>
         <div className="flex-1 overflow-y-auto px-4">
           {count === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No notifications
+              {t("notifications.empty")}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -86,9 +93,14 @@ export function NotificationsDrawer({
                     <IconAlertTriangle className="size-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-medium">{n.title}</p>
+                    <p className="text-sm font-medium">
+                      {t("notifications.lowStockTitle", { name: n.name })}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {n.description}
+                      {t("notifications.lowStockDescription", {
+                        stock: n.stock,
+                        threshold: n.threshold,
+                      })}
                     </p>
                   </div>
                 </li>

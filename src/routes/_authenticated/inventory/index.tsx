@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -34,6 +35,7 @@ function EditableStockCell({
   threshold: number
   canManage: boolean
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   // Draft value is only used while editing; the displayed count always comes
@@ -52,13 +54,22 @@ function EditableStockCell({
     setSaving(true)
     try {
       await setStockLevel({ data: { id: item.id, stock: draft } })
-      toast.success("Stock updated", {
-        description: `${item.name} set to ${draft} units.`,
+      toast.success(t("pages.stock.stockUpdated"), {
+        description:
+          draft === 1
+            ? t("pages.stock.stockUpdatedDescriptionOne", {
+                name: item.name,
+                count: draft,
+              })
+            : t("pages.stock.stockUpdatedDescriptionOther", {
+                name: item.name,
+                count: draft,
+              }),
       })
       router.invalidate()
     } catch {
-      toast.error("Could not update stock", {
-        description: "Please try again.",
+      toast.error(t("pages.stock.updateError"), {
+        description: t("common.tryAgain"),
       })
     } finally {
       setSaving(false)
@@ -88,23 +99,29 @@ function EditableStockCell({
     item.stock <= threshold && "font-medium text-destructive"
   )
 
+  const unitsLabel =
+    item.stock === 1
+      ? t("pages.stock.unitsOne", { count: item.stock })
+      : t("pages.stock.unitsOther", { count: item.stock })
+
   if (!canManage) {
-    return <span className={className}>{item.stock} units</span>
+    return <span className={className}>{unitsLabel}</span>
   }
 
   return (
     <button
       onClick={startEdit}
       disabled={saving}
-      title="Click to edit"
+      title={t("pages.stock.editTitle")}
       className={cn("cursor-pointer hover:bg-muted", className)}
     >
-      {item.stock} units
+      {unitsLabel}
     </button>
   )
 }
 
 function StockActions({ item }: { item: StockItem }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("inventory:manage")
   const [editOpen, setEditOpen] = useState(false)
@@ -112,10 +129,12 @@ function StockActions({ item }: { item: StockItem }) {
   async function handleDelete() {
     try {
       await deleteStockItem({ data: { id: item.id } })
-      toast.success("Item deleted", { description: item.name })
+      toast.success(t("pages.stock.deleted"), { description: item.name })
       router.invalidate()
     } catch {
-      toast.error("Could not delete item", { description: "Please try again." })
+      toast.error(t("pages.stock.deleteError"), {
+        description: t("common.tryAgain"),
+      })
     }
   }
 
@@ -135,17 +154,18 @@ function StockActions({ item }: { item: StockItem }) {
 }
 
 function buildStockColumns(
+  t: TFunction,
   threshold: number,
   canManage: boolean
 ): ColumnDef<StockItem>[] {
   const columns: ColumnDef<StockItem>[] = [
     {
       accessorKey: "name",
-      header: "Product",
+      header: t("fields.product"),
     },
     {
       accessorKey: "category",
-      header: "Category",
+      header: t("fields.category"),
       meta: { className: "w-[448px] text-center" },
       cell: ({ row }) => (
         <div className="flex justify-center">
@@ -155,12 +175,12 @@ function buildStockColumns(
     },
     {
       accessorKey: "price",
-      header: "Price",
+      header: t("fields.price"),
       cell: ({ row }) => formatCurrency(row.getValue<number>("price")),
     },
     {
       accessorKey: "stock",
-      header: "Stock",
+      header: t("fields.stock"),
       cell: ({ row }) => (
         <EditableStockCell
           item={row.original}
@@ -191,8 +211,8 @@ function StockPage() {
   const { stockItems } = Route.useLoaderData()
   const threshold = inventory.lowStockThreshold
   const stockColumns = useMemo(
-    () => buildStockColumns(threshold, canManage),
-    [threshold, canManage]
+    () => buildStockColumns(t, threshold, canManage),
+    [t, threshold, canManage]
   )
 
   return (
@@ -209,7 +229,7 @@ function StockPage() {
       <DataTable
         columns={stockColumns}
         data={stockItems}
-        searchPlaceholder="Search products..."
+        searchPlaceholder={t("pages.stock.searchPlaceholder")}
         exportFileName="stock"
         action={
           canManage ? (
@@ -218,7 +238,7 @@ function StockPage() {
               trigger={
                 <Button size="sm">
                   <IconPlus className="size-4" />
-                  New Item
+                  {t("pages.stock.newButton")}
                 </Button>
               }
             />

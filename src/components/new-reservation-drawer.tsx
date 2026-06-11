@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
@@ -46,16 +48,18 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-const schema = z.object({
-  player: z.string().min(1, "Player is required"),
-  court: z.string().min(1, "Court is required"),
-  date: z.date({ error: "Date is required" }),
-  time: z.string().min(1, "Time is required"),
-  duration: z.string().min(1, "Duration is required"),
-  paymentStatus: z.string().min(1, "Payment status is required"),
-})
+function makeSchema(t: TFunction) {
+  return z.object({
+    player: z.string().min(1, t("validation.playerRequired")),
+    court: z.string().min(1, t("validation.courtRequired")),
+    date: z.date({ error: t("validation.dateRequired") }),
+    time: z.string().min(1, t("validation.timeRequired")),
+    duration: z.string().min(1, t("validation.durationRequired")),
+    paymentStatus: z.string().min(1, t("validation.paymentStatusRequired")),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export interface ReservationData {
@@ -82,6 +86,7 @@ export function NewReservationDrawer({
   onOpenChange: controlledOnOpenChange,
   onSaved,
 }: Props) {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
@@ -91,6 +96,7 @@ export function NewReservationDrawer({
   const courts = reservationSettings.courts.filter((c) => c.active)
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
@@ -134,9 +140,13 @@ export function NewReservationDrawer({
           : createReservation({ data: payload }),
       onSuccess: () => {
         toast.success(
-          isEditing ? "Reservation updated" : "Reservation created",
+          isEditing
+            ? t("forms.reservation.updated")
+            : t("forms.reservation.created"),
           {
-            description: `Reservation for ${values.player} has been saved.`,
+            description: t("forms.reservation.savedDescription", {
+              player: values.player,
+            }),
           }
         )
         onSaved?.()
@@ -146,8 +156,8 @@ export function NewReservationDrawer({
         const message =
           error instanceof Error
             ? error.message
-            : "The reservation could not be saved. Please try again."
-        toast.error("Could not save reservation", { description: message })
+            : t("forms.reservation.errorDescription")
+        toast.error(t("forms.reservation.errorTitle"), { description: message })
       },
     })
   }
@@ -158,7 +168,9 @@ export function NewReservationDrawer({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>
-            {isEditing ? "Edit Reservation" : "New Reservation"}
+            {isEditing
+              ? t("forms.reservation.titleEdit")
+              : t("forms.reservation.titleNew")}
           </DrawerTitle>
         </DrawerHeader>
 
@@ -172,9 +184,12 @@ export function NewReservationDrawer({
               name="player"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Player</FormLabel>
+                  <FormLabel>{t("fields.player")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Full name" {...field} />
+                    <Input
+                      placeholder={t("forms.reservation.playerPlaceholder")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,11 +201,13 @@ export function NewReservationDrawer({
               name="court"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Court</FormLabel>
+                  <FormLabel>{t("fields.court")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a court" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectCourt")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -211,7 +228,7 @@ export function NewReservationDrawer({
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t("fields.date")}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -225,7 +242,7 @@ export function NewReservationDrawer({
                           <IconCalendar className="mr-2 size-4" />
                           {field.value
                             ? format(field.value, "PPP")
-                            : "Pick a date"}
+                            : t("common.pickDate")}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -250,7 +267,7 @@ export function NewReservationDrawer({
               name="time"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start Time</FormLabel>
+                  <FormLabel>{t("fields.startTime")}</FormLabel>
                   <FormControl>
                     <Input type="time" {...field} />
                   </FormControl>
@@ -264,19 +281,29 @@ export function NewReservationDrawer({
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duration</FormLabel>
+                  <FormLabel>{t("fields.duration")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select duration" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectDuration")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="150">2.5 hours</SelectItem>
-                      <SelectItem value="180">3 hours</SelectItem>
+                      <SelectItem value="60">{t("options.oneHour")}</SelectItem>
+                      <SelectItem value="90">
+                        {t("options.onePointFiveHours")}
+                      </SelectItem>
+                      <SelectItem value="120">
+                        {t("options.twoHours")}
+                      </SelectItem>
+                      <SelectItem value="150">
+                        {t("options.twoPointFiveHours")}
+                      </SelectItem>
+                      <SelectItem value="180">
+                        {t("options.threeHours")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -289,17 +316,23 @@ export function NewReservationDrawer({
               name="paymentStatus"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Payment</FormLabel>
+                  <FormLabel>{t("fields.payment")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select payment status" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectPaymentStatus")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="partial">Partially Paid</SelectItem>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="paid">{t("options.paid")}</SelectItem>
+                      <SelectItem value="partial">
+                        {t("options.partiallyPaid")}
+                      </SelectItem>
+                      <SelectItem value="unpaid">
+                        {t("options.unpaid")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -311,11 +344,15 @@ export function NewReservationDrawer({
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label={isEditing ? "Save Changes" : "Create Reservation"}
+                label={
+                  isEditing
+                    ? t("common.saveChanges")
+                    : t("forms.reservation.submitNew")
+                }
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { ensurePermission } from "@/lib/route-guards"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react"
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/settings/clubs")({
 })
 
 function ClubActions({ club }: { club: ClubRecord }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -49,13 +52,16 @@ function ClubActions({ club }: { club: ClubRecord }) {
   async function handleDelete() {
     try {
       await deleteClub({ data: { id: club.id } })
-      toast.success("Club deleted", {
-        description: `${club.name} was removed.`,
+      toast.success(t("settings.clubs.deleted"), {
+        description: t("settings.clubs.deletedDescription", {
+          name: club.name,
+        }),
       })
       router.invalidate()
     } catch (error) {
-      toast.error("Could not delete club", {
-        description: error instanceof Error ? error.message : "Try again.",
+      toast.error(t("settings.clubs.deleteError"), {
+        description:
+          error instanceof Error ? error.message : t("common.tryAgain"),
       })
     } finally {
       setConfirmOpen(false)
@@ -85,7 +91,7 @@ function ClubActions({ club }: { club: ClubRecord }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            Edit
+            {t("common.edit")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -93,7 +99,7 @@ function ClubActions({ club }: { club: ClubRecord }) {
             disabled={isDefault}
             onClick={() => setConfirmOpen(true)}
           >
-            Delete
+            {t("common.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -101,20 +107,24 @@ function ClubActions({ club }: { club: ClubRecord }) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {club.name}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("settings.clubs.deleteTitle", { name: club.name })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the club and <strong>all</strong> of its
-              data — players, reservations, inventory, sales, coaches, classes
-              and {club.memberCount} member account(s). This cannot be undone.
+              {t("settings.clubs.deleteConfirmLead")}{" "}
+              <strong>{t("settings.clubs.deleteConfirmEmphasis")}</strong>{" "}
+              {t("settings.clubs.deleteConfirmRest", {
+                count: club.memberCount,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
               onClick={handleDelete}
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -123,67 +133,68 @@ function ClubActions({ club }: { club: ClubRecord }) {
   )
 }
 
+function buildColumns(t: TFunction): ColumnDef<ClubRecord>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: t("settings.clubs.colName"),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.name}</span>
+      ),
+    },
+    {
+      accessorKey: "slug",
+      header: t("settings.clubs.colSlug"),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.slug}</span>
+      ),
+    },
+    {
+      accessorKey: "memberCount",
+      header: t("settings.clubs.colMembers"),
+      cell: ({ row }) => row.original.memberCount,
+    },
+    {
+      accessorKey: "status",
+      header: t("common.status"),
+      cell: ({ row }) =>
+        row.original.status === "active" ? (
+          <Badge variant="default">{t("options.active")}</Badge>
+        ) : (
+          <Badge variant="outline" className="text-muted-foreground">
+            {t("options.inactive")}
+          </Badge>
+        ),
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      meta: { className: "text-right" },
+      cell: ({ row }) => <ClubActions club={row.original} />,
+    },
+  ]
+}
+
 function ClubsSettingsPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { clubs } = Route.useLoaderData()
 
-  const columns = useMemo<ColumnDef<ClubRecord>[]>(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Name",
-        cell: ({ row }) => (
-          <span className="font-medium">{row.original.name}</span>
-        ),
-      },
-      {
-        accessorKey: "slug",
-        header: "Slug",
-        cell: ({ row }) => (
-          <span className="text-muted-foreground">{row.original.slug}</span>
-        ),
-      },
-      {
-        accessorKey: "memberCount",
-        header: "Members",
-        cell: ({ row }) => row.original.memberCount,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) =>
-          row.original.status === "active" ? (
-            <Badge variant="default">Active</Badge>
-          ) : (
-            <Badge variant="outline" className="text-muted-foreground">
-              Inactive
-            </Badge>
-          ),
-      },
-      {
-        id: "actions",
-        enableSorting: false,
-        meta: { className: "text-right" },
-        cell: ({ row }) => <ClubActions club={row.original} />,
-      },
-    ],
-    []
-  )
+  const columns = useMemo(() => buildColumns(t), [t])
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-medium">Clubs</h2>
+        <h2 className="text-lg font-medium">{t("settings.clubs.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Provision clubs and review their membership. Assign users to a club
-          from the Users tab.
+          {t("settings.clubs.description")}
         </p>
       </div>
 
       <DataTable
         columns={columns}
         data={clubs}
-        searchPlaceholder="Search clubs..."
+        searchPlaceholder={t("settings.clubs.searchPlaceholder")}
         exportFileName="clubs"
         action={
           <NewClubDrawer
@@ -194,7 +205,7 @@ function ClubsSettingsPage() {
             trigger={
               <Button size="sm">
                 <IconPlus className="size-4" />
-                New Club
+                {t("settings.clubs.newButton")}
               </Button>
             }
           />
