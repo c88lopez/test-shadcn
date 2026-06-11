@@ -66,10 +66,7 @@ export const Route = createFileRoute("/_authenticated/settings/users")({
     ensurePermission(context.user.role, "users:manage"),
   loader: async ({ context }) => {
     const canManageClubs = can(context.user.role, "clubs:manage")
-    const [users, clubs] = await Promise.all([
-      listUsers(),
-      canManageClubs ? listClubOptions() : Promise.resolve([] as ClubOption[]),
-    ])
+    const [users, clubs] = await Promise.all([listUsers(), listClubOptions()])
     return { users, clubs, canManageClubs }
   },
   component: UsersSettingsPage,
@@ -83,6 +80,7 @@ interface User {
   status: string
   clubId: string | null
   clubName: string | null
+  clubIds: string[]
 }
 
 function UserActions({
@@ -170,9 +168,10 @@ function UserActions({
           name: user.name,
           email: user.email,
           role: user.role,
-          clubId: user.clubId,
+          clubIds: user.clubIds,
         }}
         canManageClubs={canManageClubs}
+        canAssignClubs={clubs.length > 0}
         clubs={clubs}
         open={editOpen}
         onOpenChange={setEditOpen}
@@ -183,7 +182,7 @@ function UserActions({
               name: data.name,
               email: data.email,
               role: data.role,
-              clubId: data.clubId,
+              clubIds: data.clubIds,
             },
           })
           router.invalidate()
@@ -473,6 +472,7 @@ function UsersSettingsPage() {
         action={
           <NewUserDrawer
             canManageClubs={canManageClubs}
+            canAssignClubs={clubs.length > 0}
             clubs={clubs}
             onSave={async (data) => {
               await createUser({
@@ -481,7 +481,7 @@ function UsersSettingsPage() {
                   email: data.email,
                   role: data.role,
                   password: data.password ?? "",
-                  clubId: data.clubId,
+                  clubIds: data.clubIds,
                 },
               })
               router.invalidate()

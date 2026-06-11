@@ -148,6 +148,7 @@ export const en = {
     payment: "Payment",
     role: "Role",
     club: "Club",
+    clubs: "Clubs",
     price: "Price",
     stock: "Stock",
     productName: "Product Name",
@@ -255,6 +256,7 @@ export const en = {
       errorDescription: "The user could not be saved. Please try again.",
       superAdminDescription:
         "Platform-wide access across all clubs. Not tied to a single club.",
+      clubsHelp: "Select every club this user can access and switch between.",
     },
     club: {
       titleNew: "New Club",
@@ -442,6 +444,15 @@ export const en = {
       courtTypeOutdoor: "Outdoor",
       addCourt: "Add court",
       removeCourt: "Remove {{name}}",
+      deleteCourtTitle: "Delete {{name}}?",
+      deleteCourtConfirm:
+        "This removes the court from your settings. This cannot be undone.",
+      deleteCourtBlockedTitle: "Can't delete this court",
+      deleteCourtBlockedOne:
+        "{{name}} still has {{count}} reservation. Delete or reassign it before removing the court.",
+      deleteCourtBlockedOther:
+        "{{name}} still has {{count}} reservations. Delete or reassign them before removing the court.",
+      courtRemoved: "{{name}} removed",
       slots: {
         title: "Slots",
         description: "Default granularity and length for new bookings.",
@@ -703,6 +714,7 @@ export const en = {
     tournaments: {
       title: "Tournaments",
       description: "Manage club tournaments.",
+      comingSoon: "Tournament management coming soon.",
     },
   },
 } as const

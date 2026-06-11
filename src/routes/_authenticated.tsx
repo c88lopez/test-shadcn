@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/components/app-sidebar"
-import { ClubSwitcher } from "@/components/club-switcher"
 import { CommandPalette } from "@/components/command-palette"
 import { NotificationsDrawer } from "@/components/notifications-drawer"
 import { getSession } from "@/lib/auth.functions"
@@ -28,6 +27,7 @@ export const Route = createFileRoute("/_authenticated")({
 })
 
 function AuthenticatedLayout() {
+  const { user } = Route.useRouteContext()
   const { stockItems, clubContext } = Route.useLoaderData()
 
   useEffect(() => {
@@ -37,14 +37,13 @@ function AuthenticatedLayout() {
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar clubContext={clubContext} user={user} />
         <main className="flex h-svh min-w-0 flex-1 flex-col overflow-hidden">
           <header className="z-10 flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" />
             <CommandPalette />
             <div className="ml-auto flex items-center gap-3">
-              <ClubSwitcher context={clubContext} />
               <NotificationsDrawer stockItems={stockItems} />
             </div>
           </header>

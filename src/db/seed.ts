@@ -5,6 +5,7 @@ import { db } from "@/db"
 import * as schema from "@/db/schema"
 import {
   club,
+  clubMember,
   coach,
   coachClass,
   player,
@@ -69,6 +70,23 @@ async function seedAdmin() {
     .update(user)
     .set({ role: "Owner", clubId: DEFAULT_CLUB_ID })
     .where(eq(user.email, email))
+  await ensureMembership(email, DEFAULT_CLUB_ID)
+}
+
+// Bootstraps a club_member row so the user can act within (and switch to) their
+// home club. Idempotent.
+async function ensureMembership(userEmail: string, clubId: string | null) {
+  if (!clubId) return
+  const rows = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.email, userEmail))
+    .limit(1)
+  if (rows.length === 0) return
+  await db
+    .insert(clubMember)
+    .values({ userId: rows[0].id, clubId })
+    .onConflictDoNothing()
 }
 
 async function seedSuperAdmin() {
@@ -103,14 +121,16 @@ async function ensureUser(opts: {
   await seedAuth.api.signUpEmail({
     body: { email: opts.email, password: opts.password, name: opts.name },
   })
+  const clubId = opts.clubId === undefined ? DEFAULT_CLUB_ID : opts.clubId
   await db
     .update(user)
     .set({
       role: opts.role,
       status: opts.status ?? "active",
-      clubId: opts.clubId === undefined ? DEFAULT_CLUB_ID : opts.clubId,
+      clubId,
     })
     .where(eq(user.email, opts.email))
+  await ensureMembership(opts.email, clubId)
   return true
 }
 
@@ -235,16 +255,24 @@ async function seedCoaching() {
   console.log(`✓ Seeded ${classSeeds.length} classes`)
 }
 
+// Demo data (extra users + players/reservations/inventory/coaching) is only
+// inserted when run with `--demo` (i.e. `bun run db:seed:demo`). The default
+// `db:seed` just bootstraps the Default Club and the admin login so a fresh
+// database starts clean.
+const includeDemo = process.argv.includes("--demo")
+
 async function main() {
   try {
     await seedClubs()
     await seedAdmin()
-    await seedSuperAdmin()
-    await seedTeam()
-    await seedPlayerRoster()
-    await seedReservationSchedule()
-    await seedInventory()
-    await seedCoaching()
+    if (includeDemo) {
+      await seedSuperAdmin()
+      await seedTeam()
+      await seedPlayerRoster()
+      await seedReservationSchedule()
+      await seedInventory()
+      await seedCoaching()
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error("Seed failed:", message)

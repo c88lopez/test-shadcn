@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
+import { IconCheck } from "@tabler/icons-react"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -58,7 +59,7 @@ type FormInput = {
   email: string
   role?: DrawerRole
   password?: string
-  clubId?: string | null
+  clubIds?: string[]
 }
 
 export interface UserFormData {
@@ -66,15 +67,17 @@ export interface UserFormData {
   email: string
   role: DrawerRole
   password?: string
-  clubId?: string | null
+  clubIds?: string[]
 }
 
 interface Props {
   trigger?: React.ReactNode
   user?: UserFormData
-  /** When true, the actor may assign clubs and the Super Admin role. */
+  /** When true, the actor may assign the Super Admin role. */
   canManageClubs?: boolean
-  /** Clubs available for assignment (only used when canManageClubs). */
+  /** When true, show the club multi-select so the user can be assigned clubs. */
+  canAssignClubs?: boolean
+  /** Clubs available for assignment. */
   clubs?: { id: string; name: string }[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -85,6 +88,7 @@ export function NewUserDrawer({
   trigger,
   user,
   canManageClubs = false,
+  canAssignClubs = false,
   clubs = [],
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
@@ -111,7 +115,7 @@ export function NewUserDrawer({
       role: z.enum(roleOptions as [string, ...string[]], {
         error: t("validation.roleRequired"),
       }),
-      clubId: z.string().nullish(),
+      clubIds: z.array(z.string()).optional(),
     }
     const obj = isEditing
       ? z.object(base)
@@ -121,13 +125,16 @@ export function NewUserDrawer({
             .string()
             .min(minLength, t("validation.passwordMin", { count: minLength })),
         })
-    // Super-admins must pick a club for any non-super-admin user.
-    if (!canManageClubs) return obj
-    return obj.refine((v) => v.role === SUPER_ADMIN_ROLE || !!v.clubId, {
-      message: t("validation.selectClubRequired"),
-      path: ["clubId"],
-    })
-  }, [isEditing, minLength, canManageClubs, roleOptions, t])
+    // A non-super-admin user must belong to at least one club.
+    if (!canAssignClubs) return obj
+    return obj.refine(
+      (v) => v.role === SUPER_ADMIN_ROLE || (v.clubIds?.length ?? 0) > 0,
+      {
+        message: t("validation.selectClubRequired"),
+        path: ["clubIds"],
+      }
+    )
+  }, [isEditing, minLength, canAssignClubs, roleOptions, t])
 
   // New users start at the configured default role (Settings → Users → Security).
   const blankUser = {
@@ -135,7 +142,7 @@ export function NewUserDrawer({
     email: "",
     role: security.defaultRole as DrawerRole,
     password: "",
-    clubId: null,
+    clubIds: [] as string[],
   }
 
   const form = useForm<FormInput>({
@@ -256,35 +263,47 @@ export function NewUserDrawer({
               )}
             />
 
-            {canManageClubs && selectedRole !== SUPER_ADMIN_ROLE && (
+            {canAssignClubs && selectedRole !== SUPER_ADMIN_ROLE && (
               <FormField
                 control={form.control}
-                name="clubId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("fields.club")}</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("placeholders.selectClub")}
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {clubs.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                name="clubIds"
+                render={({ field }) => {
+                  const selected = field.value ?? []
+                  const toggle = (id: string) =>
+                    field.onChange(
+                      selected.includes(id)
+                        ? selected.filter((x) => x !== id)
+                        : [...selected, id]
+                    )
+                  return (
+                    <FormItem>
+                      <FormLabel>{t("fields.clubs")}</FormLabel>
+                      <FormDescription>
+                        {t("forms.user.clubsHelp")}
+                      </FormDescription>
+                      <div className="flex flex-col divide-y rounded-md border">
+                        {clubs.map((c) => {
+                          const isOn = selected.includes(c.id)
+                          return (
+                            <button
+                              type="button"
+                              key={c.id}
+                              onClick={() => toggle(c.id)}
+                              aria-pressed={isOn}
+                              className="flex items-center justify-between px-3 py-2.5 text-left text-sm hover:bg-accent"
+                            >
+                              <span>{c.name}</span>
+                              {isOn && (
+                                <IconCheck className="size-4 text-primary" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
               />
             )}
 

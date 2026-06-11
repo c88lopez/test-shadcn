@@ -16,9 +16,11 @@ import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
+import { Route as ApiClubsIndexRouteImport } from './routes/api/clubs/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
 import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
+import { Route as ApiClubsIdRouteImport } from './routes/api/clubs/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
 import { Route as AuthenticatedSettingsUiRouteImport } from './routes/_authenticated/settings/ui'
@@ -67,6 +69,11 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiClubsIndexRoute = ApiClubsIndexRouteImport.update({
+  id: '/api/clubs/',
+  path: '/api/clubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
@@ -85,6 +92,11 @@ const AuthenticatedCoachesIndexRoute =
     path: '/coaches/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiClubsIdRoute = ApiClubsIdRouteImport.update({
+  id: '/api/clubs/$id',
+  path: '/api/clubs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -168,9 +180,11 @@ export interface FileRoutesByFullPath {
   '/settings/ui': typeof AuthenticatedSettingsUiRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/clubs/$id': typeof ApiClubsIdRoute
   '/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/clubs/': typeof ApiClubsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -189,9 +203,11 @@ export interface FileRoutesByTo {
   '/settings/ui': typeof AuthenticatedSettingsUiRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/clubs/$id': typeof ApiClubsIdRoute
   '/coaches': typeof AuthenticatedCoachesIndexRoute
   '/inventory': typeof AuthenticatedInventoryIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/api/clubs': typeof ApiClubsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -213,9 +229,11 @@ export interface FileRoutesById {
   '/_authenticated/settings/ui': typeof AuthenticatedSettingsUiRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/clubs/$id': typeof ApiClubsIdRoute
   '/_authenticated/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/api/clubs/': typeof ApiClubsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,9 +255,11 @@ export interface FileRouteTypes {
     | '/settings/ui'
     | '/settings/users'
     | '/api/auth/$'
+    | '/api/clubs/$id'
     | '/coaches/'
     | '/inventory/'
     | '/settings/'
+    | '/api/clubs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -258,9 +278,11 @@ export interface FileRouteTypes {
     | '/settings/ui'
     | '/settings/users'
     | '/api/auth/$'
+    | '/api/clubs/$id'
     | '/coaches'
     | '/inventory'
     | '/settings'
+    | '/api/clubs'
   id:
     | '__root__'
     | '/_authenticated'
@@ -281,15 +303,19 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/ui'
     | '/_authenticated/settings/users'
     | '/api/auth/$'
+    | '/api/clubs/$id'
     | '/_authenticated/coaches/'
     | '/_authenticated/inventory/'
     | '/_authenticated/settings/'
+    | '/api/clubs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiClubsIdRoute: typeof ApiClubsIdRoute
+  ApiClubsIndexRoute: typeof ApiClubsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -343,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/clubs/': {
+      id: '/api/clubs/'
+      path: '/api/clubs'
+      fullPath: '/api/clubs/'
+      preLoaderRoute: typeof ApiClubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/'
@@ -363,6 +396,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/coaches/'
       preLoaderRoute: typeof AuthenticatedCoachesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/clubs/$id': {
+      id: '/api/clubs/$id'
+      path: '/api/clubs/$id'
+      fullPath: '/api/clubs/$id'
+      preLoaderRoute: typeof ApiClubsIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -507,6 +547,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiClubsIdRoute: ApiClubsIdRoute,
+  ApiClubsIndexRoute: ApiClubsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

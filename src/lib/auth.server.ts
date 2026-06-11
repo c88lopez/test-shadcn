@@ -1,7 +1,7 @@
 import { getCookie, getRequest } from "@tanstack/react-start/server"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { db } from "@/db"
-import { club } from "@/db/schema"
+import { club, clubMember } from "@/db/schema"
 import { auth } from "@/lib/auth"
 import { can } from "@/lib/permissions"
 import type { Permission } from "@/lib/permissions"
@@ -39,18 +39,35 @@ export async function requirePermission(permission: Permission) {
   return session
 }
 
+// True when `userId` is a member of `clubId` (club_member join table).
+async function isClubMember(userId: string, clubId: string): Promise<boolean> {
+  const rows = await db
+    .select({ clubId: clubMember.clubId })
+    .from(clubMember)
+    .where(and(eq(clubMember.userId, userId), eq(clubMember.clubId, clubId)))
+    .limit(1)
+  return rows.length > 0
+}
+
 /**
  * Resolves the club the current request acts within:
- * - club-scoped users: always their own club (the cookie is ignored).
+ * - club-scoped users: their home club, or the club chosen via the active-club
+ *   cookie when they are a member of it (lets an Owner switch between clubs).
  * - super-admins: the club chosen via the active-club cookie, falling back to
  *   the first club alphabetically so every page has a concrete scope.
  * Returns null only when no club exists at all.
  */
 export async function resolveActiveClubId(user: {
+  id: string
   clubId?: string | null
 }): Promise<string | null> {
-  if (user.clubId) return user.clubId
   const selected = getCookie(ACTIVE_CLUB_COOKIE)
+  if (user.clubId) {
+    if (selected && selected !== user.clubId) {
+      if (await isClubMember(user.id, selected)) return selected
+    }
+    return user.clubId
+  }
   if (selected) {
     const rows = await db
       .select({ id: club.id })
