@@ -1,4 +1,7 @@
+import { useMemo } from "react"
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { IconCalendar, IconChartBar } from "@tabler/icons-react"
 import {
   Area,
@@ -41,22 +44,44 @@ export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
 })
 
-const courtsChartConfig = {
-  occupied: { label: "Occupied", color: "var(--chart-1)" },
-  available: { label: "Available", color: "var(--chart-2)" },
-} satisfies ChartConfig
+function buildCourtsChartConfig(t: TFunction): ChartConfig {
+  return {
+    occupied: { label: t("pages.dashboard.occupied"), color: "var(--chart-1)" },
+    available: {
+      label: t("pages.dashboard.available"),
+      color: "var(--chart-2)",
+    },
+  }
+}
 
-const weeklyChartConfig = {
-  reservations: { label: "Reservations", color: "var(--chart-1)" },
-} satisfies ChartConfig
+function buildWeeklyChartConfig(t: TFunction): ChartConfig {
+  return {
+    reservations: {
+      label: t("pages.dashboard.chartReservations"),
+      color: "var(--chart-1)",
+    },
+  }
+}
 
-const subscribersChartConfig = {
-  subscribers: { label: "Subscribers", color: "var(--chart-1)" },
-} satisfies ChartConfig
+function buildSubscribersChartConfig(t: TFunction): ChartConfig {
+  return {
+    subscribers: {
+      label: t("pages.dashboard.chartSubscribers"),
+      color: "var(--chart-1)",
+    },
+  }
+}
 
 function Dashboard() {
+  const { t } = useTranslation()
   const { stats } = Route.useLoaderData()
   const settings = useAppSettings()
+  const courtsChartConfig = useMemo(() => buildCourtsChartConfig(t), [t])
+  const weeklyChartConfig = useMemo(() => buildWeeklyChartConfig(t), [t])
+  const subscribersChartConfig = useMemo(
+    () => buildSubscribersChartConfig(t),
+    [t]
+  )
 
   const totalCourts = settings.reservations.courts.filter(
     (c) => c.active
@@ -72,9 +97,9 @@ function Dashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.dashboard.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Padel club overview
+          {t("pages.dashboard.description")}
         </p>
       </div>
 
@@ -83,8 +108,12 @@ function Dashboard() {
         {/* Courts status */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Courts</CardTitle>
-            <CardDescription>Current occupancy</CardDescription>
+            <CardTitle className="text-sm font-medium">
+              {t("pages.dashboard.courts")}
+            </CardTitle>
+            <CardDescription>
+              {t("pages.dashboard.currentOccupancy")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-2">
             <ChartContainer
@@ -106,11 +135,11 @@ function Dashboard() {
             <div className="flex gap-4 text-sm">
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full bg-[var(--chart-1)]" />
-                {occupied} Occupied
+                {occupied} {t("pages.dashboard.occupied")}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full bg-[var(--chart-2)]" />
-                {available} Available
+                {available} {t("pages.dashboard.available")}
               </span>
             </div>
           </CardContent>
@@ -120,9 +149,11 @@ function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">
-              Today's Bookings
+              {t("pages.dashboard.todaysBookings")}
             </CardTitle>
-            <CardDescription>Reservations for today</CardDescription>
+            <CardDescription>
+              {t("pages.dashboard.reservationsForToday")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-4 pt-2">
             <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
@@ -130,7 +161,9 @@ function Dashboard() {
             </div>
             <div>
               <p className="text-4xl font-bold">{stats.todayTotal}</p>
-              <p className="text-sm text-muted-foreground">reservations</p>
+              <p className="text-sm text-muted-foreground">
+                {t("pages.dashboard.reservationsLabel")}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -138,8 +171,12 @@ function Dashboard() {
         {/* Weekly total */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">This Week</CardTitle>
-            <CardDescription>Total reservations</CardDescription>
+            <CardTitle className="text-sm font-medium">
+              {t("pages.dashboard.thisWeek")}
+            </CardTitle>
+            <CardDescription>
+              {t("pages.dashboard.totalReservations")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-4 pt-2">
             <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
@@ -147,7 +184,9 @@ function Dashboard() {
             </div>
             <div>
               <p className="text-4xl font-bold">{stats.weeklyTotal}</p>
-              <p className="text-sm text-muted-foreground">reservations</p>
+              <p className="text-sm text-muted-foreground">
+                {t("pages.dashboard.reservationsLabel")}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -156,8 +195,10 @@ function Dashboard() {
       {/* Timeline bar chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Reservations this week</CardTitle>
-          <CardDescription>Number of reservations per day</CardDescription>
+          <CardTitle>{t("pages.dashboard.reservationsThisWeek")}</CardTitle>
+          <CardDescription>
+            {t("pages.dashboard.reservationsPerDay")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer
@@ -185,10 +226,12 @@ function Dashboard() {
       {/* Court subscribers */}
       <Card>
         <CardHeader>
-          <CardTitle>Court Subscribers</CardTitle>
+          <CardTitle>{t("pages.dashboard.courtSubscribers")}</CardTitle>
           <CardDescription>
-            {stats.subscribersTotal} active members · +{stats.subscribersGrowth}{" "}
-            in the last 7 months
+            {t("pages.dashboard.subscribersSummary", {
+              total: stats.subscribersTotal,
+              growth: stats.subscribersGrowth,
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -239,17 +282,21 @@ function Dashboard() {
       {/* Today's reservations table */}
       <Card>
         <CardHeader>
-          <CardTitle>Today's Reservations</CardTitle>
-          <CardDescription>All bookings scheduled for today</CardDescription>
+          <CardTitle>{t("pages.dashboard.todaysReservations")}</CardTitle>
+          <CardDescription>
+            {t("pages.dashboard.allBookingsToday")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Court</TableHead>
-                <TableHead>Account</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead>{t("fields.court")}</TableHead>
+                <TableHead>{t("pages.dashboard.account")}</TableHead>
+                <TableHead>{t("pages.dashboard.time")}</TableHead>
+                <TableHead className="text-right">
+                  {t("common.status")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -259,22 +306,22 @@ function Dashboard() {
                     colSpan={4}
                     className="py-8 text-center text-muted-foreground"
                   >
-                    No reservations scheduled for today.
+                    {t("pages.dashboard.noReservationsToday")}
                   </TableCell>
                 </TableRow>
               ) : (
                 stats.today.map((r, i) => (
                   <TableRow key={i}>
                     <TableCell className="font-medium">
-                      Court {r.court}
+                      {t("stats.court", { court: r.court })}
                     </TableCell>
                     <TableCell>{r.player}</TableCell>
                     <TableCell>{r.time}</TableCell>
                     <TableCell className="text-right">
                       {r.paid ? (
-                        <Badge variant="default">Paid</Badge>
+                        <Badge variant="default">{t("options.paid")}</Badge>
                       ) : (
-                        <Badge variant="outline">Unpaid</Badge>
+                        <Badge variant="outline">{t("options.unpaid")}</Badge>
                       )}
                     </TableCell>
                   </TableRow>

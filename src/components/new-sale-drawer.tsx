@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
@@ -44,18 +46,20 @@ import { getCurrencySymbol } from "@/lib/app-settings"
 import { createSale } from "@/lib/sales.functions"
 import type { StockItem } from "@/db/schema"
 
-const lineItemSchema = z.object({
-  stockItemId: z.string().min(1, "Item is required"),
-  quantity: z.coerce.number().int().positive("Must be at least 1"),
-  unitPrice: z.coerce.number().positive("Price must be greater than 0"),
-})
+function makeSchema(t: TFunction) {
+  const lineItemSchema = z.object({
+    stockItemId: z.string().min(1, t("validation.itemRequired")),
+    quantity: z.coerce.number().int().positive(t("validation.minQuantity")),
+    unitPrice: z.coerce.number().positive(t("validation.pricePositive")),
+  })
 
-const schema = z.object({
-  date: z.date({ error: "Date is required" }),
-  items: z.array(lineItemSchema).min(1, "Add at least one item"),
-})
+  return z.object({
+    date: z.date({ error: t("validation.dateRequired") }),
+    items: z.array(lineItemSchema).min(1, t("validation.minOneItem")),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 const EMPTY_LINE = { stockItemId: "", quantity: 1, unitPrice: 0 }
@@ -67,10 +71,12 @@ interface Props {
 }
 
 export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const currencySymbol = getCurrencySymbol()
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
@@ -102,17 +108,19 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
       action: () => createSale({ data: payload }),
       onSuccess: () => {
         const count = values.items.length
-        toast.success("Sale recorded", {
-          description: `${count} ${count === 1 ? "item" : "items"} saved and stock updated.`,
+        toast.success(t("forms.sale.recorded"), {
+          description:
+            count === 1
+              ? t("forms.sale.recordedOne", { count })
+              : t("forms.sale.recordedOther", { count }),
         })
         onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: (error) => {
         const message = error instanceof Error ? error.message : undefined
-        toast.error("Something went wrong", {
-          description:
-            message ?? "The sale could not be saved. Please try again.",
+        toast.error(t("common.genericError"), {
+          description: message ?? t("forms.sale.errorDescription"),
         })
       },
     })
@@ -123,7 +131,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>New Sale</DrawerTitle>
+          <DrawerTitle>{t("forms.sale.title")}</DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -135,7 +143,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t("fields.date")}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -149,7 +157,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                           <IconCalendar className="mr-2 size-4" />
                           {field.value
                             ? format(field.value, "PPP")
-                            : "Pick a date"}
+                            : t("common.pickDate")}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -168,7 +176,9 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Items</span>
+                <span className="text-sm font-medium">
+                  {t("forms.sale.items")}
+                </span>
                 <Button
                   type="button"
                   variant="outline"
@@ -176,7 +186,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                   onClick={() => append({ ...EMPTY_LINE })}
                 >
                   <IconPlus className="size-3.5" />
-                  Add Item
+                  {t("forms.sale.addItem")}
                 </Button>
               </div>
 
@@ -187,7 +197,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
-                      Item {index + 1}
+                      {t("forms.sale.itemN", { n: index + 1 })}
                     </span>
                     {fields.length > 1 && (
                       <Button
@@ -207,7 +217,7 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                     name={`items.${index}.stockItemId`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Product</FormLabel>
+                        <FormLabel>{t("fields.product")}</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value)
@@ -226,13 +236,18 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a product" />
+                              <SelectValue
+                                placeholder={t("placeholders.selectProduct")}
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {stockItems.map((product) => (
                               <SelectItem key={product.id} value={product.id}>
-                                {product.name} ({product.stock} in stock)
+                                {t("forms.sale.productInStock", {
+                                  name: product.name,
+                                  stock: product.stock,
+                                })}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -248,12 +263,12 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                       name={`items.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Qty</FormLabel>
+                          <FormLabel>{t("fields.qty")}</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               min="1"
-                              placeholder="1"
+                              placeholder={t("forms.sale.qtyPlaceholder")}
                               {...field}
                             />
                           </FormControl>
@@ -267,7 +282,11 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
                       name={`items.${index}.unitPrice`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Unit Price ({currencySymbol})</FormLabel>
+                          <FormLabel>
+                            {t("forms.sale.unitPriceLabel", {
+                              symbol: currencySymbol,
+                            })}
+                          </FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -290,11 +309,11 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label="Record Sale"
+                label={t("forms.sale.submit")}
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

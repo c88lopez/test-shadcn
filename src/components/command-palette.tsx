@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import {
   IconBell,
   IconBox,
@@ -20,96 +21,118 @@ import {
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
+import type { TranslationKey } from "@/lib/i18n"
 
 interface CommandItem {
-  label: string
+  labelKey: TranslationKey
+  groupKey: TranslationKey
   to: string
-  group: string
   icon: Icon
   keywords?: string
 }
 
 const COMMANDS: CommandItem[] = [
-  { label: "Dashboard", to: "/", group: "Courts", icon: IconDashboard },
   {
-    label: "Reservations",
+    labelKey: "commandPalette.items.dashboard",
+    to: "/",
+    groupKey: "commandPalette.groups.courts",
+    icon: IconDashboard,
+  },
+  {
+    labelKey: "commandPalette.items.reservations",
     to: "/reservations",
-    group: "Courts",
+    groupKey: "commandPalette.groups.courts",
     icon: IconCalendar,
   },
   {
-    label: "Sales Dashboard",
+    labelKey: "commandPalette.items.salesDashboard",
     to: "/inventory/dashboard",
-    group: "Inventory",
+    groupKey: "commandPalette.groups.inventory",
     icon: IconChartBar,
   },
-  { label: "Stock", to: "/inventory", group: "Inventory", icon: IconBox },
   {
-    label: "Sales Log",
+    labelKey: "commandPalette.items.stock",
+    to: "/inventory",
+    groupKey: "commandPalette.groups.inventory",
+    icon: IconBox,
+  },
+  {
+    labelKey: "commandPalette.items.salesLog",
     to: "/inventory/sales-log",
-    group: "Inventory",
+    groupKey: "commandPalette.groups.inventory",
     icon: IconReceipt,
   },
-  { label: "Coaches", to: "/coaches", group: "Coaches", icon: IconUserStar },
   {
-    label: "Classes",
+    labelKey: "commandPalette.items.coaches",
+    to: "/coaches",
+    groupKey: "commandPalette.groups.coaches",
+    icon: IconUserStar,
+  },
+  {
+    labelKey: "commandPalette.items.classes",
     to: "/coaches/classes",
-    group: "Coaches",
+    groupKey: "commandPalette.groups.coaches",
     icon: IconSchool,
   },
-  { label: "Players", to: "/players", group: "Players", icon: IconUsers },
   {
-    label: "Tournaments",
+    labelKey: "commandPalette.items.players",
+    to: "/players",
+    groupKey: "commandPalette.groups.players",
+    icon: IconUsers,
+  },
+  {
+    labelKey: "commandPalette.items.tournaments",
     to: "/tournaments",
-    group: "Tournaments",
+    groupKey: "commandPalette.groups.tournaments",
     icon: IconTrophy,
   },
   {
-    label: "General",
+    labelKey: "commandPalette.items.generalSettings",
     to: "/settings/general",
-    group: "Settings",
+    groupKey: "commandPalette.groups.settings",
     icon: IconBuildingStore,
-    keywords: "club currency locale profile",
+    keywords: "club currency locale profile general configuración",
   },
   {
-    label: "Reservation settings",
+    labelKey: "commandPalette.items.reservationSettings",
     to: "/settings/reservations",
-    group: "Settings",
+    groupKey: "commandPalette.groups.settings",
     icon: IconCalendarCog,
-    keywords: "hours courts booking rules",
+    keywords: "hours courts booking rules reservas pistas",
   },
   {
-    label: "Notification settings",
+    labelKey: "commandPalette.items.notificationSettings",
     to: "/settings/notifications",
-    group: "Settings",
+    groupKey: "commandPalette.groups.settings",
     icon: IconBell,
-    keywords: "email whatsapp reminders",
+    keywords: "email whatsapp reminders notificaciones",
   },
   {
-    label: "Inventory settings",
+    labelKey: "commandPalette.items.inventorySettings",
     to: "/settings/inventory",
-    group: "Settings",
+    groupKey: "commandPalette.groups.settings",
     icon: IconBox,
-    keywords: "low stock threshold",
+    keywords: "low stock threshold inventario",
   },
   {
-    label: "Users",
+    labelKey: "commandPalette.items.users",
     to: "/settings/users",
-    group: "Settings",
+    groupKey: "commandPalette.groups.settings",
     icon: IconUsers,
-    keywords: "roles security password",
+    keywords: "roles security password usuarios",
   },
   {
-    label: "Appearance",
+    labelKey: "commandPalette.items.appearance",
     to: "/settings/ui",
-    group: "Settings",
+    groupKey: "commandPalette.groups.settings",
     icon: IconPalette,
-    keywords: "theme accent color font size ui",
+    keywords: "theme accent color font size ui idioma apariencia",
   },
 ]
 
 export function CommandPalette() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [activeIdx, setActiveIdx] = useState(0)
@@ -129,9 +152,11 @@ export function CommandPalette() {
     const q = query.trim().toLowerCase()
     if (!q) return COMMANDS
     return COMMANDS.filter((c) =>
-      `${c.label} ${c.group} ${c.keywords ?? ""}`.toLowerCase().includes(q)
+      `${t(c.labelKey)} ${t(c.groupKey)} ${c.keywords ?? ""}`
+        .toLowerCase()
+        .includes(q)
     )
-  }, [query])
+  }, [query, t])
 
   useEffect(() => {
     setActiveIdx(0)
@@ -165,7 +190,9 @@ export function CommandPalette() {
         className="flex h-8 w-full max-w-sm items-center gap-2 rounded-md bg-muted/50 px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
       >
         <IconSearch className="size-4" />
-        <span className="flex-1 text-left">Search anything...</span>
+        <span className="flex-1 text-left">
+          {t("commandPalette.searchAnything")}
+        </span>
         <kbd className="hidden items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
           ⌘K
         </kbd>
@@ -182,10 +209,10 @@ export function CommandPalette() {
             }}
           >
             <DialogPrimitive.Title className="sr-only">
-              Command palette
+              {t("commandPalette.srTitle")}
             </DialogPrimitive.Title>
             <DialogPrimitive.Description className="sr-only">
-              Search and jump to any page.
+              {t("commandPalette.srDescription")}
             </DialogPrimitive.Description>
 
             <div className="flex items-center gap-2 border-b px-3">
@@ -195,7 +222,7 @@ export function CommandPalette() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onInputKeyDown}
-                placeholder="Jump to a page..."
+                placeholder={t("commandPalette.placeholder")}
                 className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
@@ -203,7 +230,7 @@ export function CommandPalette() {
             <div className="max-h-80 overflow-y-auto p-1.5">
               {results.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  No results found.
+                  {t("commandPalette.noResults")}
                 </p>
               ) : (
                 results.map((item, i) => {
@@ -220,9 +247,9 @@ export function CommandPalette() {
                       )}
                     >
                       <item.icon className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1">{t(item.labelKey)}</span>
                       <span className="text-xs text-muted-foreground">
-                        {item.group}
+                        {t(item.groupKey)}
                       </span>
                       {active && (
                         <IconCornerDownLeft className="size-3.5 text-muted-foreground" />

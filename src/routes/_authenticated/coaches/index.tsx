@@ -1,5 +1,7 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
 import { differenceInYears, parseISO } from "date-fns"
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/coaches/")({
 })
 
 function CoachActions({ coach }: { coach: Coach }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
   const [editOpen, setEditOpen] = useState(false)
@@ -25,11 +28,11 @@ function CoachActions({ coach }: { coach: Coach }) {
   async function handleDelete() {
     try {
       await deleteCoach({ data: { id: coach.id } })
-      toast.success("Coach deleted", { description: coach.name })
+      toast.success(t("pages.coaches.deleted"), { description: coach.name })
       router.invalidate()
     } catch {
-      toast.error("Could not delete coach", {
-        description: "Please try again.",
+      toast.error(t("pages.coaches.deleteError"), {
+        description: t("common.tryAgain"),
       })
     }
   }
@@ -54,20 +57,20 @@ function CoachActions({ coach }: { coach: Coach }) {
   )
 }
 
-function buildColumns(canManage: boolean): ColumnDef<Coach>[] {
+function buildColumns(t: TFunction, canManage: boolean): ColumnDef<Coach>[] {
   const columns: ColumnDef<Coach>[] = [
     {
       accessorKey: "name",
-      header: "Full Name",
+      header: t("fields.fullName"),
     },
     {
       accessorKey: "phone",
-      header: "Phone",
+      header: t("fields.phone"),
       enableSorting: false,
     },
     {
       accessorKey: "birthday",
-      header: "Birthday",
+      header: t("pages.coaches.birthday"),
       cell: ({ row }) => {
         const birthday = row.getValue<string | null>("birthday")
         return birthday
@@ -81,10 +84,15 @@ function buildColumns(canManage: boolean): ColumnDef<Coach>[] {
     },
     {
       id: "age",
-      header: "Age",
+      header: t("fields.age"),
       cell: ({ row }) =>
         row.original.birthday
-          ? `${differenceInYears(new Date(), parseISO(row.original.birthday))} yrs`
+          ? t("pages.coaches.ageYears", {
+              count: differenceInYears(
+                new Date(),
+                parseISO(row.original.birthday)
+              ),
+            })
           : "—",
     },
   ]
@@ -102,24 +110,25 @@ function buildColumns(canManage: boolean): ColumnDef<Coach>[] {
 }
 
 function CoachesPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
   const { coaches } = Route.useLoaderData()
-  const columns = buildColumns(canManage)
+  const columns = useMemo(() => buildColumns(t, canManage), [t, canManage])
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Coaches</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.coaches.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage club coaches.
+          {t("pages.coaches.description")}
         </p>
       </div>
 
       <DataTable
         columns={columns}
         data={coaches}
-        searchPlaceholder="Search coaches..."
+        searchPlaceholder={t("pages.coaches.searchPlaceholder")}
         exportFileName="coaches"
         action={
           canManage ? (
@@ -128,7 +137,7 @@ function CoachesPage() {
               trigger={
                 <Button size="sm">
                   <IconPlus className="size-4" />
-                  New Coach
+                  {t("pages.coaches.newButton")}
                 </Button>
               }
             />

@@ -1,5 +1,8 @@
+import { useMemo } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { IconBrandWhatsapp, IconMail } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { ensurePermission } from "@/lib/route-guards"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -25,6 +28,22 @@ export const Route = createFileRoute("/_authenticated/settings/notifications")({
     ensurePermission(context.user.role, "settings:manage"),
   component: NotificationsSettingsPage,
 })
+
+const OFFSET_LABEL_KEYS = {
+  1: "settings.notifications.offsets.h1",
+  2: "settings.notifications.offsets.h2",
+  24: "settings.notifications.offsets.h24",
+  48: "settings.notifications.offsets.h48",
+} as const
+
+function buildReminderOffsets(
+  t: TFunction
+): { hours: number; label: string }[] {
+  return REMINDER_OFFSETS.map((offset) => ({
+    hours: offset.hours,
+    label: t(OFFSET_LABEL_KEYS[offset.hours as keyof typeof OFFSET_LABEL_KEYS]),
+  }))
+}
 
 function ToggleRow({
   title,
@@ -54,8 +73,10 @@ function ToggleRow({
 }
 
 function NotificationsSettingsPage() {
+  const { t } = useTranslation()
   const settings = useAppSettings()
   const { notifications } = settings
+  const reminderOffsets = useMemo(() => buildReminderOffsets(t), [t])
 
   function update(partial: Partial<NotificationSettings>) {
     setAppSettings({
@@ -78,34 +99,36 @@ function NotificationsSettingsPage() {
       ...settings,
       notifications: DEFAULT_APP_SETTINGS.notifications,
     })
-    toast.success("Notification settings reset to defaults")
+    toast.success(t("settings.notifications.resetToast"))
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium">Notifications</h2>
+          <h2 className="text-lg font-medium">
+            {t("settings.notifications.title")}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose how and when players and staff are notified.
+            {t("settings.notifications.description")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={reset}>
-          Reset to defaults
+          {t("common.resetToDefaults")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Channels</CardTitle>
+          <CardTitle>{t("settings.notifications.channels.title")}</CardTitle>
           <CardDescription>
-            Delivery methods for outbound notifications.
+            {t("settings.notifications.channels.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col">
           <ToggleRow
-            title="Email"
-            description="Send notifications by email."
+            title={t("settings.notifications.email.title")}
+            description={t("settings.notifications.email.description")}
             icon={<IconMail className="size-5" />}
             checked={notifications.channels.email}
             onChange={(checked) =>
@@ -115,8 +138,8 @@ function NotificationsSettingsPage() {
             }
           />
           <ToggleRow
-            title="WhatsApp"
-            description="Send notifications via WhatsApp."
+            title={t("settings.notifications.whatsapp.title")}
+            description={t("settings.notifications.whatsapp.description")}
             icon={<IconBrandWhatsapp className="size-5" />}
             checked={notifications.channels.whatsapp}
             onChange={(checked) =>
@@ -130,15 +153,15 @@ function NotificationsSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Events</CardTitle>
+          <CardTitle>{t("settings.notifications.events.title")}</CardTitle>
           <CardDescription>
-            Which booking events trigger a notification.
+            {t("settings.notifications.events.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col">
           <ToggleRow
-            title="Booking confirmations"
-            description="When a reservation is created."
+            title={t("settings.notifications.confirmations.title")}
+            description={t("settings.notifications.confirmations.description")}
             checked={notifications.events.confirmations}
             onChange={(checked) =>
               update({
@@ -147,8 +170,8 @@ function NotificationsSettingsPage() {
             }
           />
           <ToggleRow
-            title="Reminders"
-            description="Before an upcoming reservation."
+            title={t("settings.notifications.reminders.title")}
+            description={t("settings.notifications.reminders.description")}
             checked={notifications.events.reminders}
             onChange={(checked) =>
               update({
@@ -157,8 +180,8 @@ function NotificationsSettingsPage() {
             }
           />
           <ToggleRow
-            title="Cancellations"
-            description="When a reservation is cancelled."
+            title={t("settings.notifications.cancellations.title")}
+            description={t("settings.notifications.cancellations.description")}
             checked={notifications.events.cancellations}
             onChange={(checked) =>
               update({
@@ -171,14 +194,16 @@ function NotificationsSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Reminder timing</CardTitle>
+          <CardTitle>
+            {t("settings.notifications.reminderTiming.title")}
+          </CardTitle>
           <CardDescription>
-            Send reminders this long before the reservation starts.
+            {t("settings.notifications.reminderTiming.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {REMINDER_OFFSETS.map((offset) => {
+            {reminderOffsets.map((offset) => {
               const active = notifications.reminderOffsets.includes(
                 offset.hours
               )
@@ -195,7 +220,9 @@ function NotificationsSettingsPage() {
                       : "border-border text-muted-foreground"
                   )}
                 >
-                  {offset.label} before
+                  {t("settings.notifications.offsetBefore", {
+                    label: offset.label,
+                  })}
                 </button>
               )
             })}
@@ -205,39 +232,39 @@ function NotificationsSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>In-app notifications</CardTitle>
+          <CardTitle>{t("settings.notifications.inApp.title")}</CardTitle>
           <CardDescription>
-            Which events appear in the notifications menu.
+            {t("settings.notifications.inApp.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col">
           <ToggleRow
-            title="Bookings"
-            description="New and updated reservations."
+            title={t("settings.notifications.bookings.title")}
+            description={t("settings.notifications.bookings.description")}
             checked={notifications.inApp.bookings}
             onChange={(checked) =>
               update({ inApp: { ...notifications.inApp, bookings: checked } })
             }
           />
           <ToggleRow
-            title="Payments"
-            description="Sales and payment activity."
+            title={t("settings.notifications.payments.title")}
+            description={t("settings.notifications.payments.description")}
             checked={notifications.inApp.payments}
             onChange={(checked) =>
               update({ inApp: { ...notifications.inApp, payments: checked } })
             }
           />
           <ToggleRow
-            title="Low stock"
-            description="When inventory drops below the threshold."
+            title={t("settings.notifications.lowStock.title")}
+            description={t("settings.notifications.lowStock.description")}
             checked={notifications.inApp.lowStock}
             onChange={(checked) =>
               update({ inApp: { ...notifications.inApp, lowStock: checked } })
             }
           />
           <ToggleRow
-            title="System"
-            description="Product updates and maintenance notices."
+            title={t("settings.notifications.system.title")}
+            description={t("settings.notifications.system.description")}
             checked={notifications.inApp.system}
             onChange={(checked) =>
               update({ inApp: { ...notifications.inApp, system: checked } })

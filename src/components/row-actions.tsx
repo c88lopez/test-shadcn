@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { IconDotsVertical } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,9 +31,11 @@ export function RowActions({
   onEdit,
   onDuplicate,
   onDelete,
-  deleteLabel = "Delete",
+  deleteLabel,
 }: RowActionsProps) {
+  const { t } = useTranslation()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const resolvedDeleteLabel = deleteLabel ?? t("rowActions.delete")
 
   return (
     <>
@@ -43,14 +46,18 @@ export function RowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDuplicate}>Duplicate</DropdownMenuItem>
+          <DropdownMenuItem onClick={onEdit}>
+            {t("rowActions.edit")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onDuplicate}>
+            {t("rowActions.duplicate")}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
             onClick={() => setConfirmOpen(true)}
           >
-            {deleteLabel}
+            {resolvedDeleteLabel}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -58,13 +65,13 @@ export function RowActions({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("rowActions.areYouSure")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone.
+              {t("rowActions.cannotBeUndone")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("rowActions.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
               onClick={() => {
@@ -72,7 +79,7 @@ export function RowActions({
                 setConfirmOpen(false)
               }}
             >
-              {deleteLabel}
+              {resolvedDeleteLabel}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,5 +1,7 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -38,6 +40,7 @@ function ClassActions({
   coachClass: ClassRecord
   coaches: Coach[]
 }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
   const [editOpen, setEditOpen] = useState(false)
@@ -45,11 +48,11 @@ function ClassActions({
   async function handleDelete() {
     try {
       await deleteClass({ data: { id: coachClass.id } })
-      toast.success("Class deleted")
+      toast.success(t("pages.classes.deleted"))
       router.invalidate()
     } catch {
-      toast.error("Could not delete class", {
-        description: "Please try again.",
+      toast.error(t("pages.classes.deleteError"), {
+        description: t("common.tryAgain"),
       })
     }
   }
@@ -71,42 +74,50 @@ function ClassActions({
 }
 
 function buildColumns(
+  t: TFunction,
   canManage: boolean,
   coaches: Coach[]
 ): ColumnDef<ClassRecord>[] {
+  const statusLabel: Record<ClassStatus, string> = {
+    Upcoming: t("pages.classes.statusUpcoming"),
+    Ongoing: t("pages.classes.statusOngoing"),
+    Completed: t("pages.classes.statusCompleted"),
+  }
+
   const columns: ColumnDef<ClassRecord>[] = [
     {
       accessorKey: "coachName",
-      header: "Coach",
+      header: t("fields.coach"),
     },
     {
       accessorKey: "court",
-      header: "Court",
-      cell: ({ row }) => `Court ${row.getValue("court")}`,
+      header: t("fields.court"),
+      cell: ({ row }) =>
+        t("stats.court", { court: row.getValue<number>("court") }),
     },
     {
       accessorKey: "date",
-      header: "Date",
+      header: t("fields.date"),
     },
     {
       accessorKey: "startTime",
-      header: "Time",
+      header: t("pages.classes.time"),
     },
     {
       id: "duration",
-      header: "Duration",
+      header: t("fields.duration"),
       cell: ({ row }) => formatDuration(row.original.durationMinutes),
     },
     {
       id: "status",
-      header: "Status",
+      header: t("common.status"),
       meta: { className: "text-center" },
       cell: ({ row }) => {
         const c = row.original
         const status = classStatus(c.date, c.startTime, c.durationMinutes)
         return (
           <div className="flex justify-center">
-            <Badge variant={statusVariant[status]}>{status}</Badge>
+            <Badge variant={statusVariant[status]}>{statusLabel[status]}</Badge>
           </div>
         )
       },
@@ -128,24 +139,28 @@ function buildColumns(
 }
 
 function ClassesPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
   const { classes, coaches } = Route.useLoaderData()
-  const columns = buildColumns(canManage, coaches)
+  const columns = useMemo(
+    () => buildColumns(t, canManage, coaches),
+    [t, canManage, coaches]
+  )
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Classes</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.classes.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Coach-led sessions linked to reserved courts.
+          {t("pages.classes.description")}
         </p>
       </div>
 
       <DataTable
         columns={columns}
         data={classes}
-        searchPlaceholder="Search classes..."
+        searchPlaceholder={t("pages.classes.searchPlaceholder")}
         exportFileName="classes"
         action={
           canManage ? (
@@ -155,7 +170,7 @@ function ClassesPage() {
               trigger={
                 <Button size="sm">
                   <IconPlus className="size-4" />
-                  New Class
+                  {t("pages.classes.newButton")}
                 </Button>
               }
             />

@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format, parseISO } from "date-fns"
@@ -43,15 +45,17 @@ import { cn } from "@/lib/utils"
 import { createClass, updateClass } from "@/lib/classes.functions"
 import type { Coach } from "@/db/schema"
 
-const schema = z.object({
-  coachId: z.string().min(1, "Coach is required"),
-  court: z.string().min(1, "Court is required"),
-  date: z.date({ error: "Date is required" }),
-  time: z.string().min(1, "Time is required"),
-  duration: z.string().min(1, "Duration is required"),
-})
+function makeSchema(t: TFunction) {
+  return z.object({
+    coachId: z.string().min(1, t("validation.coachRequired")),
+    court: z.string().min(1, t("validation.courtRequired")),
+    date: z.date({ error: t("validation.dateRequired") }),
+    time: z.string().min(1, t("validation.timeRequired")),
+    duration: z.string().min(1, t("validation.durationRequired")),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export interface ClassData {
@@ -92,12 +96,14 @@ export function NewClassDrawer({
   onOpenChange: controlledOnOpenChange,
   onSaved,
 }: Props) {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!coachClass
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
@@ -126,16 +132,22 @@ export function NewClassDrawer({
           : createClass({ data: payload }),
       onSuccess: () => {
         const coachName =
-          coaches.find((c) => c.id === values.coachId)?.name ?? "coach"
-        toast.success(isEditing ? "Class updated" : "Class scheduled", {
-          description: `Class with ${coachName} has been saved.`,
-        })
+          coaches.find((c) => c.id === values.coachId)?.name ??
+          t("forms.class.fallbackCoach")
+        toast.success(
+          isEditing ? t("forms.class.updated") : t("forms.class.created"),
+          {
+            description: t("forms.class.savedDescription", {
+              coach: coachName,
+            }),
+          }
+        )
         onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
-        toast.error("Something went wrong", {
-          description: "The class could not be saved. Please try again.",
+        toast.error(t("common.genericError"), {
+          description: t("forms.class.errorDescription"),
         })
       },
     })
@@ -146,7 +158,9 @@ export function NewClassDrawer({
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{isEditing ? "Edit Class" : "New Class"}</DrawerTitle>
+          <DrawerTitle>
+            {isEditing ? t("forms.class.titleEdit") : t("forms.class.titleNew")}
+          </DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -158,11 +172,13 @@ export function NewClassDrawer({
               name="coachId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Coach</FormLabel>
+                  <FormLabel>{t("fields.coach")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a coach" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectCoach")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -183,17 +199,19 @@ export function NewClassDrawer({
               name="court"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Court</FormLabel>
+                  <FormLabel>{t("fields.court")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a court" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectCourt")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6].map((n) => (
                         <SelectItem key={n} value={String(n)}>
-                          Court {n}
+                          {t("forms.class.courtN", { n })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -208,7 +226,7 @@ export function NewClassDrawer({
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t("fields.date")}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -222,7 +240,7 @@ export function NewClassDrawer({
                           <IconCalendar className="mr-2 size-4" />
                           {field.value
                             ? format(field.value, "PPP")
-                            : "Pick a date"}
+                            : t("common.pickDate")}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -245,7 +263,7 @@ export function NewClassDrawer({
                 name="time"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Time</FormLabel>
+                    <FormLabel>{t("fields.startTime")}</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
@@ -259,17 +277,21 @@ export function NewClassDrawer({
                 name="duration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration</FormLabel>
+                    <FormLabel>{t("fields.duration")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Duration" />
+                          <SelectValue
+                            placeholder={t("placeholders.duration")}
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="60">60 min</SelectItem>
-                        <SelectItem value="90">90 min</SelectItem>
-                        <SelectItem value="120">120 min</SelectItem>
+                        <SelectItem value="60">{t("options.min60")}</SelectItem>
+                        <SelectItem value="90">{t("options.min90")}</SelectItem>
+                        <SelectItem value="120">
+                          {t("options.min120")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -282,11 +304,15 @@ export function NewClassDrawer({
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label={isEditing ? "Save Changes" : "Schedule Class"}
+                label={
+                  isEditing
+                    ? t("common.saveChanges")
+                    : t("forms.class.submitNew")
+                }
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

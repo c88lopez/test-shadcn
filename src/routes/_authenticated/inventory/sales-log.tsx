@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import {
   IconChevronDown,
   IconChevronRight,
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/inventory/sales-log")({
 })
 
 function SalesLogPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("inventory:manage")
   const { sales: salesData, stockItems } = Route.useLoaderData()
@@ -65,10 +67,12 @@ function SalesLogPage() {
 
   function handleExport(format: ExportFormat) {
     const records = filtered.map((sale) => ({
-      Date: sale.date,
-      Items: sale.items.map((i) => `${i.quantity}x ${i.item}`).join("; "),
-      "Item count": sale.items.length,
-      Total: saleTotal(sale),
+      [t("fields.date")]: sale.date,
+      [t("forms.sale.items")]: sale.items
+        .map((i) => `${i.quantity}x ${i.item}`)
+        .join("; "),
+      [t("pages.salesLog.itemCount")]: sale.items.length,
+      [t("pages.salesLog.total")]: saleTotal(sale),
     }))
     exportRecords(records, format, "sales-log")
   }
@@ -76,15 +80,15 @@ function SalesLogPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Sales Log</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.salesLog.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Click a row to expand its line items.
+          {t("pages.salesLog.description")}
         </p>
       </div>
 
       <div className="flex items-center justify-between gap-4">
         <Input
-          placeholder="Search sales..."
+          placeholder={t("pages.salesLog.searchPlaceholder")}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="max-w-sm"
@@ -94,15 +98,15 @@ function SalesLogPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <IconDownload className="size-4" />
-                Export
+                {t("common.export")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleExport("csv")}>
-                Export as CSV
+                {t("table.exportCsv")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("json")}>
-                Export as JSON
+                {t("table.exportJson")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -113,7 +117,7 @@ function SalesLogPage() {
               trigger={
                 <Button size="sm">
                   <IconPlus className="size-4" />
-                  New Sale
+                  {t("forms.sale.title")}
                 </Button>
               }
             />
@@ -126,9 +130,11 @@ function SalesLogPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-8" />
-              <TableHead>Date</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead className="text-right">Total</TableHead>
+              <TableHead>{t("fields.date")}</TableHead>
+              <TableHead>{t("forms.sale.items")}</TableHead>
+              <TableHead className="text-right">
+                {t("pages.salesLog.total")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -138,7 +144,7 @@ function SalesLogPage() {
                   colSpan={4}
                   className="py-8 text-center text-muted-foreground"
                 >
-                  No results.
+                  {t("table.noResults")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -160,8 +166,13 @@ function SalesLogPage() {
                       </TableCell>
                       <TableCell>{sale.date}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {sale.items.length}{" "}
-                        {sale.items.length === 1 ? "item" : "items"}
+                        {sale.items.length === 1
+                          ? t("pages.salesLog.itemCountOne", {
+                              count: sale.items.length,
+                            })
+                          : t("pages.salesLog.itemCountOther", {
+                              count: sale.items.length,
+                            })}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(total)}
@@ -174,13 +185,17 @@ function SalesLogPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="pl-8">Product</TableHead>
-                                <TableHead className="w-20">Qty</TableHead>
+                                <TableHead className="pl-8">
+                                  {t("fields.product")}
+                                </TableHead>
+                                <TableHead className="w-20">
+                                  {t("fields.qty")}
+                                </TableHead>
                                 <TableHead className="w-32">
-                                  Unit Price
+                                  {t("pages.salesLog.unitPrice")}
                                 </TableHead>
                                 <TableHead className="w-32 text-right">
-                                  Subtotal
+                                  {t("pages.salesLog.subtotal")}
                                 </TableHead>
                               </TableRow>
                             </TableHeader>

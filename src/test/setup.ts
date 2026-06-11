@@ -1,4 +1,7 @@
 import "@testing-library/jest-dom/vitest"
+// Initialize the i18n singleton (English) so `useTranslation().t` returns real
+// strings in component tests instead of raw keys.
+import "@/lib/i18n"
 import { afterEach } from "vitest"
 import { cleanup } from "@testing-library/react"
 

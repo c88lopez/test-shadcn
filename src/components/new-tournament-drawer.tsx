@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { format } from "date-fns"
@@ -41,21 +43,25 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  date: z.date({ error: "Date is required" }),
-  category: z.string().min(1, "Category is required"),
-  format: z.string().min(1, "Format is required"),
-  maxTeams: z.coerce.number().int().min(2, "At least 2 teams required"),
-})
+function makeSchema(t: TFunction) {
+  return z.object({
+    name: z.string().min(1, t("validation.nameRequired")),
+    date: z.date({ error: t("validation.dateRequired") }),
+    category: z.string().min(1, t("validation.categoryRequired")),
+    format: z.string().min(1, t("validation.formatRequired")),
+    maxTeams: z.coerce.number().int().min(2, t("validation.minTeams")),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
@@ -75,14 +81,16 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
       willFail: JSON.stringify(values).toLowerCase().includes("fail"),
       onSuccess: () => {
         console.log("New tournament:", values)
-        toast.success("Tournament created", {
-          description: `${values.name} has been saved.`,
+        toast.success(t("forms.tournament.created"), {
+          description: t("forms.tournament.savedDescription", {
+            name: values.name,
+          }),
         })
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
-        toast.error("Something went wrong", {
-          description: "The tournament could not be saved. Please try again.",
+        toast.error(t("common.genericError"), {
+          description: t("forms.tournament.errorDescription"),
         })
       },
     })
@@ -93,7 +101,7 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>New Tournament</DrawerTitle>
+          <DrawerTitle>{t("forms.tournament.title")}</DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -105,9 +113,12 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tournament Name</FormLabel>
+                  <FormLabel>{t("forms.tournament.nameLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Summer Open 2026" {...field} />
+                    <Input
+                      placeholder={t("forms.tournament.namePlaceholder")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,7 +130,7 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t("fields.date")}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -133,7 +144,7 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
                           <IconCalendar className="mr-2 size-4" />
                           {field.value
                             ? format(field.value, "PPP")
-                            : "Pick a date"}
+                            : t("common.pickDate")}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -158,11 +169,13 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t("fields.category")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectCategory")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -180,7 +193,7 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
                         "Mixed",
                       ].map((c) => (
                         <SelectItem key={c} value={c}>
-                          {c}
+                          {c === "Mixed" ? t("options.mixed") : c}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -195,20 +208,24 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               name="format"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Format</FormLabel>
+                  <FormLabel>{t("forms.tournament.formatLabel")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select format" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectFormat")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="round_robin">Round Robin</SelectItem>
+                      <SelectItem value="round_robin">
+                        {t("options.roundRobin")}
+                      </SelectItem>
                       <SelectItem value="elimination">
-                        Single Elimination
+                        {t("options.singleElimination")}
                       </SelectItem>
                       <SelectItem value="double_elimination">
-                        Double Elimination
+                        {t("options.doubleElimination")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -222,7 +239,7 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               name="maxTeams"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Max Teams</FormLabel>
+                  <FormLabel>{t("forms.tournament.maxTeamsLabel")}</FormLabel>
                   <FormControl>
                     <Input type="number" min="2" placeholder="8" {...field} />
                   </FormControl>
@@ -235,11 +252,11 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label="Create Tournament"
+                label={t("forms.tournament.submit")}
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

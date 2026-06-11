@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -36,16 +38,20 @@ import {
 const maleCategories = ["C8", "C7", "C6", "C5", "C4"] as const
 const femaleCategories = ["D8", "D7", "D6", "D5", "D4"] as const
 
-const schema = z.object({
-  fullName: z.string().min(1, "Full name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone is required"),
-  age: z.coerce.number().int().min(5).max(99),
-  gender: z.enum(["Male", "Female"], { error: "Gender is required" }),
-  category: z.string().min(1, "Category is required"),
-})
+function makeSchema(t: TFunction) {
+  return z.object({
+    fullName: z.string().min(1, t("validation.fullNameRequired")),
+    email: z.string().email(t("validation.emailInvalid")),
+    phone: z.string().min(1, t("validation.phoneRequired")),
+    age: z.coerce.number().int().min(5).max(99),
+    gender: z.enum(["Male", "Female"], {
+      error: t("validation.genderRequired"),
+    }),
+    category: z.string().min(1, t("validation.categoryRequired")),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 type FormInput = Omit<FormValues, "age" | "gender"> & {
   age?: number
   gender?: "Male" | "Female"
@@ -75,12 +81,14 @@ export function NewPlayerDrawer({
   onOpenChange: controlledOnOpenChange,
   onSaved,
 }: Props) {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!player
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
+  const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
@@ -128,15 +136,18 @@ export function NewPlayerDrawer({
           ? updatePlayer({ data: { id: player.id, ...payload } })
           : createPlayer({ data: payload }),
       onSuccess: () => {
-        toast.success(isEditing ? "Player updated" : "Player created", {
-          description: `${values.fullName} has been saved successfully.`,
-        })
+        toast.success(
+          isEditing ? t("forms.player.updated") : t("forms.player.created"),
+          {
+            description: t("common.savedSuccess", { name: values.fullName }),
+          }
+        )
         onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
-        toast.error("Something went wrong", {
-          description: "The player could not be saved. Please try again.",
+        toast.error(t("common.genericError"), {
+          description: t("forms.player.errorDescription"),
         })
       },
     })
@@ -147,7 +158,11 @@ export function NewPlayerDrawer({
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{isEditing ? "Edit Player" : "New Player"}</DrawerTitle>
+          <DrawerTitle>
+            {isEditing
+              ? t("forms.player.titleEdit")
+              : t("forms.player.titleNew")}
+          </DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -159,9 +174,12 @@ export function NewPlayerDrawer({
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{t("fields.fullName")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Full name" {...field} />
+                    <Input
+                      placeholder={t("placeholders.fullName")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,11 +191,11 @@ export function NewPlayerDrawer({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("fields.email")}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="player@email.com"
+                      placeholder={t("forms.player.emailPlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -191,11 +209,11 @@ export function NewPlayerDrawer({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>{t("fields.phone")}</FormLabel>
                   <FormControl>
                     <Input
                       type="tel"
-                      placeholder="+34 600 000 000"
+                      placeholder={t("forms.player.phonePlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -209,13 +227,13 @@ export function NewPlayerDrawer({
               name="age"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Age</FormLabel>
+                  <FormLabel>{t("fields.age")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="5"
                       max="99"
-                      placeholder="25"
+                      placeholder={t("forms.player.agePlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -229,7 +247,7 @@ export function NewPlayerDrawer({
               name="gender"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Gender</FormLabel>
+                  <FormLabel>{t("fields.gender")}</FormLabel>
                   <Select
                     onValueChange={(val) => {
                       field.onChange(val)
@@ -239,12 +257,16 @@ export function NewPlayerDrawer({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
+                        <SelectValue
+                          placeholder={t("placeholders.selectGender")}
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Male">{t("options.male")}</SelectItem>
+                      <SelectItem value="Female">
+                        {t("options.female")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -257,7 +279,7 @@ export function NewPlayerDrawer({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{t("fields.category")}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
@@ -267,7 +289,9 @@ export function NewPlayerDrawer({
                       <SelectTrigger>
                         <SelectValue
                           placeholder={
-                            gender ? "Select category" : "Select gender first"
+                            gender
+                              ? t("placeholders.selectCategory")
+                              : t("placeholders.selectGenderFirst")
                           }
                         />
                       </SelectTrigger>
@@ -289,11 +313,15 @@ export function NewPlayerDrawer({
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label={isEditing ? "Save Changes" : "Add Player"}
+                label={
+                  isEditing
+                    ? t("common.saveChanges")
+                    : t("forms.player.submitNew")
+                }
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DrawerClose>
             </DrawerFooter>

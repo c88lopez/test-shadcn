@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { IconLoader2 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import type { SubmitStatus } from "@/hooks/use-submit-lifecycle"
@@ -14,9 +15,10 @@ export function DrawerSubmitButton({
   status,
   progress,
   label,
-  savingLabel = "Saving…",
-  successLabel = "Saved",
+  savingLabel,
+  successLabel,
 }: DrawerSubmitButtonProps) {
+  const { t } = useTranslation()
   const busy = status === "submitting" || status === "success"
   return (
     <Button type="submit" disabled={busy} className="relative overflow-hidden">
@@ -32,9 +34,9 @@ export function DrawerSubmitButton({
           <IconLoader2 className="size-4 animate-spin" />
         )}
         {status === "submitting"
-          ? savingLabel
+          ? (savingLabel ?? t("common.saving"))
           : status === "success"
-            ? successLabel
+            ? (successLabel ?? t("common.saved"))
             : label}
       </span>
     </Button>

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   flexRender,
   getCoreRowModel,
@@ -57,7 +58,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  searchPlaceholder = "Search...",
+  searchPlaceholder,
   pageSize = 10,
   action,
   onRowHover,
@@ -65,6 +66,7 @@ export function DataTable<TData, TValue>({
   enableExport = true,
   exportFileName = "export",
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState("")
 
@@ -105,7 +107,7 @@ export function DataTable<TData, TValue>({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
         <Input
-          placeholder={searchPlaceholder}
+          placeholder={searchPlaceholder ?? t("table.searchPlaceholder")}
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
@@ -116,15 +118,15 @@ export function DataTable<TData, TValue>({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <IconDownload className="size-4" />
-                  Export
+                  {t("table.export")}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleExport("csv")}>
-                  Export as CSV
+                  {t("table.exportCsv")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExport("json")}>
-                  Export as JSON
+                  {t("table.exportJson")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -219,7 +221,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="py-8 text-center text-muted-foreground"
                 >
-                  No results.
+                  {t("table.noResults")}
                 </TableCell>
               </TableRow>
             )}
@@ -229,8 +231,10 @@ export function DataTable<TData, TValue>({
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {Math.max(table.getPageCount(), 1)}
+          {t("table.pageOf", {
+            current: table.getState().pagination.pageIndex + 1,
+            total: Math.max(table.getPageCount(), 1),
+          })}
         </p>
         <div className="flex gap-2">
           <Button
@@ -239,7 +243,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {t("table.previous")}
           </Button>
           <Button
             variant="outline"
@@ -247,7 +251,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {t("table.next")}
           </Button>
         </div>
       </div>

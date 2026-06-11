@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconMinus, IconPlus, IconZoomIn } from "@tabler/icons-react"
 import { format, parseISO } from "date-fns"
@@ -15,6 +17,7 @@ import {
   listReservations,
 } from "@/lib/reservations.functions"
 import type { Reservation as DbReservation } from "@/db/schema"
+import type { TranslationKey } from "@/lib/i18n"
 import { useCan } from "@/hooks/use-permissions"
 import {
   formatHour,
@@ -57,7 +60,7 @@ function buildRange(r: DbReservation): string {
 const ZOOM_STEPS = [52, 80, 120, 160, 200, 260]
 const DEFAULT_ZOOM = 3 // index 3 → 160 px/h → ~5 h visible
 const SIDE_PAD = 24 // px of breathing room before open and after close
-const LABEL_COL = 96 // w-24 in px
+const LABEL_COL = 64 // w-16 in px — sized to fit the "Court" header / "# N" rows
 const BLOCK_GAP = 5 // px horizontal gap between adjacent reservation blocks
 
 function parseTimeRange(time: string): { startMin: number; endMin: number } {
@@ -81,6 +84,7 @@ function CourtTimeline({
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
+  const { t, i18n } = useTranslation()
   const { reservations: reservationSettings, general } = useAppSettings()
   const dayHours = todayHours(reservationSettings)
   const fallback = dayHours.closed
@@ -138,19 +142,24 @@ function CourtTimeline({
     })
   }, [pxPerHour, startHour, endHour])
 
-  const todayLabel = now.toLocaleDateString("en-GB", {
+  const dateLocale = i18n.language === "es" ? "es-ES" : "en-GB"
+  const rawTodayLabel = now.toLocaleDateString(dateLocale, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   })
+  // Spanish locale lowercases the weekday/month; capitalize the first letter
+  // so the subtitle reads e.g. "Jueves 11 de junio de 2026".
+  const todayLabel =
+    rawTodayLabel.charAt(0).toUpperCase() + rawTodayLabel.slice(1)
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {todayLabel}
-          {fallback && " · Closed today"}
+          {fallback && ` · ${t("pages.reservations.closedToday")}`}
         </p>
         <div className="flex items-center gap-1">
           <Button
@@ -180,8 +189,8 @@ function CourtTimeline({
         <div style={{ width: innerWidth }}>
           {/* Hour header */}
           <div className="flex border-b">
-            <div className="sticky left-0 z-30 flex w-24 shrink-0 items-center border-r bg-background px-3 text-xs font-bold">
-              Court
+            <div className="sticky left-0 z-30 flex w-16 shrink-0 items-center border-r bg-background px-3 text-xs font-bold">
+              {t("fields.court")}
             </div>
             <div className="relative h-8 flex-1 overflow-visible">
               {hours.map((h) => (
@@ -210,8 +219,8 @@ function CourtTimeline({
                 )}
               >
                 {/* Label */}
-                <div className="sticky left-0 z-30 flex w-24 shrink-0 items-center border-r bg-background px-3 text-xs font-bold text-muted-foreground">
-                  {court.name}
+                <div className="sticky left-0 z-30 flex w-16 shrink-0 items-center border-r bg-background px-3 text-xs font-bold text-muted-foreground">
+                  {court.name.replace(/^Court\s+/i, "# ")}
                 </div>
 
                 {/* Track */}
@@ -240,7 +249,7 @@ function CourtTimeline({
                     return (
                       <div
                         key={r.id}
-                        title={`${r.reservedTo} · ${formatTimeRange(r.time, general.timeFormat)}${r.paid ? "" : " · Unpaid"}`}
+                        title={`${r.reservedTo} · ${formatTimeRange(r.time, general.timeFormat)}${r.paid ? "" : ` · ${t("options.unpaid")}`}`}
                         onMouseEnter={() => onHover(r.id)}
                         onMouseLeave={() => onHover(null)}
                         className={cn(
@@ -291,6 +300,7 @@ function toReservationData(r: ReservationRow) {
 }
 
 function ReservationActions({ reservation }: { reservation: ReservationRow }) {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("reservations:manage")
   const [editOpen, setEditOpen] = useState(false)
@@ -298,13 +308,13 @@ function ReservationActions({ reservation }: { reservation: ReservationRow }) {
   async function handleDelete() {
     try {
       await deleteReservation({ data: { id: reservation.id } })
-      toast.success("Reservation deleted", {
+      toast.success(t("pages.reservations.deleted"), {
         description: `${reservation.player} · ${reservation.timeRange}`,
       })
       router.invalidate()
     } catch {
-      toast.error("Could not delete reservation", {
-        description: "Please try again.",
+      toast.error(t("pages.reservations.deleteError"), {
+        description: t("common.tryAgain"),
       })
     }
   }
@@ -326,61 +336,68 @@ function ReservationActions({ reservation }: { reservation: ReservationRow }) {
 
 const PAYMENT_BADGE: Record<
   string,
-  { label: string; variant: "default" | "secondary" | "outline" }
+  { labelKey: TranslationKey; variant: "default" | "secondary" | "outline" }
 > = {
-  paid: { label: "Paid", variant: "default" },
-  partial: { label: "Partial", variant: "secondary" },
-  unpaid: { label: "Unpaid", variant: "outline" },
+  paid: { labelKey: "options.paid", variant: "default" },
+  partial: {
+    labelKey: "pages.reservations.statusPartial",
+    variant: "secondary",
+  },
+  unpaid: { labelKey: "options.unpaid", variant: "outline" },
 }
 
-const columns: ColumnDef<ReservationRow>[] = [
-  {
-    accessorKey: "court",
-    header: "Court",
-    cell: ({ row }) => `Court ${row.getValue("court")}`,
-  },
-  {
-    accessorKey: "player",
-    header: "Reserved To",
-  },
-  {
-    accessorKey: "bookedBy",
-    header: "Reserved By",
-  },
-  {
-    accessorKey: "timeRange",
-    header: "Time",
-    cell: ({ row }) => <TimeCell time={row.getValue<string>("timeRange")} />,
-  },
-  {
-    accessorKey: "paymentStatus",
-    header: "Status",
-    meta: { className: "w-[384px] text-center" },
-    cell: ({ row }) => {
-      const badge =
-        PAYMENT_BADGE[row.getValue<string>("paymentStatus")] ??
-        PAYMENT_BADGE.unpaid
-      return (
-        <div className="flex justify-center">
-          <Badge variant={badge.variant}>{badge.label}</Badge>
-        </div>
-      )
+function buildColumns(t: TFunction): ColumnDef<ReservationRow>[] {
+  return [
+    {
+      accessorKey: "court",
+      header: t("fields.court"),
+      cell: ({ row }) => `# ${row.getValue<string>("court")}`,
     },
-  },
-  {
-    id: "actions",
-    enableSorting: false,
-    meta: { className: "text-right" },
-    cell: ({ row }) => <ReservationActions reservation={row.original} />,
-  },
-]
+    {
+      accessorKey: "player",
+      header: t("pages.reservations.reservedTo"),
+    },
+    {
+      accessorKey: "bookedBy",
+      header: t("pages.reservations.reservedBy"),
+    },
+    {
+      accessorKey: "timeRange",
+      header: t("pages.reservations.time"),
+      cell: ({ row }) => <TimeCell time={row.getValue<string>("timeRange")} />,
+    },
+    {
+      accessorKey: "paymentStatus",
+      header: t("common.status"),
+      meta: { className: "w-[384px] text-center" },
+      cell: ({ row }) => {
+        const badge =
+          PAYMENT_BADGE[row.getValue<string>("paymentStatus")] ??
+          PAYMENT_BADGE.unpaid
+        return (
+          <div className="flex justify-center">
+            <Badge variant={badge.variant}>{t(badge.labelKey)}</Badge>
+          </div>
+        )
+      },
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      meta: { className: "text-right" },
+      cell: ({ row }) => <ReservationActions reservation={row.original} />,
+    },
+  ]
+}
 
 // --- Page ---
 
 function ReservationsPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("reservations:manage")
   const { reservations } = Route.useLoaderData()
+  const columns = useMemo(() => buildColumns(t), [t])
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const rows: ReservationRow[] = reservations.map((r) => ({
@@ -403,9 +420,11 @@ function ReservationsPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Reservations</h1>
+          <h1 className="text-2xl font-semibold">
+            {t("pages.reservations.title")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage court reservations.
+            {t("pages.reservations.description")}
           </p>
         </div>
         {canManage && (
@@ -414,7 +433,7 @@ function ReservationsPage() {
             trigger={
               <Button size="sm">
                 <IconPlus className="size-4" />
-                New Reservation
+                {t("pages.reservations.newButton")}
               </Button>
             }
           />
@@ -422,7 +441,9 @@ function ReservationsPage() {
       </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">Today's Timeline</h2>
+        <h2 className="text-lg font-medium">
+          {t("pages.reservations.todaysTimeline")}
+        </h2>
         <CourtTimeline
           reservations={todayReservations}
           hoveredId={hoveredId}
@@ -431,11 +452,13 @@ function ReservationsPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">All Reservations</h2>
+        <h2 className="text-lg font-medium">
+          {t("pages.reservations.allReservations")}
+        </h2>
         <DataTable
           columns={columns}
           data={rows}
-          searchPlaceholder="Search reservations..."
+          searchPlaceholder={t("pages.reservations.searchPlaceholder")}
           onRowHover={(r) => setHoveredId(r ? r.id : null)}
           isRowHighlighted={(r) => r.id === hoveredId}
         />

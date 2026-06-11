@@ -1,5 +1,8 @@
+import { useMemo } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { IconPlus, IconTrash } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
+import type { TFunction } from "i18next"
 import { ensurePermission } from "@/lib/route-guards"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -42,9 +45,18 @@ export const Route = createFileRoute("/_authenticated/settings/reservations")({
   component: ReservationSettingsPage,
 })
 
+function buildWeekdays(t: TFunction): { key: Weekday; label: string }[] {
+  return WEEKDAYS.map((d) => ({
+    key: d.key,
+    label: t(`settings.reservations.weekdays.${d.key}`),
+  }))
+}
+
 function ReservationSettingsPage() {
+  const { t } = useTranslation()
   const settings = useAppSettings()
   const { reservations } = settings
+  const weekdays = useMemo(() => buildWeekdays(t), [t])
 
   function update(partial: Partial<ReservationSettings>) {
     setAppSettings({
@@ -89,32 +101,36 @@ function ReservationSettingsPage() {
       ...settings,
       reservations: DEFAULT_APP_SETTINGS.reservations,
     })
-    toast.success("Reservation settings reset to defaults")
+    toast.success(t("settings.reservations.resetToast"))
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium">Reservations &amp; Courts</h2>
+          <h2 className="text-lg font-medium">
+            {t("settings.reservations.title")}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Operating hours, courts and booking rules.
+            {t("settings.reservations.description")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={reset}>
-          Reset to defaults
+          {t("common.resetToDefaults")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Operating hours</CardTitle>
+          <CardTitle>
+            {t("settings.reservations.operatingHours.title")}
+          </CardTitle>
           <CardDescription>
-            Sets the visible range of the reservations timeline for each day.
+            {t("settings.reservations.operatingHours.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {WEEKDAYS.map((day) => {
+          {weekdays.map((day) => {
             const value = reservations.hours[day.key]
             const invalid = !value.closed && value.open >= value.close
             return (
@@ -132,7 +148,9 @@ function ReservationSettingsPage() {
                       }
                     />
                     <span className="w-12 text-xs text-muted-foreground">
-                      {value.closed ? "Closed" : "Open"}
+                      {value.closed
+                        ? t("settings.reservations.closed")
+                        : t("settings.reservations.open")}
                     </span>
                   </div>
                   <Input
@@ -159,7 +177,7 @@ function ReservationSettingsPage() {
                 </div>
                 {invalid && (
                   <p className="pl-24 text-xs text-destructive">
-                    Closing time must be after opening time.
+                    {t("settings.reservations.invalidHours")}
                   </p>
                 )}
               </div>
@@ -170,9 +188,9 @@ function ReservationSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Courts</CardTitle>
+          <CardTitle>{t("settings.reservations.courts.title")}</CardTitle>
           <CardDescription>
-            Manage the courts shown in the reservations timeline.
+            {t("settings.reservations.courts.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
@@ -198,8 +216,12 @@ function ReservationSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="indoor">Indoor</SelectItem>
-                  <SelectItem value="outdoor">Outdoor</SelectItem>
+                  <SelectItem value="indoor">
+                    {t("settings.reservations.courtTypeIndoor")}
+                  </SelectItem>
+                  <SelectItem value="outdoor">
+                    {t("settings.reservations.courtTypeOutdoor")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-center gap-2">
@@ -210,7 +232,7 @@ function ReservationSettingsPage() {
                   }
                 />
                 <span className="w-14 text-xs text-muted-foreground">
-                  {court.active ? "Active" : "Inactive"}
+                  {court.active ? t("common.active") : t("common.inactive")}
                 </span>
               </div>
               <Button
@@ -218,7 +240,9 @@ function ReservationSettingsPage() {
                 size="icon"
                 className="ml-auto size-8 text-muted-foreground hover:text-destructive"
                 onClick={() => removeCourt(court.id)}
-                aria-label={`Remove ${court.name}`}
+                aria-label={t("settings.reservations.removeCourt", {
+                  name: court.name,
+                })}
               >
                 <IconTrash className="size-4" />
               </Button>
@@ -231,21 +255,21 @@ function ReservationSettingsPage() {
             onClick={addCourt}
           >
             <IconPlus className="size-4" />
-            Add court
+            {t("settings.reservations.addCourt")}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Slots</CardTitle>
+          <CardTitle>{t("settings.reservations.slots.title")}</CardTitle>
           <CardDescription>
-            Default granularity and length for new bookings.
+            {t("settings.reservations.slots.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <Label>Slot duration</Label>
+            <Label>{t("settings.reservations.slotDuration")}</Label>
             <Select
               value={String(reservations.slotDuration)}
               onValueChange={(v) => update({ slotDuration: Number(v) })}
@@ -256,7 +280,7 @@ function ReservationSettingsPage() {
               <SelectContent>
                 {SLOT_DURATIONS.map((m) => (
                   <SelectItem key={m} value={String(m)}>
-                    {m} minutes
+                    {t("settings.reservations.slotMinutes", { minutes: m })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -264,7 +288,7 @@ function ReservationSettingsPage() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="defaultBookingLength">
-              Default booking length (min)
+              {t("settings.reservations.defaultBookingLength")}
             </Label>
             <Input
               id="defaultBookingLength"
@@ -284,14 +308,16 @@ function ReservationSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Booking rules</CardTitle>
+          <CardTitle>{t("settings.reservations.bookingRules.title")}</CardTitle>
           <CardDescription>
-            Constraints applied when players book or cancel.
+            {t("settings.reservations.bookingRules.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="minAdvanceHours">Min advance (hours)</Label>
+            <Label htmlFor="minAdvanceHours">
+              {t("settings.reservations.minAdvance")}
+            </Label>
             <Input
               id="minAdvanceHours"
               type="number"
@@ -303,7 +329,9 @@ function ReservationSettingsPage() {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="maxAdvanceDays">Max advance (days)</Label>
+            <Label htmlFor="maxAdvanceDays">
+              {t("settings.reservations.maxAdvance")}
+            </Label>
             <Input
               id="maxAdvanceDays"
               type="number"
@@ -316,7 +344,7 @@ function ReservationSettingsPage() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="cancellationCutoffHours">
-              Cancellation cutoff (hours)
+              {t("settings.reservations.cancellationCutoff")}
             </Label>
             <Input
               id="cancellationCutoffHours"
@@ -332,7 +360,7 @@ function ReservationSettingsPage() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="maxConcurrentPerPlayer">
-              Max active bookings per player
+              {t("settings.reservations.maxConcurrent")}
             </Label>
             <Input
               id="maxConcurrentPerPlayer"
