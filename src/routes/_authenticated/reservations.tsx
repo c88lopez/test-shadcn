@@ -220,7 +220,7 @@ function CourtTimeline({
               >
                 {/* Label */}
                 <div className="sticky left-0 z-30 flex w-24 shrink-0 items-center border-r bg-background px-3 text-xs font-bold text-muted-foreground">
-                  {court.name}
+                  {court.name.replace(/^Court\s+/i, "# ")}
                 </div>
 
                 {/* Track */}
@@ -351,8 +351,7 @@ function buildColumns(t: TFunction): ColumnDef<ReservationRow>[] {
     {
       accessorKey: "court",
       header: t("fields.court"),
-      cell: ({ row }) =>
-        t("stats.court", { court: row.getValue<string>("court") }),
+      cell: ({ row }) => `# ${row.getValue<string>("court")}`,
     },
     {
       accessorKey: "player",
