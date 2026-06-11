@@ -60,7 +60,7 @@ function buildRange(r: DbReservation): string {
 const ZOOM_STEPS = [52, 80, 120, 160, 200, 260]
 const DEFAULT_ZOOM = 3 // index 3 → 160 px/h → ~5 h visible
 const SIDE_PAD = 24 // px of breathing room before open and after close
-const LABEL_COL = 96 // w-24 in px
+const LABEL_COL = 64 // w-16 in px — sized to fit the "Court" header / "# N" rows
 const BLOCK_GAP = 5 // px horizontal gap between adjacent reservation blocks
 
 function parseTimeRange(time: string): { startMin: number; endMin: number } {
@@ -189,7 +189,7 @@ function CourtTimeline({
         <div style={{ width: innerWidth }}>
           {/* Hour header */}
           <div className="flex border-b">
-            <div className="sticky left-0 z-30 flex w-24 shrink-0 items-center border-r bg-background px-3 text-xs font-bold">
+            <div className="sticky left-0 z-30 flex w-16 shrink-0 items-center border-r bg-background px-3 text-xs font-bold">
               {t("fields.court")}
             </div>
             <div className="relative h-8 flex-1 overflow-visible">
@@ -219,7 +219,7 @@ function CourtTimeline({
                 )}
               >
                 {/* Label */}
-                <div className="sticky left-0 z-30 flex w-24 shrink-0 items-center border-r bg-background px-3 text-xs font-bold text-muted-foreground">
+                <div className="sticky left-0 z-30 flex w-16 shrink-0 items-center border-r bg-background px-3 text-xs font-bold text-muted-foreground">
                   {court.name.replace(/^Court\s+/i, "# ")}
                 </div>
 
