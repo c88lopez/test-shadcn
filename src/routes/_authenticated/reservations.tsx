@@ -84,7 +84,7 @@ function CourtTimeline({
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { reservations: reservationSettings, general } = useAppSettings()
   const dayHours = todayHours(reservationSettings)
   const fallback = dayHours.closed
@@ -142,12 +142,17 @@ function CourtTimeline({
     })
   }, [pxPerHour, startHour, endHour])
 
-  const todayLabel = now.toLocaleDateString("en-GB", {
+  const dateLocale = i18n.language === "es" ? "es-ES" : "en-GB"
+  const rawTodayLabel = now.toLocaleDateString(dateLocale, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   })
+  // Spanish locale lowercases the weekday/month; capitalize the first letter
+  // so the subtitle reads e.g. "Jueves 11 de junio de 2026".
+  const todayLabel =
+    rawTodayLabel.charAt(0).toUpperCase() + rawTodayLabel.slice(1)
 
   return (
     <div className="flex flex-col gap-2">
