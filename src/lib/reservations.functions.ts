@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start"
-import { and, asc, eq } from "drizzle-orm"
+import { and, asc, count, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import { reservation } from "@/db/schema"
@@ -72,6 +72,23 @@ export const listReservations = createServerFn({ method: "GET" }).handler(
       )
   }
 )
+
+// How many reservations reference a given court number in the active club.
+// Used to block deleting a court that still has reservations.
+export const countReservationsForCourt = createServerFn({ method: "GET" })
+  .inputValidator((data: unknown) =>
+    z.object({ court: z.coerce.number().int().positive() }).parse(data)
+  )
+  .handler(async ({ data }) => {
+    const clubId = await currentClubId()
+    const [row] = await db
+      .select({ value: count() })
+      .from(reservation)
+      .where(
+        and(eq(reservation.clubId, clubId), eq(reservation.court, data.court))
+      )
+    return { count: row.value }
+  })
 
 export const createReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => reservationInput.parse(data))

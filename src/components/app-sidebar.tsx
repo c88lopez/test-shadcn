@@ -16,17 +16,18 @@ import {
 } from "@tabler/icons-react"
 import { useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { authClient, useSession } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth-client"
 import { useAppSettings } from "@/lib/app-settings"
+import { setActiveClub } from "@/lib/clubs.functions"
+import type { ClubContext } from "@/lib/clubs.functions"
 import type { TranslationKey } from "@/lib/i18n"
 
 import {
@@ -122,65 +123,126 @@ function initialsFromName(name: string | undefined | null) {
     .toUpperCase()
 }
 
-export function AppSidebar() {
+function ClubBrand({ initials, name }: { initials: string; name: string }) {
+  return (
+    <>
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+        {initials}
+      </div>
+      <span className="truncate font-semibold">{name}</span>
+    </>
+  )
+}
+
+function ClubSwitcher({
+  context,
+  activeName,
+  activeInitials,
+}: {
+  context: ClubContext
+  activeName: string
+  activeInitials: string
+}) {
+  const router = useRouter()
+  const { t } = useTranslation()
+  const [pending, setPending] = useState(false)
+
+  async function switchClub(clubId: string) {
+    if (clubId === context.activeClubId) return
+    setPending(true)
+    try {
+      await setActiveClub({ data: { clubId } })
+      await router.invalidate()
+    } catch (error) {
+      toast.error(t("clubSwitcher.switchError"), {
+        description:
+          error instanceof Error ? error.message : t("clubSwitcher.tryAgain"),
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+
+  // With only one accessible club there's nothing to switch to — show the club
+  // as static branding (visually enabled, no greyed-out look).
+  if (context.clubs.length <= 1) {
+    return (
+      <div className="flex h-11 items-center gap-2 rounded-md px-2 text-sm">
+        <ClubBrand initials={activeInitials} name={activeName} />
+      </div>
+    )
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton
+          className="h-11 data-[state=open]:bg-sidebar-accent"
+          disabled={pending}
+        >
+          <ClubBrand initials={activeInitials} name={activeName} />
+          <IconSelector className="ml-auto size-4 shrink-0 opacity-50" />
+        </SidebarMenuButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="bottom" align="start" className="w-60">
+        {context.clubs.map((club) => (
+          <DropdownMenuItem
+            key={club.id}
+            onSelect={() => void switchClub(club.id)}
+            className="gap-2"
+          >
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground">
+              {initialsFromName(club.name)}
+            </div>
+            <span className="truncate">{club.name}</span>
+            {context.activeClubId === club.id && (
+              <IconCheck className="ml-auto size-4 shrink-0" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export type SidebarUser = {
+  name?: string | null
+  email?: string | null
+  image?: string | null
+}
+
+export function AppSidebar({
+  clubContext,
+  user,
+}: {
+  clubContext: ClubContext
+  user: SidebarUser
+}) {
   const router = useRouter()
   const { t } = useTranslation()
   const { general } = useAppSettings()
-  const { data: sessionData } = useSession()
-  const sessionUser = sessionData?.user
-
-  // The primary club reflects the configured club profile (Settings → General).
-  const clubs = [
-    { id: 1, name: general.clubName, initials: general.clubInitials },
-    { id: 2, name: "Chance", initials: "CH" },
-  ]
-  const [activeClubId, setActiveClubId] = useState(1)
-  const activeClub = clubs.find((c) => c.id === activeClubId) ?? clubs[0]
 
   async function handleSignOut() {
     await authClient.signOut()
     router.navigate({ to: "/login" })
   }
 
+  // Fall back to the configured club profile when context has no club yet.
+  const activeName = clubContext.activeClubName ?? general.clubName
+  const activeInitials = clubContext.activeClubName
+    ? initialsFromName(clubContext.activeClubName)
+    : general.clubInitials
+
   return (
     <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="h-11 data-[state=open]:bg-sidebar-accent">
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-                    {activeClub.initials}
-                  </div>
-                  <span className="truncate font-semibold">
-                    {activeClub.name}
-                  </span>
-                  <IconSelector className="ml-auto size-4 shrink-0 opacity-50" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="bottom" align="start" className="w-60">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  {t("nav.account.yourClubs")}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {clubs.map((club) => (
-                  <DropdownMenuItem
-                    key={club.id}
-                    onSelect={() => setActiveClubId(club.id)}
-                    className="gap-2"
-                  >
-                    <div className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground">
-                      {club.initials}
-                    </div>
-                    <span className="truncate">{club.name}</span>
-                    {activeClub.id === club.id && (
-                      <IconCheck className="ml-auto size-4 shrink-0" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ClubSwitcher
+              context={clubContext}
+              activeName={activeName}
+              activeInitials={activeInitials}
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -217,20 +279,17 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="h-12 data-[state=open]:bg-sidebar-accent">
                   <Avatar className="size-7 rounded-md">
-                    <AvatarImage
-                      src={sessionUser?.image ?? ""}
-                      alt={sessionUser?.name ?? ""}
-                    />
+                    <AvatarImage src={user.image ?? ""} alt={user.name ?? ""} />
                     <AvatarFallback className="rounded-md text-xs">
-                      {initialsFromName(sessionUser?.name)}
+                      {initialsFromName(user.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col text-left leading-tight">
                     <span className="truncate text-sm font-medium">
-                      {sessionUser?.name ?? t("nav.account.account")}
+                      {user.name ?? t("nav.account.account")}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
-                      {sessionUser?.email ?? ""}
+                      {user.email ?? ""}
                     </span>
                   </div>
                   <IconDotsVertical className="ml-auto size-4 shrink-0" />

@@ -152,6 +152,7 @@ export const es: DeepString<typeof en> = {
     payment: "Pago",
     role: "Rol",
     club: "Club",
+    clubs: "Clubes",
     price: "Precio",
     stock: "Stock",
     productName: "Nombre del producto",
@@ -260,6 +261,8 @@ export const es: DeepString<typeof en> = {
       errorDescription: "No se pudo guardar el usuario. Inténtalo de nuevo.",
       superAdminDescription:
         "Acceso a toda la plataforma y todos los clubes. No está ligado a un solo club.",
+      clubsHelp:
+        "Seleccioná todos los clubes a los que este usuario puede acceder y cambiar.",
     },
     club: {
       titleNew: "Nuevo club",
@@ -452,6 +455,15 @@ export const es: DeepString<typeof en> = {
       courtTypeOutdoor: "Descubierta",
       addCourt: "Agregar pista",
       removeCourt: "Eliminar {{name}}",
+      deleteCourtTitle: "¿Eliminar {{name}}?",
+      deleteCourtConfirm:
+        "Esto quita la pista de tu configuración. No se puede deshacer.",
+      deleteCourtBlockedTitle: "No se puede eliminar esta pista",
+      deleteCourtBlockedOne:
+        "{{name}} todavía tiene {{count}} reserva. Elimínala o reasígnala antes de quitar la pista.",
+      deleteCourtBlockedOther:
+        "{{name}} todavía tiene {{count}} reservas. Elimínalas o reasígnalas antes de quitar la pista.",
+      courtRemoved: "{{name}} eliminada",
       slots: {
         title: "Franjas",
         description:
@@ -723,6 +735,7 @@ export const es: DeepString<typeof en> = {
     tournaments: {
       title: "Torneos",
       description: "Administra los torneos del club.",
+      comingSoon: "La gestión de torneos llegará pronto.",
     },
   },
 }

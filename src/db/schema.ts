@@ -1,5 +1,6 @@
 import {
   pgTable,
+  primaryKey,
   text,
   timestamp,
   boolean,
@@ -52,6 +53,28 @@ export const user = pgTable("user", {
 })
 
 export type User = typeof user.$inferSelect
+
+// Clubs a user may act within. `user.club_id` remains the user's primary/home
+// club (default scope); this join table grants access to additional clubs so an
+// Owner can switch between several. Platform super-admins ignore this table —
+// they operate across all clubs via a null club_id.
+export const clubMember = pgTable(
+  "club_member",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    clubId: text("club_id")
+      .notNull()
+      .references(() => club.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.clubId] })]
+)
+
+export type ClubMember = typeof clubMember.$inferSelect
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),

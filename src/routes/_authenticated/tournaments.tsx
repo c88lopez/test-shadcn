@@ -25,14 +25,14 @@ function TournamentsPage() {
           trigger={
             <Button size="sm">
               <IconPlus className="size-4" />
-              New Tournament
+              {t("forms.tournament.title")}
             </Button>
           }
         />
       </div>
       <div className="flex flex-col items-center gap-3 py-24 text-muted-foreground">
         <IconTrophy className="size-12 opacity-30" />
-        <p className="text-sm">Tournament management coming soon.</p>
+        <p className="text-sm">{t("pages.tournaments.comingSoon")}</p>
       </div>
     </div>
   )

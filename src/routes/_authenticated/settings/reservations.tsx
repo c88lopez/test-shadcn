@@ -1,11 +1,22 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
-import { IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import { ensurePermission } from "@/lib/route-guards"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { countReservationsForCourt } from "@/lib/reservations.functions"
 import {
   Card,
   CardContent,
@@ -52,11 +63,20 @@ function buildWeekdays(t: TFunction): { key: Weekday; label: string }[] {
   }))
 }
 
+// Default court names are stored as "Court N". For read-only display, localize
+// the "Court" word (e.g. "Pista N" in Spanish). Custom names are left as-is.
+function localizeCourtName(name: string, t: TFunction): string {
+  const match = /^Court\s+(.+)$/i.exec(name)
+  return match ? t("stats.court", { court: match[1] }) : name
+}
+
 function ReservationSettingsPage() {
   const { t } = useTranslation()
   const settings = useAppSettings()
   const { reservations } = settings
   const weekdays = useMemo(() => buildWeekdays(t), [t])
+  const [courtToDelete, setCourtToDelete] = useState<Court | null>(null)
+  const [checkingCourt, setCheckingCourt] = useState(false)
 
   function update(partial: Partial<ReservationSettings>) {
     setAppSettings({
@@ -92,8 +112,40 @@ function ReservationSettingsPage() {
     })
   }
 
-  function removeCourt(id: number) {
-    update({ courts: reservations.courts.filter((c) => c.id !== id) })
+  // Confirm in a modal, then block deletion if the court still has
+  // reservations; otherwise remove it from settings.
+  async function confirmRemoveCourt() {
+    if (!courtToDelete) return
+    const court = courtToDelete
+    const courtLabel = localizeCourtName(court.name, t)
+    setCheckingCourt(true)
+    try {
+      const { count } = await countReservationsForCourt({
+        data: { court: court.id },
+      })
+      if (count > 0) {
+        toast.error(t("settings.reservations.deleteCourtBlockedTitle"), {
+          description: t(
+            count === 1
+              ? "settings.reservations.deleteCourtBlockedOne"
+              : "settings.reservations.deleteCourtBlockedOther",
+            { name: courtLabel, count }
+          ),
+        })
+        return
+      }
+      update({ courts: reservations.courts.filter((c) => c.id !== court.id) })
+      toast.success(
+        t("settings.reservations.courtRemoved", { name: courtLabel })
+      )
+    } catch {
+      toast.error(t("common.genericError"), {
+        description: t("common.tryAgain"),
+      })
+    } finally {
+      setCheckingCourt(false)
+      setCourtToDelete(null)
+    }
   }
 
   function reset() {
@@ -239,9 +291,9 @@ function ReservationSettingsPage() {
                 variant="ghost"
                 size="icon"
                 className="ml-auto size-8 text-muted-foreground hover:text-destructive"
-                onClick={() => removeCourt(court.id)}
+                onClick={() => setCourtToDelete(court)}
                 aria-label={t("settings.reservations.removeCourt", {
-                  name: court.name,
+                  name: localizeCourtName(court.name, t),
                 })}
               >
                 <IconTrash className="size-4" />
@@ -376,6 +428,44 @@ function ReservationSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={!!courtToDelete}
+        onOpenChange={(open) => {
+          if (!open && !checkingCourt) setCourtToDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("settings.reservations.deleteCourtTitle", {
+                name: courtToDelete
+                  ? localizeCourtName(courtToDelete.name, t)
+                  : "",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("settings.reservations.deleteCourtConfirm")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={checkingCourt}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+              disabled={checkingCourt}
+              onClick={(e) => {
+                e.preventDefault()
+                void confirmRemoveCourt()
+              }}
+            >
+              {checkingCourt && <IconLoader2 className="size-4 animate-spin" />}
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
