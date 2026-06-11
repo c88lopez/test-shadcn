@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
 import { differenceInYears, parseISO } from "date-fns"
@@ -102,6 +103,7 @@ function buildColumns(canManage: boolean): ColumnDef<Coach>[] {
 }
 
 function CoachesPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
   const { coaches } = Route.useLoaderData()
@@ -110,9 +112,9 @@ function CoachesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Coaches</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.coaches.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage club coaches.
+          {t("pages.coaches.description")}
         </p>
       </div>
 

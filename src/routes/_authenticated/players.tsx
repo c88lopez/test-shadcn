@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
   IconPlus,
@@ -158,6 +159,7 @@ const columns: ColumnDef<Player>[] = [
 ]
 
 function PlayersPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("players:manage")
   const { players, stats } = Route.useLoaderData()
@@ -179,9 +181,9 @@ function PlayersPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Players</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.players.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage club members.
+          {t("pages.players.description")}
         </p>
       </div>
 

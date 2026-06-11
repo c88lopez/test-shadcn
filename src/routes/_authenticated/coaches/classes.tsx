@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -128,6 +129,7 @@ function buildColumns(
 }
 
 function ClassesPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
   const { classes, coaches } = Route.useLoaderData()
@@ -136,9 +138,9 @@ function ClassesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Classes</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.classes.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Coach-led sessions linked to reserved courts.
+          {t("pages.classes.description")}
         </p>
       </div>
 

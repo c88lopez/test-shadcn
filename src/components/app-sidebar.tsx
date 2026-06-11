@@ -15,6 +15,7 @@ import {
   IconCheck,
 } from "@tabler/icons-react"
 import { useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { authClient, useSession } from "@/lib/auth-client"
 import { useAppSettings } from "@/lib/app-settings"
+import type { TranslationKey } from "@/lib/i18n"
 
 import {
   Sidebar,
@@ -40,50 +42,65 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const navCourtManagement = [
-  { title: "Dashboard", url: "/", icon: IconDashboard },
-  { title: "Reservations", url: "/reservations", icon: IconCalendar },
+type NavItem = {
+  titleKey: TranslationKey
+  url: string
+  icon: typeof IconDashboard
+}
+
+const navCourtManagement: NavItem[] = [
+  { titleKey: "nav.items.dashboard", url: "/", icon: IconDashboard },
+  {
+    titleKey: "nav.items.reservations",
+    url: "/reservations",
+    icon: IconCalendar,
+  },
 ]
 
-const navInventory = [
-  { title: "Dashboard", url: "/inventory/dashboard", icon: IconChartBar },
-  { title: "Stock", url: "/inventory", icon: IconBox },
-  { title: "Sales Log", url: "/inventory/sales-log", icon: IconReceipt },
+const navInventory: NavItem[] = [
+  {
+    titleKey: "nav.items.inventoryDashboard",
+    url: "/inventory/dashboard",
+    icon: IconChartBar,
+  },
+  { titleKey: "nav.items.stock", url: "/inventory", icon: IconBox },
+  {
+    titleKey: "nav.items.salesLog",
+    url: "/inventory/sales-log",
+    icon: IconReceipt,
+  },
 ]
 
-const navCoaches = [
-  { title: "Coaches", url: "/coaches", icon: IconUserStar },
-  { title: "Classes", url: "/coaches/classes", icon: IconSchool },
+const navCoaches: NavItem[] = [
+  { titleKey: "nav.items.coaches", url: "/coaches", icon: IconUserStar },
+  { titleKey: "nav.items.classes", url: "/coaches/classes", icon: IconSchool },
 ]
 
-const navPlayers = [{ title: "Players", url: "/players", icon: IconUsers }]
-
-const navTournaments = [
-  { title: "Tournaments", url: "/tournaments", icon: IconTrophy },
+const navPlayers: NavItem[] = [
+  { titleKey: "nav.items.players", url: "/players", icon: IconUsers },
 ]
 
-const navSecondary = [
-  { title: "Settings", url: "/settings", icon: IconSettings },
+const navTournaments: NavItem[] = [
+  { titleKey: "nav.items.tournaments", url: "/tournaments", icon: IconTrophy },
 ]
 
-function NavGroup({
-  label,
-  items,
-}: {
-  label: string
-  items: typeof navCourtManagement
-}) {
+const navSecondary: NavItem[] = [
+  { titleKey: "nav.items.settings", url: "/settings", icon: IconSettings },
+]
+
+function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
+  const { t } = useTranslation()
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.url}>
               <SidebarMenuButton asChild>
                 <a href={item.url}>
                   <item.icon />
-                  <span>{item.title}</span>
+                  <span>{t(item.titleKey)}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -107,6 +124,7 @@ function initialsFromName(name: string | undefined | null) {
 
 export function AppSidebar() {
   const router = useRouter()
+  const { t } = useTranslation()
   const { general } = useAppSettings()
   const { data: sessionData } = useSession()
   const sessionUser = sessionData?.user
@@ -143,7 +161,7 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent side="bottom" align="start" className="w-60">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Your clubs
+                  {t("nav.account.yourClubs")}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {clubs.map((club) => (
@@ -168,11 +186,11 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavGroup label="Courts" items={navCourtManagement} />
-        <NavGroup label="Inventory" items={navInventory} />
-        <NavGroup label="Coaches" items={navCoaches} />
-        <NavGroup label="Players" items={navPlayers} />
-        <NavGroup label="Tournaments" items={navTournaments} />
+        <NavGroup label={t("nav.groups.courts")} items={navCourtManagement} />
+        <NavGroup label={t("nav.groups.inventory")} items={navInventory} />
+        <NavGroup label={t("nav.groups.coaches")} items={navCoaches} />
+        <NavGroup label={t("nav.groups.players")} items={navPlayers} />
+        <NavGroup label={t("nav.groups.tournaments")} items={navTournaments} />
       </SidebarContent>
 
       <SidebarFooter>
@@ -180,11 +198,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navSecondary.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span>{t(item.titleKey)}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -209,7 +227,7 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="flex flex-col text-left leading-tight">
                     <span className="truncate text-sm font-medium">
-                      {sessionUser?.name ?? "Account"}
+                      {sessionUser?.name ?? t("nav.account.account")}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
                       {sessionUser?.email ?? ""}
@@ -219,9 +237,9 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-56">
-                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>{t("nav.account.profile")}</DropdownMenuItem>
                 <DropdownMenuItem onSelect={handleSignOut}>
-                  Sign out
+                  {t("nav.account.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

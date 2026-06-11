@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconPlus } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -183,6 +184,7 @@ function buildStockColumns(
 }
 
 function StockPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("inventory:manage")
   const { inventory } = useAppSettings()
@@ -196,10 +198,11 @@ function StockPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Stock</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.stock.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage stock levels. {canManage ? "Click a count to edit it. " : ""}
-          Items at or below {threshold} units are highlighted.
+          {t("pages.stock.manage")}{" "}
+          {canManage ? `${t("pages.stock.clickToEdit")} ` : ""}
+          {t("pages.stock.threshold", { threshold })}
         </p>
       </div>
 

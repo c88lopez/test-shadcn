@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import {
   IconChevronDown,
   IconChevronRight,
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/inventory/sales-log")({
 })
 
 function SalesLogPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("inventory:manage")
   const { sales: salesData, stockItems } = Route.useLoaderData()
@@ -76,9 +78,9 @@ function SalesLogPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Sales Log</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.salesLog.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Click a row to expand its line items.
+          {t("pages.salesLog.description")}
         </p>
       </div>
 

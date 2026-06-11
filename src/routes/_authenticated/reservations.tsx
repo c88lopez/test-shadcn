@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { IconMinus, IconPlus, IconZoomIn } from "@tabler/icons-react"
 import { format, parseISO } from "date-fns"
@@ -378,6 +379,7 @@ const columns: ColumnDef<ReservationRow>[] = [
 // --- Page ---
 
 function ReservationsPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("reservations:manage")
   const { reservations } = Route.useLoaderData()
@@ -403,9 +405,11 @@ function ReservationsPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Reservations</h1>
+          <h1 className="text-2xl font-semibold">
+            {t("pages.reservations.title")}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage court reservations.
+            {t("pages.reservations.description")}
           </p>
         </div>
         {canManage && (

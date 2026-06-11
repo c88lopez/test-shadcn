@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import {
   IconCheck,
   IconDeviceDesktop,
@@ -7,6 +7,7 @@ import {
   IconSun,
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,19 +27,43 @@ import {
   saveUiSettings,
 } from "@/lib/ui-settings"
 import type { ThemeMode, UiSettings } from "@/lib/ui-settings"
+import i18n from "@/lib/i18n"
+import type { TranslationKey } from "@/lib/i18n"
+import { setLocale } from "@/lib/i18n.functions"
+import { SUPPORTED_LOCALES } from "@/lib/locale"
+import type { Locale } from "@/lib/locale"
 
 export const Route = createFileRoute("/_authenticated/settings/ui")({
   component: UiSettingsPage,
 })
 
-const themeOptions: { value: ThemeMode; label: string; icon: Icon }[] = [
-  { value: "light", label: "Light", icon: IconSun },
-  { value: "dark", label: "Dark", icon: IconMoon },
-  { value: "system", label: "System", icon: IconDeviceDesktop },
+const themeOptions: {
+  value: ThemeMode
+  labelKey: TranslationKey
+  icon: Icon
+}[] = [
+  { value: "light", labelKey: "settings.ui.theme.light", icon: IconSun },
+  { value: "dark", labelKey: "settings.ui.theme.dark", icon: IconMoon },
+  {
+    value: "system",
+    labelKey: "settings.ui.theme.system",
+    icon: IconDeviceDesktop,
+  },
 ]
 
+const fontSizeLabelKeys: Record<string, TranslationKey> = {
+  sm: "settings.ui.fontSize.small",
+  md: "settings.ui.fontSize.default",
+  lg: "settings.ui.fontSize.large",
+}
+
 function UiSettingsPage() {
+  const { t } = useTranslation()
+  const router = useRouter()
   const [settings, setSettings] = useState<UiSettings>(() => loadUiSettings())
+  const [activeLocale, setActiveLocale] = useState<Locale>(
+    () => i18n.language as Locale
+  )
 
   function update(partial: Partial<UiSettings>) {
     const next = { ...settings, ...partial }
@@ -47,32 +72,72 @@ function UiSettingsPage() {
     applyUiSettings(next)
   }
 
+  async function changeLanguage(locale: Locale) {
+    setActiveLocale(locale)
+    await i18n.changeLanguage(locale)
+    await setLocale({ data: { locale } })
+    // Refresh root context so its resolved locale stays in sync after navigation.
+    await router.invalidate()
+  }
+
   function resetDefaults() {
     setSettings(DEFAULT_UI_SETTINGS)
     saveUiSettings(DEFAULT_UI_SETTINGS)
     applyUiSettings(DEFAULT_UI_SETTINGS)
-    toast.success("Appearance reset to defaults")
+    toast.success(t("settings.ui.resetToast"))
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium">UI</h2>
+          <h2 className="text-lg font-medium">{t("settings.ui.title")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Customize the theme, accent color and text size.
+            {t("settings.ui.description")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={resetDefaults}>
-          Reset to defaults
+          {t("common.resetToDefaults")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Theme</CardTitle>
+          <CardTitle>{t("settings.ui.language.title")}</CardTitle>
           <CardDescription>
-            Choose light, dark, or match your operating system.
+            {t("settings.ui.language.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+            {SUPPORTED_LOCALES.map((locale) => {
+              const active = activeLocale === locale.code
+              return (
+                <button
+                  key={locale.code}
+                  type="button"
+                  onClick={() => void changeLanguage(locale.code)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-lg border p-4 text-sm transition-colors hover:bg-muted",
+                    active
+                      ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
+                      : "border-border"
+                  )}
+                >
+                  {active && <IconCheck className="size-4" />}
+                  {locale.label}
+                </button>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.ui.theme.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.ui.theme.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,7 +157,7 @@ function UiSettingsPage() {
                   )}
                 >
                   <opt.icon className="size-5" />
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </button>
               )
             })}
@@ -102,9 +167,9 @@ function UiSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Accent color</CardTitle>
+          <CardTitle>{t("settings.ui.accent.title")}</CardTitle>
           <CardDescription>
-            Used for primary buttons, highlights and active states.
+            {t("settings.ui.accent.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -137,9 +202,9 @@ function UiSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Font size</CardTitle>
+          <CardTitle>{t("settings.ui.fontSize.title")}</CardTitle>
           <CardDescription>
-            Scales text and spacing across the whole app.
+            {t("settings.ui.fontSize.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -162,7 +227,7 @@ function UiSettingsPage() {
                     A
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {size.label}
+                    {t(fontSizeLabelKeys[size.key])}
                   </span>
                 </button>
               )

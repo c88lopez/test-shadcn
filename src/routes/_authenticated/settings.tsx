@@ -9,9 +9,11 @@ import {
   IconUsers,
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { useCan } from "@/hooks/use-permissions"
 import type { Permission } from "@/lib/permissions"
+import type { TranslationKey } from "@/lib/i18n"
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsLayout,
@@ -19,50 +21,51 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 const navItems: {
   to: string
-  label: string
+  labelKey: TranslationKey
   icon: Icon
   permission?: Permission
 }[] = [
   {
     to: "/settings/general",
-    label: "General",
+    labelKey: "settings.nav.general",
     icon: IconBuildingStore,
     permission: "settings:manage",
   },
   {
     to: "/settings/reservations",
-    label: "Reservations",
+    labelKey: "settings.nav.reservations",
     icon: IconCalendarCog,
     permission: "settings:manage",
   },
   {
     to: "/settings/notifications",
-    label: "Notifications",
+    labelKey: "settings.nav.notifications",
     icon: IconBell,
     permission: "settings:manage",
   },
   {
     to: "/settings/inventory",
-    label: "Inventory",
+    labelKey: "settings.nav.inventory",
     icon: IconBox,
     permission: "settings:manage",
   },
   {
     to: "/settings/users",
-    label: "Users",
+    labelKey: "settings.nav.users",
     icon: IconUsers,
     permission: "users:manage",
   },
   {
     to: "/settings/clubs",
-    label: "Clubs",
+    labelKey: "settings.nav.clubs",
     icon: IconBuildings,
     permission: "clubs:manage",
   },
-  { to: "/settings/ui", label: "UI", icon: IconPalette },
+  { to: "/settings/ui", labelKey: "settings.nav.ui", icon: IconPalette },
 ]
 
 function SettingsLayout() {
+  const { t } = useTranslation()
   const canSettings = useCan("settings:manage")
   const canUsers = useCan("users:manage")
   const canClubs = useCan("clubs:manage")
@@ -76,9 +79,9 @@ function SettingsLayout() {
   return (
     <div className="flex h-full flex-col gap-6">
       <div className="shrink-0">
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-2xl font-semibold">{t("settings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your club, reservations, notifications, users and appearance.
+          {t("settings.description")}
         </p>
       </div>
 
@@ -96,7 +99,7 @@ function SettingsLayout() {
               }}
             >
               <item.icon className="size-4" />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>

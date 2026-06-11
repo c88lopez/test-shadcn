@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import {
   Area,
   AreaChart,
@@ -42,6 +43,7 @@ const CHART_COLORS = [
 ]
 
 function InventoryDashboard() {
+  const { t } = useTranslation()
   const { stats } = Route.useLoaderData()
   const symbol = getCurrencySymbol()
 
@@ -65,9 +67,11 @@ function InventoryDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Sales Dashboard</h1>
+        <h1 className="text-2xl font-semibold">
+          {t("pages.inventoryDashboard.title")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Product sales overview for this week.
+          {t("pages.inventoryDashboard.description")}
         </p>
       </div>
 

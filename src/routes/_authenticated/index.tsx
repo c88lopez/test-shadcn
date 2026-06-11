@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { IconCalendar, IconChartBar } from "@tabler/icons-react"
 import {
   Area,
@@ -55,6 +56,7 @@ const subscribersChartConfig = {
 } satisfies ChartConfig
 
 function Dashboard() {
+  const { t } = useTranslation()
   const { stats } = Route.useLoaderData()
   const settings = useAppSettings()
 
@@ -72,9 +74,9 @@ function Dashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-semibold">{t("pages.dashboard.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Padel club overview
+          {t("pages.dashboard.description")}
         </p>
       </div>
 
