@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { getOverviewStats } from "@/lib/stats.functions"
-import { useAppSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/")({
   loader: async () => ({ stats: await getOverviewStats() }),
@@ -75,7 +74,6 @@ function buildSubscribersChartConfig(t: TFunction): ChartConfig {
 function Dashboard() {
   const { t } = useTranslation()
   const { stats } = Route.useLoaderData()
-  const settings = useAppSettings()
   const courtsChartConfig = useMemo(() => buildCourtsChartConfig(t), [t])
   const weeklyChartConfig = useMemo(() => buildWeeklyChartConfig(t), [t])
   const subscribersChartConfig = useMemo(
@@ -83,9 +81,7 @@ function Dashboard() {
     [t]
   )
 
-  const totalCourts = settings.reservations.courts.filter(
-    (c) => c.active
-  ).length
+  const totalCourts = stats.activeCourts
   const occupied = Math.min(stats.courtsOccupiedNow, totalCourts)
   const available = Math.max(totalCourts - occupied, 0)
 

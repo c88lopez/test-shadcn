@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { useEffect, useMemo, useState } from "react"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
@@ -16,7 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { countReservationsForCourt } from "@/lib/reservations.functions"
+import {
+  countCourtUsage,
+  createCourt,
+  deleteCourt,
+  listCourts,
+  updateCourt,
+} from "@/lib/courts.functions"
+import type { CourtRecord } from "@/lib/courts.functions"
 import {
   Card,
   CardContent,
@@ -42,17 +49,14 @@ import {
   useAppSettings,
   WEEKDAYS,
 } from "@/lib/app-settings"
-import type {
-  Court,
-  CourtType,
-  DayHours,
-  ReservationSettings,
-  Weekday,
-} from "@/lib/app-settings"
+import type { DayHours, ReservationSettings, Weekday } from "@/lib/app-settings"
+
+type CourtType = "indoor" | "outdoor"
 
 export const Route = createFileRoute("/_authenticated/settings/reservations")({
   beforeLoad: ({ context }) =>
     ensurePermission(context.user.role, "settings:manage"),
+  loader: async () => ({ courts: await listCourts() }),
   component: ReservationSettingsPage,
 })
 
@@ -72,11 +76,17 @@ function localizeCourtName(name: string, t: TFunction): string {
 
 function ReservationSettingsPage() {
   const { t } = useTranslation()
+  const router = useRouter()
+  const { courts: loadedCourts } = Route.useLoaderData()
   const settings = useAppSettings()
   const { reservations } = settings
   const weekdays = useMemo(() => buildWeekdays(t), [t])
-  const [courtToDelete, setCourtToDelete] = useState<Court | null>(null)
+  // Local mirror of the DB courts so name edits stay snappy (saved on blur).
+  const [courts, setCourts] = useState<CourtRecord[]>(loadedCourts)
+  const [courtToDelete, setCourtToDelete] = useState<CourtRecord | null>(null)
   const [checkingCourt, setCheckingCourt] = useState(false)
+
+  useEffect(() => setCourts(loadedCourts), [loadedCourts])
 
   function update(partial: Partial<ReservationSettings>) {
     setAppSettings({
@@ -94,50 +104,64 @@ function ReservationSettingsPage() {
     })
   }
 
-  function updateCourt(id: number, partial: Partial<Court>) {
-    update({
-      courts: reservations.courts.map((c) =>
-        c.id === id ? { ...c, ...partial } : c
-      ),
-    })
+  function updateCourtLocal(id: string, partial: Partial<CourtRecord>) {
+    setCourts((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...partial } : c))
+    )
   }
 
-  function addCourt() {
-    const nextId = Math.max(0, ...reservations.courts.map((c) => c.id)) + 1
-    update({
-      courts: [
-        ...reservations.courts,
-        { id: nextId, name: `Court ${nextId}`, type: "indoor", active: true },
-      ],
-    })
+  // Persists a single court to the DB. Reverts (via refetch) on failure.
+  async function saveCourt(id: string, partial: Partial<CourtRecord>) {
+    try {
+      await updateCourt({ data: { id, ...partial } })
+    } catch {
+      toast.error(t("common.genericError"), {
+        description: t("common.tryAgain"),
+      })
+      router.invalidate()
+    }
   }
 
-  // Confirm in a modal, then block deletion if the court still has
-  // reservations; otherwise remove it from settings.
+  async function addCourt() {
+    const nextNumber = Math.max(0, ...courts.map((c) => c.sortOrder)) + 1
+    try {
+      await createCourt({
+        data: { name: `Court ${nextNumber}`, type: "indoor", active: true },
+      })
+      router.invalidate()
+    } catch {
+      toast.error(t("common.genericError"), {
+        description: t("common.tryAgain"),
+      })
+    }
+  }
+
+  // Confirm in a modal, then block deletion if the court is still in use by a
+  // reservation or class; otherwise delete it.
   async function confirmRemoveCourt() {
     if (!courtToDelete) return
     const court = courtToDelete
     const courtLabel = localizeCourtName(court.name, t)
     setCheckingCourt(true)
     try {
-      const { count } = await countReservationsForCourt({
-        data: { court: court.id },
-      })
-      if (count > 0) {
+      const usage = await countCourtUsage({ data: { id: court.id } })
+      const total = usage.reservations + usage.classes
+      if (total > 0) {
         toast.error(t("settings.reservations.deleteCourtBlockedTitle"), {
           description: t(
-            count === 1
+            total === 1
               ? "settings.reservations.deleteCourtBlockedOne"
               : "settings.reservations.deleteCourtBlockedOther",
-            { name: courtLabel, count }
+            { name: courtLabel, count: total }
           ),
         })
         return
       }
-      update({ courts: reservations.courts.filter((c) => c.id !== court.id) })
+      await deleteCourt({ data: { id: court.id } })
       toast.success(
         t("settings.reservations.courtRemoved", { name: courtLabel })
       )
+      router.invalidate()
     } catch {
       toast.error(t("common.genericError"), {
         description: t("common.tryAgain"),
@@ -246,7 +270,7 @@ function ReservationSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {reservations.courts.map((court) => (
+          {courts.map((court) => (
             <div
               key={court.id}
               className="flex flex-wrap items-center gap-3 border-b pb-3 last:border-b-0 last:pb-0"
@@ -254,15 +278,17 @@ function ReservationSettingsPage() {
               <Input
                 value={court.name}
                 onChange={(e) =>
-                  updateCourt(court.id, { name: e.target.value })
+                  updateCourtLocal(court.id, { name: e.target.value })
                 }
+                onBlur={(e) => saveCourt(court.id, { name: e.target.value })}
                 className="h-8 w-40"
               />
               <Select
                 value={court.type}
-                onValueChange={(v) =>
-                  updateCourt(court.id, { type: v as CourtType })
-                }
+                onValueChange={(v) => {
+                  updateCourtLocal(court.id, { type: v as CourtType })
+                  saveCourt(court.id, { type: v as CourtType })
+                }}
               >
                 <SelectTrigger className="h-8 w-32">
                   <SelectValue />
@@ -279,9 +305,10 @@ function ReservationSettingsPage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={court.active}
-                  onCheckedChange={(checked) =>
-                    updateCourt(court.id, { active: checked })
-                  }
+                  onCheckedChange={(checked) => {
+                    updateCourtLocal(court.id, { active: checked })
+                    saveCourt(court.id, { active: checked })
+                  }}
                 />
                 <span className="w-14 text-xs text-muted-foreground">
                   {court.active ? t("common.active") : t("common.inactive")}

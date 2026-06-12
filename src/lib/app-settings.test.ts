@@ -113,7 +113,7 @@ describe("loadAppSettings", () => {
     expect(settings.general.phone).toBe("555-0001")
     // Untouched fields keep their defaults.
     expect(settings.general.timeFormat).toBe("24h")
-    expect(settings.reservations.courts).toHaveLength(6)
+    expect(settings.reservations.slotDuration).toBe(60)
     expect(settings.security.defaultRole).toBe("Front Desk")
   })
 

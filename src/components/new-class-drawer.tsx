@@ -43,12 +43,13 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { createClass, updateClass } from "@/lib/classes.functions"
+import type { CourtRecord } from "@/lib/courts.functions"
 import type { Coach } from "@/db/schema"
 
 function makeSchema(t: TFunction) {
   return z.object({
     coachId: z.string().min(1, t("validation.coachRequired")),
-    court: z.string().min(1, t("validation.courtRequired")),
+    courtId: z.string().min(1, t("validation.courtRequired")),
     date: z.date({ error: t("validation.dateRequired") }),
     time: z.string().min(1, t("validation.timeRequired")),
     duration: z.string().min(1, t("validation.durationRequired")),
@@ -61,7 +62,7 @@ type FormInput = Omit<FormValues, "date"> & { date?: Date }
 export interface ClassData {
   id?: string
   coachId: string | null
-  court: number
+  courtId: string
   date: string
   startTime: string
   durationMinutes: number
@@ -70,18 +71,19 @@ export interface ClassData {
 interface Props {
   trigger?: React.ReactNode
   coaches: Coach[]
+  courts: CourtRecord[]
   coachClass?: ClassData
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onSaved?: () => void
 }
 
-const EMPTY: FormInput = { coachId: "", court: "", time: "", duration: "" }
+const EMPTY: FormInput = { coachId: "", courtId: "", time: "", duration: "" }
 
 function toFormValues(c: ClassData): FormInput {
   return {
     coachId: c.coachId ?? "",
-    court: String(c.court),
+    courtId: c.courtId,
     date: parseISO(c.date),
     time: c.startTime,
     duration: String(c.durationMinutes),
@@ -91,6 +93,7 @@ function toFormValues(c: ClassData): FormInput {
 export function NewClassDrawer({
   trigger,
   coaches,
+  courts: allCourts,
   coachClass,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
@@ -101,6 +104,11 @@ export function NewClassDrawer({
   const open = controlledOpen ?? internalOpen
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!coachClass
+
+  // Active courts, plus this class's current court even if since deactivated.
+  const courts = allCourts.filter(
+    (c) => c.active || c.id === coachClass?.courtId
+  )
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
   const schema = useMemo(() => makeSchema(t), [t])
@@ -120,7 +128,7 @@ export function NewClassDrawer({
   function onSubmit(values: FormInput) {
     const payload = {
       coachId: values.coachId,
-      court: Number(values.court),
+      courtId: values.courtId,
       date: format(values.date as Date, "yyyy-MM-dd"),
       startTime: values.time,
       durationMinutes: Number(values.duration),
@@ -196,7 +204,7 @@ export function NewClassDrawer({
 
             <FormField
               control={form.control}
-              name="court"
+              name="courtId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("fields.court")}</FormLabel>
@@ -209,9 +217,9 @@ export function NewClassDrawer({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6].map((n) => (
-                        <SelectItem key={n} value={String(n)}>
-                          {t("forms.class.courtN", { n })}
+                      {courts.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

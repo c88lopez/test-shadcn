@@ -31,18 +31,8 @@ export interface DayHours {
   closed: boolean
 }
 
-export type CourtType = "indoor" | "outdoor"
-
-export interface Court {
-  id: number
-  name: string
-  type: CourtType
-  active: boolean
-}
-
 export interface ReservationSettings {
   hours: Record<Weekday, DayHours>
-  courts: Court[]
   slotDuration: number
   defaultBookingLength: number
   minAdvanceHours: number
@@ -137,18 +127,6 @@ function defaultHours(): Record<Weekday, DayHours> {
   return Object.fromEntries(entries) as Record<Weekday, DayHours>
 }
 
-function defaultCourts(): Court[] {
-  return Array.from(
-    { length: 6 },
-    (_, i): Court => ({
-      id: i + 1,
-      name: `Court ${i + 1}`,
-      type: "indoor",
-      active: true,
-    })
-  )
-}
-
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   general: {
     address: "",
@@ -160,7 +138,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   },
   reservations: {
     hours: defaultHours(),
-    courts: defaultCourts(),
     slotDuration: 60,
     defaultBookingLength: 90,
     minAdvanceHours: 1,
@@ -217,9 +194,6 @@ function merge(parsed: DeepPartial<AppSettings> | null): AppSettings {
       ...D.reservations,
       ...parsed?.reservations,
       hours,
-      courts:
-        (parsed?.reservations?.courts as Court[] | undefined) ??
-        D.reservations.courts,
     },
     notifications: {
       ...D.notifications,

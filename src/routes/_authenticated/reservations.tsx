@@ -16,7 +16,9 @@ import {
   deleteReservation,
   listReservations,
 } from "@/lib/reservations.functions"
-import type { Reservation as DbReservation } from "@/db/schema"
+import type { ReservationListItem } from "@/lib/reservations.functions"
+import { listCourts } from "@/lib/courts.functions"
+import type { CourtRecord } from "@/lib/courts.functions"
 import type { TranslationKey } from "@/lib/i18n"
 import { useCan } from "@/hooks/use-permissions"
 import {
@@ -27,16 +29,19 @@ import {
 } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/reservations")({
-  loader: async () => ({ reservations: await listReservations() }),
+  loader: async () => ({
+    reservations: await listReservations(),
+    courts: await listCourts(),
+  }),
   component: ReservationsPage,
 })
 
-// Table/timeline row: a DB reservation plus a derived "HH:MM – HH:MM" range.
-type ReservationRow = DbReservation & { timeRange: string }
+// Table/timeline row: a reservation plus a derived "HH:MM – HH:MM" range.
+type ReservationRow = ReservationListItem & { timeRange: string }
 
 interface TimelineReservation {
   id: string
-  court: number
+  courtId: string
   reservedTo: string
   time: string
   paid: boolean
@@ -50,7 +55,7 @@ function endTime(startTime: string, durationMinutes: number): string {
   ).padStart(2, "0")}`
 }
 
-function buildRange(r: DbReservation): string {
+function buildRange(r: ReservationListItem): string {
   return `${r.startTime} – ${endTime(r.startTime, r.durationMinutes)}`
 }
 
@@ -77,10 +82,12 @@ function toPx(minutes: number, pxPerHour: number, startHour: number): number {
 
 function CourtTimeline({
   reservations,
+  courts: allCourts,
   hoveredId,
   onHover,
 }: {
   reservations: TimelineReservation[]
+  courts: CourtRecord[]
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
@@ -97,7 +104,7 @@ function CourtTimeline({
       ? closeParts[0] + 1
       : closeParts[0]
   const totalHours = Math.max(1, endHour - startHour)
-  const courts = reservationSettings.courts.filter((c) => c.active)
+  const courts = allCourts.filter((c) => c.active)
   const hours = Array.from({ length: totalHours + 1 }, (_, i) => startHour + i)
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -208,7 +215,7 @@ function CourtTimeline({
           {/* Court rows */}
           {courts.map((court, courtIdx) => {
             const courtReservations = reservations.filter(
-              (r) => r.court === court.id
+              (r) => r.courtId === court.id
             )
             return (
               <div
@@ -291,7 +298,7 @@ function toReservationData(r: ReservationRow) {
   return {
     id: r.id,
     player: r.player,
-    court: String(r.court),
+    courtId: r.courtId,
     date: parseISO(r.date),
     time: r.startTime,
     duration: String(r.durationMinutes),
@@ -299,7 +306,13 @@ function toReservationData(r: ReservationRow) {
   }
 }
 
-function ReservationActions({ reservation }: { reservation: ReservationRow }) {
+function ReservationActions({
+  reservation,
+  courts,
+}: {
+  reservation: ReservationRow
+  courts: CourtRecord[]
+}) {
   const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("reservations:manage")
@@ -325,6 +338,7 @@ function ReservationActions({ reservation }: { reservation: ReservationRow }) {
     <>
       <NewReservationDrawer
         reservation={toReservationData(reservation)}
+        courts={courts}
         open={editOpen}
         onOpenChange={setEditOpen}
         onSaved={() => router.invalidate()}
@@ -346,12 +360,15 @@ const PAYMENT_BADGE: Record<
   unpaid: { labelKey: "options.unpaid", variant: "outline" },
 }
 
-function buildColumns(t: TFunction): ColumnDef<ReservationRow>[] {
+function buildColumns(
+  t: TFunction,
+  courts: CourtRecord[]
+): ColumnDef<ReservationRow>[] {
   return [
     {
-      accessorKey: "court",
+      accessorKey: "courtNumber",
       header: t("fields.court"),
-      cell: ({ row }) => `# ${row.getValue<string>("court")}`,
+      cell: ({ row }) => `# ${row.getValue<number>("courtNumber")}`,
     },
     {
       accessorKey: "player",
@@ -385,7 +402,9 @@ function buildColumns(t: TFunction): ColumnDef<ReservationRow>[] {
       id: "actions",
       enableSorting: false,
       meta: { className: "text-right" },
-      cell: ({ row }) => <ReservationActions reservation={row.original} />,
+      cell: ({ row }) => (
+        <ReservationActions reservation={row.original} courts={courts} />
+      ),
     },
   ]
 }
@@ -396,8 +415,8 @@ function ReservationsPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("reservations:manage")
-  const { reservations } = Route.useLoaderData()
-  const columns = useMemo(() => buildColumns(t), [t])
+  const { reservations, courts } = Route.useLoaderData()
+  const columns = useMemo(() => buildColumns(t, courts), [t, courts])
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const rows: ReservationRow[] = reservations.map((r) => ({
@@ -410,7 +429,7 @@ function ReservationsPage() {
     .filter((r) => r.date === todayISO)
     .map((r) => ({
       id: r.id,
-      court: r.court,
+      courtId: r.courtId,
       reservedTo: r.player,
       time: r.timeRange,
       paid: r.paymentStatus === "paid",
@@ -429,6 +448,7 @@ function ReservationsPage() {
         </div>
         {canManage && (
           <NewReservationDrawer
+            courts={courts}
             onSaved={() => router.invalidate()}
             trigger={
               <Button size="sm">
@@ -446,6 +466,7 @@ function ReservationsPage() {
         </h2>
         <CourtTimeline
           reservations={todayReservations}
+          courts={courts}
           hoveredId={hoveredId}
           onHover={setHoveredId}
         />

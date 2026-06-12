@@ -1,9 +1,4 @@
-import type {
-  NewCoach,
-  NewPlayer,
-  NewReservation,
-  NewStockItem,
-} from "@/db/schema"
+import type { NewCoach, NewPlayer, NewStockItem } from "@/db/schema"
 
 // Initial player roster used to seed an empty database. Mirrors the data that
 // previously lived inline in the Players route.
@@ -171,11 +166,18 @@ export const seedPlayers: Omit<NewPlayer, "id" | "createdAt" | "clubId">[] = [
 ]
 
 // Reservations to seed for "today" (the `date` is filled in at seed time).
-// No two share a court+time, so they satisfy conflict detection.
-export const reservationSeeds: Omit<
-  NewReservation,
-  "id" | "createdAt" | "date" | "clubId"
->[] = [
+// No two share a court+time, so they satisfy conflict detection. `court` is the
+// court number, mapped to a court id at seed time.
+export interface ReservationSeed {
+  court: number
+  player: string
+  bookedBy: string
+  startTime: string
+  durationMinutes: number
+  paymentStatus: string
+}
+
+export const reservationSeeds: ReservationSeed[] = [
   {
     court: 1,
     player: "Maria García",

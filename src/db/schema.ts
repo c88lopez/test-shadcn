@@ -118,6 +118,27 @@ export const verification = pgTable("verification", {
 
 // --- App domain tables ---
 
+// A bookable court. Belongs to exactly one club. `sortOrder` doubles as the
+// human-facing court number (1, 2, 3 …) used in labels like "Court 3".
+export const court = pgTable("court", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  type: text("type").notNull().default("indoor"),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  clubId: text("club_id")
+    .notNull()
+    .references(() => club.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type Court = typeof court.$inferSelect
+export type NewCourt = typeof court.$inferInsert
+
 export const player = pgTable("player", {
   id: text("id")
     .primaryKey()
@@ -143,7 +164,9 @@ export const reservation = pgTable("reservation", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  court: integer("court").notNull(),
+  courtId: text("court_id")
+    .notNull()
+    .references(() => court.id, { onDelete: "restrict" }),
   player: text("player").notNull(),
   bookedBy: text("booked_by").notNull(),
   date: date("date").notNull(),
@@ -242,7 +265,9 @@ export const coachClass = pgTable("coach_class", {
   coachId: text("coach_id").references(() => coach.id, {
     onDelete: "set null",
   }),
-  court: integer("court").notNull(),
+  courtId: text("court_id")
+    .notNull()
+    .references(() => court.id, { onDelete: "restrict" }),
   date: date("date").notNull(),
   startTime: text("start_time").notNull(),
   durationMinutes: integer("duration_minutes").notNull(),

@@ -13,6 +13,8 @@ import { RowActions } from "@/components/row-actions"
 import { listClasses, deleteClass } from "@/lib/classes.functions"
 import type { ClassRecord } from "@/lib/classes.functions"
 import { listCoaches } from "@/lib/coaches.functions"
+import { listCourts } from "@/lib/courts.functions"
+import type { CourtRecord } from "@/lib/courts.functions"
 import { classStatus, formatDuration } from "@/lib/classes"
 import type { ClassStatus } from "@/lib/classes"
 import { useCan } from "@/hooks/use-permissions"
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/coaches/classes")({
   loader: async () => ({
     classes: await listClasses(),
     coaches: await listCoaches(),
+    courts: await listCourts(),
   }),
   component: ClassesPage,
 })
@@ -36,9 +39,11 @@ const statusVariant: Record<ClassStatus, "default" | "secondary" | "outline"> =
 function ClassActions({
   coachClass,
   coaches,
+  courts,
 }: {
   coachClass: ClassRecord
   coaches: Coach[]
+  courts: CourtRecord[]
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -63,6 +68,7 @@ function ClassActions({
     <>
       <NewClassDrawer
         coaches={coaches}
+        courts={courts}
         coachClass={coachClass}
         open={editOpen}
         onOpenChange={setEditOpen}
@@ -76,7 +82,8 @@ function ClassActions({
 function buildColumns(
   t: TFunction,
   canManage: boolean,
-  coaches: Coach[]
+  coaches: Coach[],
+  courts: CourtRecord[]
 ): ColumnDef<ClassRecord>[] {
   const statusLabel: Record<ClassStatus, string> = {
     Upcoming: t("pages.classes.statusUpcoming"),
@@ -90,10 +97,10 @@ function buildColumns(
       header: t("fields.coach"),
     },
     {
-      accessorKey: "court",
+      accessorKey: "courtNumber",
       header: t("fields.court"),
       cell: ({ row }) =>
-        t("stats.court", { court: row.getValue<number>("court") }),
+        t("stats.court", { court: row.getValue<number>("courtNumber") }),
     },
     {
       accessorKey: "date",
@@ -130,7 +137,11 @@ function buildColumns(
       enableSorting: false,
       meta: { className: "text-right" },
       cell: ({ row }) => (
-        <ClassActions coachClass={row.original} coaches={coaches} />
+        <ClassActions
+          coachClass={row.original}
+          coaches={coaches}
+          courts={courts}
+        />
       ),
     })
   }
@@ -142,10 +153,10 @@ function ClassesPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("coaches:manage")
-  const { classes, coaches } = Route.useLoaderData()
+  const { classes, coaches, courts } = Route.useLoaderData()
   const columns = useMemo(
-    () => buildColumns(t, canManage, coaches),
-    [t, canManage, coaches]
+    () => buildColumns(t, canManage, coaches, courts),
+    [t, canManage, coaches, courts]
   )
 
   return (
@@ -166,6 +177,7 @@ function ClassesPage() {
           canManage ? (
             <NewClassDrawer
               coaches={coaches}
+              courts={courts}
               onSaved={() => router.invalidate()}
               trigger={
                 <Button size="sm">

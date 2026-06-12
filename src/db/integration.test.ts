@@ -10,6 +10,7 @@ import {
   club,
   coach,
   coachClass,
+  court,
   player,
   reservation,
   sale,
@@ -29,6 +30,9 @@ const TEST_URL = process.env.DATABASE_URL_TEST
 
 // Default club seeded by migration 0004; all domain rows are scoped to it.
 const CLUB_ID = "00000000-0000-0000-0000-000000000001"
+// Two fixed courts for this club, created in beforeAll.
+const COURT1_ID = "00000000-0000-0000-0000-0000000c0001"
+const COURT2_ID = "00000000-0000-0000-0000-0000000c0002"
 
 describe.skipIf(!TEST_URL)("database integration", () => {
   let pool: Pool
@@ -41,6 +45,27 @@ describe.skipIf(!TEST_URL)("database integration", () => {
     await db
       .insert(club)
       .values({ id: CLUB_ID, name: "Default Club", slug: "default" })
+      .onConflictDoNothing()
+    await db
+      .insert(court)
+      .values([
+        {
+          id: COURT1_ID,
+          name: "Court 1",
+          type: "indoor",
+          active: true,
+          sortOrder: 1,
+          clubId: CLUB_ID,
+        },
+        {
+          id: COURT2_ID,
+          name: "Court 2",
+          type: "indoor",
+          active: true,
+          sortOrder: 2,
+          clubId: CLUB_ID,
+        },
+      ])
       .onConflictDoNothing()
   })
 
@@ -124,9 +149,9 @@ describe.skipIf(!TEST_URL)("database integration", () => {
   describe("reservation conflicts", () => {
     const day = "2026-01-15"
 
-    async function book(court: number, startTime: string, duration: number) {
+    async function book(courtId: string, startTime: string, duration: number) {
       await db.insert(reservation).values({
-        court,
+        courtId,
         player: "Booked Player",
         bookedBy: "Front Desk",
         date: day,
@@ -137,36 +162,36 @@ describe.skipIf(!TEST_URL)("database integration", () => {
       })
     }
 
-    async function sameCourtSlots(court: number) {
+    async function sameCourtSlots(courtId: string) {
       return db
         .select()
         .from(reservation)
-        .where(and(eq(reservation.court, court), eq(reservation.date, day)))
+        .where(and(eq(reservation.courtId, courtId), eq(reservation.date, day)))
     }
 
     it("flags an overlapping booking on the same court", async () => {
-      await book(1, "10:00", 60)
+      await book(COURT1_ID, "10:00", 60)
       const conflict = findOverlap(
         { startTime: "10:30", durationMinutes: 60 },
-        await sameCourtSlots(1)
+        await sameCourtSlots(COURT1_ID)
       )
       expect(conflict).toBeDefined()
     })
 
     it("allows back-to-back bookings whose edges touch", async () => {
-      await book(1, "10:00", 60)
+      await book(COURT1_ID, "10:00", 60)
       const conflict = findOverlap(
         { startTime: "11:00", durationMinutes: 60 },
-        await sameCourtSlots(1)
+        await sameCourtSlots(COURT1_ID)
       )
       expect(conflict).toBeUndefined()
     })
 
     it("does not flag a booking on a different court", async () => {
-      await book(1, "10:00", 60)
+      await book(COURT1_ID, "10:00", 60)
       const conflict = findOverlap(
         { startTime: "10:00", durationMinutes: 60 },
-        await sameCourtSlots(2)
+        await sameCourtSlots(COURT2_ID)
       )
       expect(conflict).toBeUndefined()
     })
@@ -322,7 +347,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
         .insert(coachClass)
         .values({
           coachId: c.id,
-          court: 1,
+          courtId: COURT1_ID,
           date: "2026-03-01",
           startTime: "10:00",
           durationMinutes: 90,
