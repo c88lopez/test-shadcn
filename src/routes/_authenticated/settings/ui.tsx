@@ -1,5 +1,9 @@
 import { useState } from "react"
-import { createFileRoute, useRouter } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  useLoaderData,
+  useRouter,
+} from "@tanstack/react-router"
 import {
   IconCheck,
   IconDeviceDesktop,
@@ -24,6 +28,8 @@ import {
   DEFAULT_UI_SETTINGS,
   FONT_SIZES,
   loadUiSettings,
+  resolveAccent,
+  saveClubAccent,
   saveUiSettings,
 } from "@/lib/ui-settings"
 import type { ThemeMode, UiSettings } from "@/lib/ui-settings"
@@ -60,16 +66,36 @@ const fontSizeLabelKeys: Record<string, TranslationKey> = {
 function UiSettingsPage() {
   const { t } = useTranslation()
   const router = useRouter()
+  const { clubContext } = useLoaderData({ from: "/_authenticated" })
+  const clubId = clubContext.activeClubId
   const [settings, setSettings] = useState<UiSettings>(() => loadUiSettings())
+  // The accent is scoped to the active club; theme/font size stay global.
+  const [accent, setAccent] = useState<string>(() =>
+    resolveAccent(clubId, loadUiSettings())
+  )
   const [activeLocale, setActiveLocale] = useState<Locale>(
     () => i18n.language as Locale
   )
 
+  // Theme / font size — global preferences.
   function update(partial: Partial<UiSettings>) {
     const next = { ...settings, ...partial }
     setSettings(next)
     saveUiSettings(next)
-    applyUiSettings(next)
+    applyUiSettings(next, accent)
+  }
+
+  // Accent color — saved against the active club only.
+  function updateAccent(accentKey: string) {
+    setAccent(accentKey)
+    if (clubId) {
+      saveClubAccent(clubId, accentKey)
+    } else {
+      const next = { ...settings, accent: accentKey }
+      setSettings(next)
+      saveUiSettings(next)
+    }
+    applyUiSettings(settings, accentKey)
   }
 
   async function changeLanguage(locale: Locale) {
@@ -83,7 +109,9 @@ function UiSettingsPage() {
   function resetDefaults() {
     setSettings(DEFAULT_UI_SETTINGS)
     saveUiSettings(DEFAULT_UI_SETTINGS)
-    applyUiSettings(DEFAULT_UI_SETTINGS)
+    setAccent(DEFAULT_UI_SETTINGS.accent)
+    if (clubId) saveClubAccent(clubId, DEFAULT_UI_SETTINGS.accent)
+    applyUiSettings(DEFAULT_UI_SETTINGS, DEFAULT_UI_SETTINGS.accent)
     toast.success(t("settings.ui.resetToast"))
   }
 
@@ -175,14 +203,14 @@ function UiSettingsPage() {
         <CardContent>
           <div className="flex flex-wrap gap-3">
             {ACCENT_COLORS.map((color) => {
-              const active = settings.accent === color.key
+              const active = accent === color.key
               return (
                 <button
                   key={color.key}
                   type="button"
                   title={color.label}
                   aria-label={color.label}
-                  onClick={() => update({ accent: color.key })}
+                  onClick={() => updateAccent(color.key)}
                   className={cn(
                     "flex size-10 items-center justify-center rounded-full transition-transform hover:scale-105",
                     active &&

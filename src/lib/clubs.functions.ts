@@ -67,6 +67,23 @@ export const updateClub = createServerFn({ method: "POST" })
     return updateClubRecord(data)
   })
 
+// Renames the caller's currently active club. Unlike updateClub (platform-level,
+// clubs:manage), this lets a club's own Owner/Admin edit their club profile from
+// Settings → General. Scoped to the active club so it can't touch other clubs.
+export const renameActiveClub = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z.object({ name: z.string().min(1) }).parse(data)
+  )
+  .handler(async ({ data }) => {
+    const session = await requirePermission("settings:manage")
+    const clubId = await resolveActiveClubId(session.user)
+    if (!clubId) throw new Error("No active club to rename.")
+    const name = data.name.trim()
+    if (!name) throw new Error("Club name is required.")
+    await db.update(club).set({ name }).where(eq(club.id, clubId))
+    return { id: clubId, name }
+  })
+
 export interface ClubContext {
   activeClubId: string | null
   activeClubName: string | null

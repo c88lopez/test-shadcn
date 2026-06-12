@@ -1,5 +1,5 @@
-import { useMemo } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { useEffect, useMemo, useState } from "react"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import { toast } from "sonner"
@@ -29,10 +29,15 @@ import {
   useAppSettings,
 } from "@/lib/app-settings"
 import type { GeneralSettings, TimeFormat, WeekStart } from "@/lib/app-settings"
+import { getClubContext, renameActiveClub } from "@/lib/clubs.functions"
 
 export const Route = createFileRoute("/_authenticated/settings/general")({
   beforeLoad: ({ context }) =>
     ensurePermission(context.user.role, "settings:manage"),
+  loader: async () => {
+    const ctx = await getClubContext()
+    return { clubName: ctx.activeClubName ?? "" }
+  },
   component: GeneralSettingsPage,
 })
 
@@ -54,10 +59,35 @@ function buildWeekStarts(t: TFunction): { value: WeekStart; label: string }[] {
 
 function GeneralSettingsPage() {
   const { t } = useTranslation()
+  const router = useRouter()
+  const { clubName: savedClubName } = Route.useLoaderData()
   const settings = useAppSettings()
   const { general } = settings
   const timeFormats = useMemo(() => buildTimeFormats(t), [t])
   const weekStarts = useMemo(() => buildWeekStarts(t), [t])
+
+  // Club name is stored in the database (shared across users/devices and shown
+  // in the sidebar), not in the per-club client settings blob.
+  const [clubName, setClubName] = useState(savedClubName)
+  useEffect(() => {
+    setClubName(savedClubName)
+  }, [savedClubName])
+
+  async function saveClubName() {
+    const trimmed = clubName.trim()
+    if (!trimmed || trimmed === savedClubName) return
+    try {
+      await renameActiveClub({ data: { name: trimmed } })
+      await router.invalidate()
+      toast.success(t("settings.general.clubNameSaved"))
+    } catch (error) {
+      toast.error(t("settings.general.clubNameError"), {
+        description:
+          error instanceof Error ? error.message : t("common.tryAgain"),
+      })
+      setClubName(savedClubName)
+    }
+  }
 
   function update(partial: Partial<GeneralSettings>) {
     setAppSettings({ ...settings, general: { ...general, ...partial } })
@@ -90,25 +120,13 @@ function GeneralSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="clubName">{t("settings.general.clubName")}</Label>
             <Input
               id="clubName"
-              value={general.clubName}
-              onChange={(e) => update({ clubName: e.target.value })}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="clubInitials">
-              {t("settings.general.logoInitials")}
-            </Label>
-            <Input
-              id="clubInitials"
-              maxLength={3}
-              value={general.clubInitials}
-              onChange={(e) =>
-                update({ clubInitials: e.target.value.toUpperCase() })
-              }
+              value={clubName}
+              onChange={(e) => setClubName(e.target.value)}
+              onBlur={saveClubName}
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">

@@ -330,6 +330,7 @@ export const en = {
       profile: "Profile",
       signOut: "Sign out",
       yourClubs: "Your clubs",
+      noClub: "No club",
       account: "Account",
     },
   },
@@ -358,7 +359,8 @@ export const en = {
       },
       accent: {
         title: "Accent color",
-        description: "Used for primary buttons, highlights and active states.",
+        description:
+          "Saved for the current club — used for primary buttons, highlights and active states.",
       },
       fontSize: {
         title: "Font size",
@@ -382,6 +384,8 @@ export const en = {
         description: "Shown across the app, including the sidebar.",
       },
       clubName: "Club name",
+      clubNameSaved: "Club name updated",
+      clubNameError: "Couldn't update the club name",
       logoInitials: "Logo initials",
       address: "Address",
       addressPlaceholder: "Street, city, country",
