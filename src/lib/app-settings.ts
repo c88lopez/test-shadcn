@@ -15,8 +15,6 @@ export type TimeFormat = "12h" | "24h"
 export type WeekStart = "monday" | "sunday"
 
 export interface GeneralSettings {
-  clubName: string
-  clubInitials: string
   address: string
   phone: string
   email: string
@@ -153,8 +151,6 @@ function defaultCourts(): Court[] {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   general: {
-    clubName: "GQG",
-    clubInitials: "GQ",
     address: "",
     phone: "",
     email: "",
@@ -192,7 +188,15 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   },
 }
 
-const STORAGE_KEY = "app_settings"
+// Settings are scoped per club. Each club's blob lives under
+// `app_settings:<clubId>`. The legacy un-scoped key is used as a one-time
+// fallback so existing browsers keep their previously saved settings.
+const STORAGE_PREFIX = "app_settings"
+const LEGACY_STORAGE_KEY = "app_settings"
+
+function storageKey(clubId: string): string {
+  return `${STORAGE_PREFIX}:${clubId}`
+}
 
 // --- Persistence ---
 
@@ -235,10 +239,14 @@ function merge(parsed: DeepPartial<AppSettings> | null): AppSettings {
   }
 }
 
-export function loadAppSettings(): AppSettings {
-  if (typeof window === "undefined") return DEFAULT_APP_SETTINGS
+// Loads a specific club's settings, falling back to any legacy un-scoped blob
+// (pre per-club settings) and finally the defaults.
+export function loadAppSettings(clubId: string | null): AppSettings {
+  if (typeof window === "undefined" || !clubId) return DEFAULT_APP_SETTINGS
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw =
+      localStorage.getItem(storageKey(clubId)) ??
+      localStorage.getItem(LEGACY_STORAGE_KEY)
     if (!raw) return DEFAULT_APP_SETTINGS
     return merge(JSON.parse(raw) as DeepPartial<AppSettings>)
   } catch {
@@ -246,10 +254,10 @@ export function loadAppSettings(): AppSettings {
   }
 }
 
-function persist(settings: AppSettings) {
+function persist(clubId: string, settings: AppSettings) {
   if (typeof window === "undefined") return
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+    localStorage.setItem(storageKey(clubId), JSON.stringify(settings))
   } catch {
     /* ignore quota / serialization errors */
   }
@@ -257,7 +265,10 @@ function persist(settings: AppSettings) {
 
 // --- External store ---
 
-let store: AppSettings = loadAppSettings()
+// The club whose settings are currently loaded into the store. Until the active
+// club is known (set by the authenticated layout) the store holds defaults.
+let activeClubId: string | null = null
+let store: AppSettings = DEFAULT_APP_SETTINGS
 const listeners = new Set<() => void>()
 
 function subscribe(listener: () => void) {
@@ -269,9 +280,18 @@ export function getAppSettings(): AppSettings {
   return store
 }
 
+// Points the store at a club's settings. Called when the active club is known
+// or changes (e.g. after switching clubs). No-op when already active.
+export function setActiveSettingsClub(clubId: string | null) {
+  if (clubId === activeClubId) return
+  activeClubId = clubId
+  store = loadAppSettings(clubId)
+  listeners.forEach((l) => l())
+}
+
 export function setAppSettings(next: AppSettings) {
   store = next
-  persist(next)
+  if (activeClubId) persist(activeClubId, next)
   listeners.forEach((l) => l())
 }
 

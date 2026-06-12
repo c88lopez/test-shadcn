@@ -9,7 +9,8 @@ import { NotificationsDrawer } from "@/components/notifications-drawer"
 import { getSession } from "@/lib/auth.functions"
 import { getClubContext } from "@/lib/clubs.functions"
 import { listStockItems } from "@/lib/inventory.functions"
-import { applyUiSettings, loadUiSettings } from "@/lib/ui-settings"
+import { applyUiSettingsForClub } from "@/lib/ui-settings"
+import { setActiveSettingsClub } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
@@ -30,9 +31,17 @@ function AuthenticatedLayout() {
   const { user } = Route.useRouteContext()
   const { stockItems, clubContext } = Route.useLoaderData()
 
+  // Theme/font size are global; the accent color is per club. Apply the active
+  // club's UI (and re-apply when the user switches clubs).
   useEffect(() => {
-    applyUiSettings(loadUiSettings())
-  }, [])
+    applyUiSettingsForClub(clubContext.activeClubId)
+  }, [clubContext.activeClubId])
+
+  // App settings are scoped per club; load the active club's settings (and
+  // reload them whenever the user switches clubs).
+  useEffect(() => {
+    setActiveSettingsClub(clubContext.activeClubId)
+  }, [clubContext.activeClubId])
 
   return (
     <TooltipProvider>

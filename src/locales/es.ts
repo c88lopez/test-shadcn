@@ -336,6 +336,7 @@ export const es: DeepString<typeof en> = {
       profile: "Perfil",
       signOut: "Cerrar sesión",
       yourClubs: "Tus clubes",
+      noClub: "Sin club",
       account: "Cuenta",
     },
   },
@@ -366,7 +367,7 @@ export const es: DeepString<typeof en> = {
       accent: {
         title: "Color de acento",
         description:
-          "Se usa en botones principales, resaltados y estados activos.",
+          "Se guarda para el club actual: se usa en botones principales, resaltados y estados activos.",
       },
       fontSize: {
         title: "Tamaño de fuente",
@@ -391,6 +392,8 @@ export const es: DeepString<typeof en> = {
         description: "Se muestra en toda la app, incluida la barra lateral.",
       },
       clubName: "Nombre del club",
+      clubNameSaved: "Nombre del club actualizado",
+      clubNameError: "No se pudo actualizar el nombre del club",
       logoInitials: "Iniciales del logotipo",
       address: "Dirección",
       addressPlaceholder: "Calle, ciudad, país",

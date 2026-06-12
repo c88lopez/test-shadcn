@@ -84,17 +84,33 @@ describe("clampNumber", () => {
 })
 
 describe("loadAppSettings", () => {
-  it("returns defaults when nothing is stored", () => {
-    expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS)
+  it("returns defaults when no club is active", () => {
+    expect(loadAppSettings(null)).toEqual(DEFAULT_APP_SETTINGS)
+  })
+
+  it("returns defaults when nothing is stored for the club", () => {
+    expect(loadAppSettings("club1")).toEqual(DEFAULT_APP_SETTINGS)
+  })
+
+  it("reads from the club-scoped key", () => {
+    localStorage.setItem(
+      "app_settings:club1",
+      JSON.stringify({ general: { phone: "555-0001" } })
+    )
+    expect(loadAppSettings("club1").general.phone).toBe("555-0001")
+    // A different club doesn't see club1's settings.
+    expect(loadAppSettings("club2").general.phone).toBe(
+      DEFAULT_APP_SETTINGS.general.phone
+    )
   })
 
   it("deep-merges a partial stored value over the defaults", () => {
     localStorage.setItem(
-      "app_settings",
-      JSON.stringify({ general: { clubName: "Smash Club" } })
+      "app_settings:club1",
+      JSON.stringify({ general: { phone: "555-0001" } })
     )
-    const settings = loadAppSettings()
-    expect(settings.general.clubName).toBe("Smash Club")
+    const settings = loadAppSettings("club1")
+    expect(settings.general.phone).toBe("555-0001")
     // Untouched fields keep their defaults.
     expect(settings.general.timeFormat).toBe("24h")
     expect(settings.reservations.courts).toHaveLength(6)
@@ -103,14 +119,22 @@ describe("loadAppSettings", () => {
 
   it("replaces array-valued settings instead of merging them", () => {
     localStorage.setItem(
-      "app_settings",
+      "app_settings:club1",
       JSON.stringify({ notifications: { reminderOffsets: [2] } })
     )
-    expect(loadAppSettings().notifications.reminderOffsets).toEqual([2])
+    expect(loadAppSettings("club1").notifications.reminderOffsets).toEqual([2])
+  })
+
+  it("falls back to the legacy un-scoped key when no club blob exists", () => {
+    localStorage.setItem(
+      "app_settings",
+      JSON.stringify({ general: { phone: "555-LEGACY" } })
+    )
+    expect(loadAppSettings("club1").general.phone).toBe("555-LEGACY")
   })
 
   it("falls back to defaults on malformed JSON", () => {
-    localStorage.setItem("app_settings", "{not json")
-    expect(loadAppSettings()).toEqual(DEFAULT_APP_SETTINGS)
+    localStorage.setItem("app_settings:club1", "{not json")
+    expect(loadAppSettings("club1")).toEqual(DEFAULT_APP_SETTINGS)
   })
 })
