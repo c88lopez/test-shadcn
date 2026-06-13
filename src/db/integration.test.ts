@@ -8,6 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import * as schema from "@/db/schema"
 import {
   club,
+  clubReservationSettings,
   coach,
   coachClass,
   court,
@@ -18,6 +19,7 @@ import {
   stockItem,
   user,
 } from "@/db/schema"
+import { DEFAULT_RESERVATION_SETTINGS } from "@/lib/reservation-settings"
 import { findOverlap } from "@/lib/reservation-overlap"
 import { findStockShortages } from "@/lib/inventory"
 import { classStatus } from "@/lib/classes"
@@ -66,6 +68,10 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           clubId: CLUB_ID,
         },
       ])
+      .onConflictDoNothing()
+    await db
+      .insert(clubReservationSettings)
+      .values({ clubId: CLUB_ID, ...DEFAULT_RESERVATION_SETTINGS })
       .onConflictDoNothing()
   })
 
@@ -194,6 +200,29 @@ describe.skipIf(!TEST_URL)("database integration", () => {
         await sameCourtSlots(COURT2_ID)
       )
       expect(conflict).toBeUndefined()
+    })
+  })
+
+  describe("reservation settings", () => {
+    it("round-trips the jsonb hours and updates rule columns", async () => {
+      const [row] = await db
+        .select()
+        .from(clubReservationSettings)
+        .where(eq(clubReservationSettings.clubId, CLUB_ID))
+      expect(row.timezone).toBe(DEFAULT_RESERVATION_SETTINGS.timezone)
+      expect(row.hours.sun.closed).toBe(true)
+      expect(row.maxConcurrentPerPlayer).toBe(2)
+
+      await db
+        .update(clubReservationSettings)
+        .set({ minAdvanceHours: 6, maxAdvanceDays: 14 })
+        .where(eq(clubReservationSettings.clubId, CLUB_ID))
+      const [updated] = await db
+        .select()
+        .from(clubReservationSettings)
+        .where(eq(clubReservationSettings.clubId, CLUB_ID))
+      expect(updated.minAdvanceHours).toBe(6)
+      expect(updated.maxAdvanceDays).toBe(14)
     })
   })
 

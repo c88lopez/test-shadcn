@@ -23,24 +23,6 @@ export interface GeneralSettings {
   weekStart: WeekStart
 }
 
-export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
-
-export interface DayHours {
-  open: string
-  close: string
-  closed: boolean
-}
-
-export interface ReservationSettings {
-  hours: Record<Weekday, DayHours>
-  slotDuration: number
-  defaultBookingLength: number
-  minAdvanceHours: number
-  maxAdvanceDays: number
-  cancellationCutoffHours: number
-  maxConcurrentPerPlayer: number
-}
-
 export interface NotificationSettings {
   channels: { email: boolean; whatsapp: boolean }
   events: { confirmations: boolean; reminders: boolean; cancellations: boolean }
@@ -69,7 +51,6 @@ export interface SecuritySettings {
 
 export interface AppSettings {
   general: GeneralSettings
-  reservations: ReservationSettings
   notifications: NotificationSettings
   inventory: InventorySettings
   security: SecuritySettings
@@ -87,16 +68,6 @@ export const TIMEZONES: string[] = [
   "America/Sao_Paulo",
 ]
 
-export const WEEKDAYS: { key: Weekday; label: string }[] = [
-  { key: "mon", label: "Monday" },
-  { key: "tue", label: "Tuesday" },
-  { key: "wed", label: "Wednesday" },
-  { key: "thu", label: "Thursday" },
-  { key: "fri", label: "Friday" },
-  { key: "sat", label: "Saturday" },
-  { key: "sun", label: "Sunday" },
-]
-
 export const REMINDER_OFFSETS: { hours: number; label: string }[] = [
   { hours: 1, label: "1 hour" },
   { hours: 2, label: "2 hours" },
@@ -104,28 +75,7 @@ export const REMINDER_OFFSETS: { hours: number; label: string }[] = [
   { hours: 48, label: "2 days" },
 ]
 
-export const SLOT_DURATIONS = [30, 60, 90] as const
-
-// Maps JS Date.getDay() (0 = Sunday) to our weekday keys.
-const DAY_INDEX_TO_KEY: Weekday[] = [
-  "sun",
-  "mon",
-  "tue",
-  "wed",
-  "thu",
-  "fri",
-  "sat",
-]
-
 // --- Defaults ---
-
-function defaultHours(): Record<Weekday, DayHours> {
-  const entries = WEEKDAYS.map((d) => [
-    d.key,
-    { open: "08:00", close: "23:00", closed: d.key === "sun" },
-  ])
-  return Object.fromEntries(entries) as Record<Weekday, DayHours>
-}
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   general: {
@@ -135,15 +85,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     timezone: "Europe/Madrid",
     timeFormat: "24h",
     weekStart: "monday",
-  },
-  reservations: {
-    hours: defaultHours(),
-    slotDuration: 60,
-    defaultBookingLength: 90,
-    minAdvanceHours: 1,
-    maxAdvanceDays: 30,
-    cancellationCutoffHours: 24,
-    maxConcurrentPerPlayer: 2,
   },
   notifications: {
     channels: { email: true, whatsapp: false },
@@ -181,20 +122,8 @@ type DeepPartial<T> = { [K in keyof T]?: DeepPartial<T[K]> }
 
 function merge(parsed: DeepPartial<AppSettings> | null): AppSettings {
   const D = DEFAULT_APP_SETTINGS
-  const parsedHours = parsed?.reservations?.hours
-  const hours = Object.fromEntries(
-    WEEKDAYS.map((d) => [
-      d.key,
-      { ...D.reservations.hours[d.key], ...parsedHours?.[d.key] },
-    ])
-  ) as Record<Weekday, DayHours>
   return {
     general: { ...D.general, ...parsed?.general },
-    reservations: {
-      ...D.reservations,
-      ...parsed?.reservations,
-      hours,
-    },
     notifications: {
       ...D.notifications,
       ...parsed?.notifications,
@@ -328,11 +257,6 @@ export function clampNumber(
   const n = Number(value)
   if (!Number.isFinite(n)) return min
   return Math.min(max, Math.max(min, n))
-}
-
-export function todayHours(reservations: ReservationSettings): DayHours {
-  const key = DAY_INDEX_TO_KEY[new Date().getDay()]
-  return reservations.hours[key]
 }
 
 /** Formats an "HH:MM" string respecting the configured 12h/24h preference. */

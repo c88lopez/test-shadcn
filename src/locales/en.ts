@@ -426,8 +426,9 @@ export const en = {
       operatingHours: {
         title: "Operating hours",
         description:
-          "Sets the visible range of the reservations timeline for each day.",
+          "Bookings outside these hours are rejected. Also sets the visible range of the reservations timeline.",
       },
+      timezone: "Timezone",
       open: "Open",
       closed: "Closed",
       invalidHours: "Closing time must be after opening time.",

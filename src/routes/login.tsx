@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
-import { IconLoader2 } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
+import { ProgressButton } from "@/components/progress-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -69,10 +68,9 @@ function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <IconLoader2 className="size-4 animate-spin" />}
+            <ProgressButton type="submit" className="w-full" loading={loading}>
               {t("auth.signIn")}
-            </Button>
+            </ProgressButton>
           </form>
         </CardContent>
       </Card>

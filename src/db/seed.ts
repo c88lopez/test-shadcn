@@ -17,6 +17,7 @@ import {
   user,
 } from "@/db/schema"
 import { seedDefaultCourts } from "@/lib/courts.server"
+import { seedDefaultReservationSettings } from "@/lib/reservation-settings.server"
 import { SUPER_ADMIN_ROLE } from "@/lib/permissions"
 import {
   seedPlayers,
@@ -52,9 +53,10 @@ async function seedClubs() {
     .insert(club)
     .values({ id: DEFAULT_CLUB_ID, name: "Default Club", slug: "default" })
     .onConflictDoNothing()
-  // Give the Default Club its bookable courts (idempotent; needed when the
-  // schema was applied via `db:push` instead of migrations).
+  // Give the Default Club its bookable courts and reservation settings
+  // (idempotent; needed when the schema was applied via `db:push`).
   await seedDefaultCourts(DEFAULT_CLUB_ID)
+  await seedDefaultReservationSettings(DEFAULT_CLUB_ID)
   console.log("✓ Default Club ready")
 }
 

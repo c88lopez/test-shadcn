@@ -19,19 +19,18 @@ import {
 import type { ReservationListItem } from "@/lib/reservations.functions"
 import { listCourts } from "@/lib/courts.functions"
 import type { CourtRecord } from "@/lib/courts.functions"
+import { getReservationSettings } from "@/lib/reservation-settings.functions"
+import { todayHours } from "@/lib/reservation-settings"
+import type { ReservationSettingsData } from "@/lib/reservation-settings.functions"
 import type { TranslationKey } from "@/lib/i18n"
 import { useCan } from "@/hooks/use-permissions"
-import {
-  formatHour,
-  formatTimeRange,
-  todayHours,
-  useAppSettings,
-} from "@/lib/app-settings"
+import { formatHour, formatTimeRange, useAppSettings } from "@/lib/app-settings"
 
 export const Route = createFileRoute("/_authenticated/reservations")({
   loader: async () => ({
     reservations: await listReservations(),
     courts: await listCourts(),
+    settings: await getReservationSettings(),
   }),
   component: ReservationsPage,
 })
@@ -83,17 +82,19 @@ function toPx(minutes: number, pxPerHour: number, startHour: number): number {
 function CourtTimeline({
   reservations,
   courts: allCourts,
+  settings,
   hoveredId,
   onHover,
 }: {
   reservations: TimelineReservation[]
   courts: CourtRecord[]
+  settings: ReservationSettingsData
   hoveredId: string | null
   onHover: (id: string | null) => void
 }) {
   const { t, i18n } = useTranslation()
-  const { reservations: reservationSettings, general } = useAppSettings()
-  const dayHours = todayHours(reservationSettings)
+  const { general } = useAppSettings()
+  const dayHours = todayHours(settings)
   const fallback = dayHours.closed
   const startHour = fallback ? 8 : Number(dayHours.open.split(":")[0])
   // Round the close time up to the next hour so the final label is visible.
@@ -415,7 +416,7 @@ function ReservationsPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("reservations:manage")
-  const { reservations, courts } = Route.useLoaderData()
+  const { reservations, courts, settings } = Route.useLoaderData()
   const columns = useMemo(() => buildColumns(t, courts), [t, courts])
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
@@ -467,6 +468,7 @@ function ReservationsPage() {
         <CourtTimeline
           reservations={todayReservations}
           courts={courts}
+          settings={settings}
           hoveredId={hoveredId}
           onHover={setHoveredId}
         />
