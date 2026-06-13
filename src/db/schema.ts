@@ -7,7 +7,9 @@ import {
   integer,
   date,
   doublePrecision,
+  jsonb,
 } from "drizzle-orm/pg-core"
+import type { DayHours, Weekday } from "@/lib/reservation-settings"
 
 // Better Auth core tables. These match the schema Better Auth's drizzle adapter
 // expects for email/password auth. App-domain tables (players, reservations,
@@ -118,6 +120,58 @@ export const verification = pgTable("verification", {
 
 // --- App domain tables ---
 
+// A bookable court. Belongs to exactly one club. `sortOrder` doubles as the
+// human-facing court number (1, 2, 3 …) used in labels like "Court 3".
+export const court = pgTable("court", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  type: text("type").notNull().default("indoor"),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  clubId: text("club_id")
+    .notNull()
+    .references(() => club.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type Court = typeof court.$inferSelect
+export type NewCourt = typeof court.$inferInsert
+
+// Per-club reservation configuration: opening hours + booking rules. One row per
+// club (club_id is the PK). Enforced server-side on reservation writes.
+export const clubReservationSettings = pgTable("club_reservation_settings", {
+  clubId: text("club_id")
+    .primaryKey()
+    .references(() => club.id, { onDelete: "cascade" }),
+  timezone: text("timezone").notNull().default("Europe/Madrid"),
+  hours: jsonb("hours").notNull().$type<Record<Weekday, DayHours>>(),
+  slotDuration: integer("slot_duration").notNull().default(60),
+  defaultBookingLength: integer("default_booking_length").notNull().default(90),
+  minAdvanceHours: integer("min_advance_hours").notNull().default(1),
+  maxAdvanceDays: integer("max_advance_days").notNull().default(30),
+  cancellationCutoffHours: integer("cancellation_cutoff_hours")
+    .notNull()
+    .default(24),
+  maxConcurrentPerPlayer: integer("max_concurrent_per_player")
+    .notNull()
+    .default(2),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp("updated_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type ClubReservationSettings =
+  typeof clubReservationSettings.$inferSelect
+export type NewClubReservationSettings =
+  typeof clubReservationSettings.$inferInsert
+
 export const player = pgTable("player", {
   id: text("id")
     .primaryKey()
@@ -143,7 +197,9 @@ export const reservation = pgTable("reservation", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  court: integer("court").notNull(),
+  courtId: text("court_id")
+    .notNull()
+    .references(() => court.id, { onDelete: "restrict" }),
   player: text("player").notNull(),
   bookedBy: text("booked_by").notNull(),
   date: date("date").notNull(),
@@ -242,7 +298,9 @@ export const coachClass = pgTable("coach_class", {
   coachId: text("coach_id").references(() => coach.id, {
     onDelete: "set null",
   }),
-  court: integer("court").notNull(),
+  courtId: text("court_id")
+    .notNull()
+    .references(() => court.id, { onDelete: "restrict" }),
   date: date("date").notNull(),
   startTime: text("start_time").notNull(),
   durationMinutes: integer("duration_minutes").notNull(),

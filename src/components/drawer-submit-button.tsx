@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next"
-import { IconLoader2 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import type { SubmitStatus } from "@/hooks/use-submit-lifecycle"
 
@@ -30,9 +29,6 @@ export function DrawerSubmitButton({
         />
       )}
       <span className="relative z-10 flex items-center gap-2">
-        {status === "submitting" && (
-          <IconLoader2 className="size-4 animate-spin" />
-        )}
         {status === "submitting"
           ? (savingLabel ?? t("common.saving"))
           : status === "success"

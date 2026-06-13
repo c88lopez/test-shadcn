@@ -11,11 +11,11 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { DrawerSubmitButton } from "@/components/drawer-submit-button"
 import { useSubmitLifecycle } from "@/hooks/use-submit-lifecycle"
-import { useAppSettings } from "@/lib/app-settings"
 import {
   createReservation,
   updateReservation,
 } from "@/lib/reservations.functions"
+import type { CourtRecord } from "@/lib/courts.functions"
 import {
   Drawer,
   DrawerClose,
@@ -51,7 +51,7 @@ import { cn } from "@/lib/utils"
 function makeSchema(t: TFunction) {
   return z.object({
     player: z.string().min(1, t("validation.playerRequired")),
-    court: z.string().min(1, t("validation.courtRequired")),
+    courtId: z.string().min(1, t("validation.courtRequired")),
     date: z.date({ error: t("validation.dateRequired") }),
     time: z.string().min(1, t("validation.timeRequired")),
     duration: z.string().min(1, t("validation.durationRequired")),
@@ -64,7 +64,7 @@ type FormInput = Omit<FormValues, "date"> & { date?: Date }
 
 export interface ReservationData {
   player: string
-  court: string
+  courtId: string
   date: Date
   time: string
   duration: string
@@ -74,6 +74,7 @@ export interface ReservationData {
 interface Props {
   trigger?: React.ReactNode
   reservation?: ReservationData & { id?: string }
+  courts: CourtRecord[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
   onSaved?: () => void
@@ -82,6 +83,7 @@ interface Props {
 export function NewReservationDrawer({
   trigger,
   reservation,
+  courts: allCourts,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   onSaved,
@@ -92,8 +94,11 @@ export function NewReservationDrawer({
   const setOpen = controlledOnOpenChange ?? setInternalOpen
   const isEditing = !!reservation
 
-  const { reservations: reservationSettings } = useAppSettings()
-  const courts = reservationSettings.courts.filter((c) => c.active)
+  // Show active courts, plus the reservation's current court even if it's since
+  // been deactivated (so editing an old booking still displays its court).
+  const courts = allCourts.filter(
+    (c) => c.active || c.id === reservation?.courtId
+  )
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
   const schema = useMemo(() => makeSchema(t), [t])
@@ -102,7 +107,7 @@ export function NewReservationDrawer({
     resolver: zodFormResolver<FormInput>(schema),
     defaultValues: reservation ?? {
       player: "",
-      court: "",
+      courtId: "",
       time: "",
       duration: "",
       paymentStatus: "",
@@ -114,7 +119,7 @@ export function NewReservationDrawer({
       form.reset(
         reservation ?? {
           player: "",
-          court: "",
+          courtId: "",
           time: "",
           duration: "",
           paymentStatus: "",
@@ -126,7 +131,7 @@ export function NewReservationDrawer({
 
   function onSubmit(values: FormInput) {
     const payload = {
-      court: Number(values.court),
+      courtId: values.courtId,
       player: values.player,
       date: format(values.date as Date, "yyyy-MM-dd"),
       startTime: values.time,
@@ -198,7 +203,7 @@ export function NewReservationDrawer({
 
             <FormField
               control={form.control}
-              name="court"
+              name="courtId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("fields.court")}</FormLabel>
@@ -212,7 +217,7 @@ export function NewReservationDrawer({
                     </FormControl>
                     <SelectContent>
                       {courts.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
+                        <SelectItem key={c.id} value={c.id}>
                           {c.name}
                         </SelectItem>
                       ))}

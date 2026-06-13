@@ -3,6 +3,7 @@ import { AlertDialog as AlertDialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useIndeterminateProgress } from "@/hooks/use-indeterminate-progress"
 
 function AlertDialog({
   ...props
@@ -45,16 +46,43 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  onKeyDown,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm"
 }) {
+  // Make Enter confirm the dialog (Radix focuses Cancel by default, so Enter
+  // would otherwise do nothing). Let inputs/textareas and the action button
+  // itself handle Enter so we don't hijack typing or double-fire.
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    onKeyDown?.(e)
+    if (e.key !== "Enter" || e.defaultPrevented || e.nativeEvent.isComposing)
+      return
+    const target = e.target as HTMLElement
+    if (
+      target.closest('[data-slot="alert-dialog-action"]') ||
+      target.tagName === "TEXTAREA" ||
+      (target.tagName === "INPUT" &&
+        (target as HTMLInputElement).type !== "button")
+    ) {
+      return
+    }
+    const action = e.currentTarget.querySelector<HTMLElement>(
+      '[data-slot="alert-dialog-action"]'
+    )
+    if (action) {
+      e.preventDefault()
+      action.click()
+    }
+  }
+
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         data-size={size}
+        onKeyDown={handleKeyDown}
         className={cn(
           "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-[min(var(--radius-4xl),24px)] bg-popover p-6 text-popover-foreground shadow-xl ring-1 ring-foreground/5 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md dark:ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
@@ -149,16 +177,36 @@ function AlertDialogAction({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> &
-  Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+  Pick<React.ComponentProps<typeof Button>, "variant" | "size"> & {
+    loading?: boolean
+  }) {
+  // While loading, fill the button with a progress bar (no spinner) and disable
+  // it, matching the drawer/login submit buttons.
+  const progress = useIndeterminateProgress(loading)
   return (
     <Button variant={variant} size={size} asChild>
       <AlertDialogPrimitive.Action
         data-slot="alert-dialog-action"
-        className={cn(className)}
+        className={cn("relative overflow-hidden", className)}
+        disabled={disabled || loading}
         {...props}
-      />
+      >
+        {progress > 0 && (
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 bg-primary-foreground/25 transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        )}
+        <span className="relative z-10 flex items-center gap-2">
+          {children}
+        </span>
+      </AlertDialogPrimitive.Action>
     </Button>
   )
 }

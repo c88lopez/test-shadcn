@@ -8,6 +8,7 @@ import {
   clubMember,
   coach,
   coachClass,
+  court,
   player,
   reservation,
   sale,
@@ -15,6 +16,8 @@ import {
   stockItem,
   user,
 } from "@/db/schema"
+import { seedDefaultCourts } from "@/lib/courts.server"
+import { seedDefaultReservationSettings } from "@/lib/reservation-settings.server"
 import { SUPER_ADMIN_ROLE } from "@/lib/permissions"
 import {
   seedPlayers,
@@ -50,7 +53,20 @@ async function seedClubs() {
     .insert(club)
     .values({ id: DEFAULT_CLUB_ID, name: "Default Club", slug: "default" })
     .onConflictDoNothing()
+  // Give the Default Club its bookable courts and reservation settings
+  // (idempotent; needed when the schema was applied via `db:push`).
+  await seedDefaultCourts(DEFAULT_CLUB_ID)
+  await seedDefaultReservationSettings(DEFAULT_CLUB_ID)
   console.log("✓ Default Club ready")
+}
+
+// Maps a club's court numbers (sort order) to court ids for seeding rows.
+async function courtIdByNumber(clubId: string): Promise<Map<number, string>> {
+  const rows = await db
+    .select({ id: court.id, sortOrder: court.sortOrder })
+    .from(court)
+    .where(eq(court.clubId, clubId))
+  return new Map(rows.map((r) => [r.sortOrder, r.id]))
 }
 
 async function seedAdmin() {
@@ -180,12 +196,13 @@ async function seedReservationSchedule() {
     return
   }
   const today = new Date().toISOString().slice(0, 10)
+  const courts = await courtIdByNumber(DEFAULT_CLUB_ID)
   await db.insert(reservation).values(
-    reservationSeeds.map((r) => ({
-      ...r,
-      date: today,
-      clubId: DEFAULT_CLUB_ID,
-    }))
+    reservationSeeds.map(({ court: courtNumber, ...r }) => {
+      const courtId = courts.get(courtNumber)
+      if (!courtId) throw new Error(`No court #${courtNumber} to seed.`)
+      return { ...r, courtId, date: today, clubId: DEFAULT_CLUB_ID }
+    })
   )
   console.log(`✓ Seeded ${reservationSeeds.length} reservations for ${today}`)
 }
@@ -240,17 +257,22 @@ async function seedCoaching() {
   const idByName = new Map(inserted.map((c) => [c.name, c.id]))
   console.log(`✓ Seeded ${inserted.length} coaches`)
 
+  const courts = await courtIdByNumber(DEFAULT_CLUB_ID)
   await db.insert(coachClass).values(
-    classSeeds.map((seed) => ({
-      coachId: idByName.get(seed.coach) ?? null,
-      court: seed.court,
-      date: new Date(Date.now() + seed.offsetDays * 86_400_000)
-        .toISOString()
-        .slice(0, 10),
-      startTime: seed.startTime,
-      durationMinutes: seed.durationMinutes,
-      clubId: DEFAULT_CLUB_ID,
-    }))
+    classSeeds.map((seed) => {
+      const courtId = courts.get(seed.court)
+      if (!courtId) throw new Error(`No court #${seed.court} to seed.`)
+      return {
+        coachId: idByName.get(seed.coach) ?? null,
+        courtId,
+        date: new Date(Date.now() + seed.offsetDays * 86_400_000)
+          .toISOString()
+          .slice(0, 10),
+        startTime: seed.startTime,
+        durationMinutes: seed.durationMinutes,
+        clubId: DEFAULT_CLUB_ID,
+      }
+    })
   )
   console.log(`✓ Seeded ${classSeeds.length} classes`)
 }

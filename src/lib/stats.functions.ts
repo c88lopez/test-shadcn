@@ -1,8 +1,15 @@
 import { createServerFn } from "@tanstack/react-start"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, count, eq, inArray } from "drizzle-orm"
 import { addDays, endOfMonth, format, startOfWeek, subMonths } from "date-fns"
 import { db } from "@/db"
-import { player, reservation, sale, saleItem, stockItem } from "@/db/schema"
+import {
+  court,
+  player,
+  reservation,
+  sale,
+  saleItem,
+  stockItem,
+} from "@/db/schema"
 import { currentClubId } from "@/lib/auth.server"
 import { endTime } from "@/lib/classes"
 import {
@@ -37,7 +44,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 
     const weekRes = await db
       .select({
-        court: reservation.court,
+        court: court.sortOrder,
         player: reservation.player,
         date: reservation.date,
         startTime: reservation.startTime,
@@ -45,12 +52,18 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
         paymentStatus: reservation.paymentStatus,
       })
       .from(reservation)
+      .innerJoin(court, eq(reservation.courtId, court.id))
       .where(
         and(
           eq(reservation.clubId, clubId),
           inArray(reservation.date, weekDates)
         )
       )
+
+    const [activeCourtsRow] = await db
+      .select({ value: count() })
+      .from(court)
+      .where(and(eq(court.clubId, clubId), eq(court.active, true)))
 
     const months = Array.from({ length: 7 }, (_, i) => {
       const d = subMonths(now, 6 - i)
@@ -79,6 +92,7 @@ export const getOverviewStats = createServerFn({ method: "GET" }).handler(
 
     return {
       courtsOccupiedNow: occupiedCourtsNow(weekRes, todayStr, nowMin),
+      activeCourts: activeCourtsRow.value,
       weekly,
       weeklyTotal: weekly.reduce((s, d) => s + d.reservations, 0),
       subscribers,
@@ -130,7 +144,7 @@ export const getPlayerStats = createServerFn({ method: "GET" }).handler(
     const clubId = await currentClubId()
     const rows = await db
       .select({
-        court: reservation.court,
+        court: court.sortOrder,
         player: reservation.player,
         date: reservation.date,
         startTime: reservation.startTime,
@@ -138,6 +152,7 @@ export const getPlayerStats = createServerFn({ method: "GET" }).handler(
         paymentStatus: reservation.paymentStatus,
       })
       .from(reservation)
+      .innerJoin(court, eq(reservation.courtId, court.id))
       .where(eq(reservation.clubId, clubId))
 
     return {

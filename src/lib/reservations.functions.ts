@@ -1,18 +1,23 @@
 import { createServerFn } from "@tanstack/react-start"
-import { and, asc, count, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
-import { reservation } from "@/db/schema"
+import { court, reservation } from "@/db/schema"
 import {
   currentClubId,
   requireClubId,
   requirePermission,
   resolveActiveClubId,
 } from "@/lib/auth.server"
+import { assertCourtBookable } from "@/lib/courts.server"
+import {
+  assertBookingAllowed,
+  assertCancellationAllowed,
+} from "@/lib/reservation-settings.server"
 import { findOverlap, timeToMin } from "@/lib/reservation-overlap"
 
 const reservationInput = z.object({
-  court: z.coerce.number().int().positive(),
+  courtId: z.string().min(1),
   player: z.string().min(1),
   date: z.string().min(1), // "YYYY-MM-DD"
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
@@ -20,11 +25,25 @@ const reservationInput = z.object({
   paymentStatus: z.enum(["paid", "partial", "unpaid"]),
 })
 
+// Reservation enriched with its court's display name/number for the UI.
+export interface ReservationListItem {
+  id: string
+  courtId: string
+  courtName: string
+  courtNumber: number
+  player: string
+  bookedBy: string
+  date: string
+  startTime: string
+  durationMinutes: number
+  paymentStatus: string
+}
+
 // Returns an overlapping reservation on the same court+date within the club.
 async function findConflict(
   clubId: string,
   input: {
-    court: number
+    courtId: string
     date: string
     startTime: string
     durationMinutes: number
@@ -37,7 +56,7 @@ async function findConflict(
     .where(
       and(
         eq(reservation.clubId, clubId),
-        eq(reservation.court, input.court),
+        eq(reservation.courtId, input.courtId),
         eq(reservation.date, input.date)
       )
     )
@@ -59,36 +78,31 @@ function conflictError(conflict: {
 }
 
 export const listReservations = createServerFn({ method: "GET" }).handler(
-  async () => {
+  async (): Promise<ReservationListItem[]> => {
     const clubId = await currentClubId()
     return db
-      .select()
+      .select({
+        id: reservation.id,
+        courtId: reservation.courtId,
+        courtName: court.name,
+        courtNumber: court.sortOrder,
+        player: reservation.player,
+        bookedBy: reservation.bookedBy,
+        date: reservation.date,
+        startTime: reservation.startTime,
+        durationMinutes: reservation.durationMinutes,
+        paymentStatus: reservation.paymentStatus,
+      })
       .from(reservation)
+      .innerJoin(court, eq(reservation.courtId, court.id))
       .where(eq(reservation.clubId, clubId))
       .orderBy(
         asc(reservation.date),
-        asc(reservation.court),
+        asc(court.sortOrder),
         asc(reservation.startTime)
       )
   }
 )
-
-// How many reservations reference a given court number in the active club.
-// Used to block deleting a court that still has reservations.
-export const countReservationsForCourt = createServerFn({ method: "GET" })
-  .inputValidator((data: unknown) =>
-    z.object({ court: z.coerce.number().int().positive() }).parse(data)
-  )
-  .handler(async ({ data }) => {
-    const clubId = await currentClubId()
-    const [row] = await db
-      .select({ value: count() })
-      .from(reservation)
-      .where(
-        and(eq(reservation.clubId, clubId), eq(reservation.court, data.court))
-      )
-    return { count: row.value }
-  })
 
 export const createReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => reservationInput.parse(data))
@@ -96,6 +110,8 @@ export const createReservation = createServerFn({ method: "POST" })
     const session = await requirePermission("reservations:manage")
     const clubId = await resolveActiveClubId(session.user)
     if (!clubId) throw new Error("This action requires a club context.")
+    await assertCourtBookable(clubId, data.courtId)
+    await assertBookingAllowed(clubId, data)
     const conflict = await findConflict(clubId, data)
     if (conflict) conflictError(conflict)
     const [created] = await db
@@ -112,6 +128,8 @@ export const updateReservation = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const clubId = await requireClubId("reservations:manage")
     const { id, ...values } = data
+    await assertCourtBookable(clubId, values.courtId)
+    await assertBookingAllowed(clubId, values, { excludeId: id })
     const conflict = await findConflict(clubId, { ...values, excludeId: id })
     if (conflict) conflictError(conflict)
     const [updated] = await db
@@ -128,6 +146,16 @@ export const deleteReservation = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const clubId = await requireClubId("reservations:manage")
+    const existing = await db
+      .select({
+        date: reservation.date,
+        startTime: reservation.startTime,
+      })
+      .from(reservation)
+      .where(and(eq(reservation.id, data.id), eq(reservation.clubId, clubId)))
+      .limit(1)
+    if (existing.length > 0)
+      await assertCancellationAllowed(clubId, existing[0])
     await db
       .delete(reservation)
       .where(and(eq(reservation.id, data.id), eq(reservation.clubId, clubId)))
