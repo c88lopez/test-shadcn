@@ -10,6 +10,10 @@ import {
   resolveActiveClubId,
 } from "@/lib/auth.server"
 import { assertCourtBookable } from "@/lib/courts.server"
+import {
+  assertBookingAllowed,
+  assertCancellationAllowed,
+} from "@/lib/reservation-settings.server"
 import { findOverlap, timeToMin } from "@/lib/reservation-overlap"
 
 const reservationInput = z.object({
@@ -107,6 +111,7 @@ export const createReservation = createServerFn({ method: "POST" })
     const clubId = await resolveActiveClubId(session.user)
     if (!clubId) throw new Error("This action requires a club context.")
     await assertCourtBookable(clubId, data.courtId)
+    await assertBookingAllowed(clubId, data)
     const conflict = await findConflict(clubId, data)
     if (conflict) conflictError(conflict)
     const [created] = await db
@@ -124,6 +129,7 @@ export const updateReservation = createServerFn({ method: "POST" })
     const clubId = await requireClubId("reservations:manage")
     const { id, ...values } = data
     await assertCourtBookable(clubId, values.courtId)
+    await assertBookingAllowed(clubId, values, { excludeId: id })
     const conflict = await findConflict(clubId, { ...values, excludeId: id })
     if (conflict) conflictError(conflict)
     const [updated] = await db
@@ -140,6 +146,16 @@ export const deleteReservation = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const clubId = await requireClubId("reservations:manage")
+    const existing = await db
+      .select({
+        date: reservation.date,
+        startTime: reservation.startTime,
+      })
+      .from(reservation)
+      .where(and(eq(reservation.id, data.id), eq(reservation.clubId, clubId)))
+      .limit(1)
+    if (existing.length > 0)
+      await assertCancellationAllowed(clubId, existing[0])
     await db
       .delete(reservation)
       .where(and(eq(reservation.id, data.id), eq(reservation.clubId, clubId)))

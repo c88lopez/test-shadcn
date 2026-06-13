@@ -57,6 +57,13 @@
       "when": 1781284232023,
       "tag": "0007_previous_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781319754706,
+      "tag": "0008_even_albert_cleary",
+      "breakpoints": true
     }
   ]
 }

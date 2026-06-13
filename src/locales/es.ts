@@ -435,8 +435,9 @@ export const es: DeepString<typeof en> = {
       operatingHours: {
         title: "Horario de apertura",
         description:
-          "Define el rango visible del cronograma de reservas para cada día.",
+          "Las reservas fuera de este horario se rechazan. También define el rango visible del cronograma de reservas.",
       },
+      timezone: "Zona horaria",
       open: "Abierto",
       closed: "Cerrado",
       invalidHours: "La hora de cierre debe ser posterior a la de apertura.",
