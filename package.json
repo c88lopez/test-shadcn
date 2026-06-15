@@ -23,7 +23,10 @@
     "db:seed:demo": "bun run src/db/seed.ts --demo",
     "db:reset": "bun run src/db/reset.ts",
     "test:integration": "vitest run src/db/integration.test.ts",
+    "db:e2e:reset": "bun run src/db/reset-e2e.ts",
+    "pretest:e2e": "bun run db:e2e:reset",
     "test:e2e": "playwright test",
+    "pretest:e2e:ui": "bun run db:e2e:reset",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
   },

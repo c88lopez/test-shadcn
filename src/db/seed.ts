@@ -38,6 +38,10 @@ const seedAuth = betterAuth({
 
 // Fixed id matching the one inserted by migration 0004 for the seed/backfill.
 const DEFAULT_CLUB_ID = "00000000-0000-0000-0000-000000000001"
+// A second club so the club switcher has somewhere to switch to. Has its own
+// courts/settings but no players/reservations, which makes tenant scoping
+// observable (its pages are empty).
+const NORTH_CLUB_ID = "00000000-0000-0000-0000-000000000002"
 
 const email = process.env.SEED_ADMIN_EMAIL ?? "admin@club.test"
 const password = process.env.SEED_ADMIN_PASSWORD ?? "admin1234"
@@ -57,7 +61,15 @@ async function seedClubs() {
   // (idempotent; needed when the schema was applied via `db:push`).
   await seedDefaultCourts(DEFAULT_CLUB_ID)
   await seedDefaultReservationSettings(DEFAULT_CLUB_ID)
-  console.log("✓ Default Club ready")
+
+  // North Branch: a second tenant for multi-club demos and switcher tests.
+  await db
+    .insert(club)
+    .values({ id: NORTH_CLUB_ID, name: "North Branch", slug: "north" })
+    .onConflictDoNothing()
+  await seedDefaultCourts(NORTH_CLUB_ID)
+  await seedDefaultReservationSettings(NORTH_CLUB_ID)
+  console.log("✓ Clubs ready (Default Club, North Branch)")
 }
 
 // Maps a club's court numbers (sort order) to court ids for seeding rows.
@@ -87,6 +99,8 @@ async function seedAdmin() {
     .set({ role: "Owner", clubId: DEFAULT_CLUB_ID })
     .where(eq(user.email, email))
   await ensureMembership(email, DEFAULT_CLUB_ID)
+  // Also a member of North Branch so the admin can switch between two clubs.
+  await ensureMembership(email, NORTH_CLUB_ID)
 }
 
 // Bootstraps a club_member row so the user can act within (and switch to) their

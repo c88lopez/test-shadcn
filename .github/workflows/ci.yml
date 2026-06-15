@@ -113,7 +113,7 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test
       BETTER_AUTH_SECRET: e2e-secret-not-for-production
-      BETTER_AUTH_URL: http://localhost:3003
+      BETTER_AUTH_URL: http://localhost:3100
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -124,7 +124,7 @@ jobs:
           bun-version: latest
 
       # Playwright's test runner is most reliable under Node; the app server it
-      # launches still runs via Bun (`bun run dev`).
+      # launches is the production build (`bun run build` + Nitro node output).
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
