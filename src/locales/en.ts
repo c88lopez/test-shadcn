@@ -368,6 +368,7 @@ export const en = {
         small: "Small",
         default: "Default",
         large: "Large",
+        extraLarge: "Extra Large",
       },
       language: {
         title: "Language",

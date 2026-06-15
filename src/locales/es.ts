@@ -375,6 +375,7 @@ export const es: DeepString<typeof en> = {
         small: "Pequeño",
         default: "Predeterminado",
         large: "Grande",
+        extraLarge: "Muy grande",
       },
       language: {
         title: "Idioma",
