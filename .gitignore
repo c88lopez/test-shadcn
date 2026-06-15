@@ -17,3 +17,10 @@ todos.json
 
 .idea/
 .vercel
+
+# playwright
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+e2e/.auth/*.json

@@ -22,7 +22,13 @@
     "db:seed": "bun run src/db/seed.ts",
     "db:seed:demo": "bun run src/db/seed.ts --demo",
     "db:reset": "bun run src/db/reset.ts",
-    "test:integration": "vitest run src/db/integration.test.ts"
+    "test:integration": "vitest run src/db/integration.test.ts",
+    "db:e2e:reset": "bun run src/db/reset-e2e.ts",
+    "pretest:e2e": "bun run db:e2e:reset",
+    "test:e2e": "playwright test",
+    "pretest:e2e:ui": "bun run db:e2e:reset",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.2.7",
@@ -59,6 +65,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/eslint-config": "latest",
     "@testing-library/dom": "^10.4.1",
