@@ -1,0 +1,1 @@
+ALTER TABLE "stock_item" ADD COLUMN "low_stock_threshold" integer DEFAULT 10 NOT NULL;

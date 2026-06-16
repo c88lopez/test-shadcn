@@ -64,6 +64,13 @@
       "when": 1781319754706,
       "tag": "0008_even_albert_cleary",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781554909975,
+      "tag": "0009_bizarre_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

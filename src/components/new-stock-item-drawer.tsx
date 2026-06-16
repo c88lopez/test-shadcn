@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
@@ -22,6 +22,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -42,16 +43,30 @@ function makeSchema(t: TFunction) {
     category: z.string().min(1, t("validation.categoryRequired")),
     price: z.coerce.number().positive(t("validation.pricePositive")),
     stock: z.coerce.number().int().min(0, t("validation.stockNonNegative")),
+    // Required: an empty field becomes `undefined` (not 0) so it fails as
+    // "required" instead of silently defaulting to zero.
+    lowStockThreshold: z.preprocess(
+      (v) => (v === "" || v === null ? undefined : v),
+      z.coerce
+        .number({ message: t("validation.thresholdRequired") })
+        .int()
+        .min(0, t("validation.thresholdNonNegative"))
+    ),
   })
 }
 
 type FormValues = z.infer<ReturnType<typeof makeSchema>>
+// While editing, the threshold may be empty until the user types a value.
+type FormInput = Omit<FormValues, "lowStockThreshold"> & {
+  lowStockThreshold?: number
+}
 
 export interface StockItemData {
   name: string
   category: string
   price: number
   stock: number
+  lowStockThreshold: number
 }
 
 interface Props {
@@ -61,8 +76,6 @@ interface Props {
   onOpenChange?: (open: boolean) => void
   onSaved?: () => void
 }
-
-const EMPTY: FormValues = { name: "", category: "", price: 0, stock: 0 }
 
 export function NewStockItemDrawer({
   trigger,
@@ -81,35 +94,31 @@ export function NewStockItemDrawer({
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
   const schema = useMemo(() => makeSchema(t), [t])
 
-  const form = useForm<FormValues>({
-    resolver: zodFormResolver<FormValues>(schema),
-    defaultValues: item
-      ? {
-          name: item.name,
-          category: item.category,
-          price: item.price,
-          stock: item.stock,
-        }
-      : EMPTY,
+  const toValues = useCallback(
+    (it?: StockItemData): FormInput => ({
+      name: it?.name ?? "",
+      category: it?.category ?? "",
+      price: it?.price ?? 0,
+      stock: it?.stock ?? 0,
+      // No default — the user must enter a threshold for every new item.
+      lowStockThreshold: it?.lowStockThreshold,
+    }),
+    []
+  )
+
+  const form = useForm<FormInput>({
+    resolver: zodFormResolver<FormInput>(schema),
+    defaultValues: toValues(item),
   })
 
   useEffect(() => {
     if (open) {
-      form.reset(
-        item
-          ? {
-              name: item.name,
-              category: item.category,
-              price: item.price,
-              stock: item.stock,
-            }
-          : EMPTY
-      )
+      form.reset(toValues(item))
       reset()
     }
-  }, [open, item, form, reset])
+  }, [open, item, form, reset, toValues])
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: FormInput) {
     run({
       action: () =>
         item?.id
@@ -226,6 +235,29 @@ export function NewStockItemDrawer({
                   <FormControl>
                     <Input type="number" min="0" placeholder="0" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="lowStockThreshold"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fields.lowStockThreshold")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 10"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t("forms.stock.thresholdHelp")}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

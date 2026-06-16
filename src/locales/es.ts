@@ -93,7 +93,6 @@ export const es: DeepString<typeof en> = {
       generalSettings: "General",
       reservationSettings: "Configuración de reservas",
       notificationSettings: "Configuración de notificaciones",
-      inventorySettings: "Configuración de inventario",
       users: "Usuarios",
       appearance: "Apariencia",
     },
@@ -128,6 +127,8 @@ export const es: DeepString<typeof en> = {
     roleRequired: "El rol es obligatorio",
     pricePositive: "El precio debe ser mayor que 0",
     stockNonNegative: "El stock no puede ser negativo",
+    thresholdRequired: "El umbral de stock bajo es obligatorio",
+    thresholdNonNegative: "El umbral no puede ser negativo",
     formatRequired: "El formato es obligatorio",
     minTeams: "Se requieren al menos 2 equipos",
     itemRequired: "El artículo es obligatorio",
@@ -155,6 +156,7 @@ export const es: DeepString<typeof en> = {
     clubs: "Clubes",
     price: "Precio",
     stock: "Stock",
+    lowStockThreshold: "Umbral de stock bajo",
     productName: "Nombre del producto",
     product: "Producto",
     qty: "Cant.",
@@ -240,6 +242,8 @@ export const es: DeepString<typeof en> = {
       titleEdit: "Editar artículo",
       namePlaceholder: "p. ej. Botella de agua (500ml)",
       priceLabel: "Precio ({{symbol}})",
+      thresholdHelp:
+        "Marca este artículo como bajo cuando el stock llegue a este número.",
       submitNew: "Agregar artículo",
       created: "Artículo creado",
       updated: "Artículo actualizado",
@@ -348,7 +352,6 @@ export const es: DeepString<typeof en> = {
       general: "General",
       reservations: "Reservas",
       notifications: "Notificaciones",
-      inventory: "Inventario",
       users: "Usuarios",
       clubs: "Clubes",
       ui: "Interfaz",
@@ -552,18 +555,6 @@ export const es: DeepString<typeof en> = {
         description: "Actualizaciones del producto y avisos de mantenimiento.",
       },
     },
-    inventory: {
-      title: "Inventario",
-      description: "Umbrales de stock y alertas.",
-      resetToast:
-        "Configuración de inventario restablecida a los valores predeterminados",
-      lowStockThreshold: {
-        title: "Umbral de stock bajo",
-        description:
-          "Los artículos con esta cantidad o menos se resaltan en la página de Stock.",
-      },
-      units: "Unidades",
-    },
     users: {
       title: "Usuarios",
       description: "Invita compañeros, asigna roles y administra el acceso.",
@@ -690,7 +681,7 @@ export const es: DeepString<typeof en> = {
       manage: "Administra los niveles de stock.",
       clickToEdit: "Haz clic en una cantidad para editarla.",
       threshold:
-        "Se resaltan los artículos con {{threshold}} unidades o menos.",
+        "Se resaltan los artículos con stock igual o menor a su umbral.",
       searchPlaceholder: "Buscar productos...",
       newButton: "Nuevo artículo",
       editTitle: "Haz clic para editar",

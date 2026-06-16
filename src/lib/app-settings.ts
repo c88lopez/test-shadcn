@@ -35,10 +35,6 @@ export interface NotificationSettings {
   }
 }
 
-export interface InventorySettings {
-  lowStockThreshold: number
-}
-
 export interface SecuritySettings {
   defaultRole: UserRole
   passwordMinLength: number
@@ -52,7 +48,6 @@ export interface SecuritySettings {
 export interface AppSettings {
   general: GeneralSettings
   notifications: NotificationSettings
-  inventory: InventorySettings
   security: SecuritySettings
 }
 
@@ -91,9 +86,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     events: { confirmations: true, reminders: true, cancellations: true },
     reminderOffsets: [24, 1],
     inApp: { bookings: true, payments: true, lowStock: true, system: true },
-  },
-  inventory: {
-    lowStockThreshold: 10,
   },
   security: {
     defaultRole: "Front Desk",
@@ -137,7 +129,6 @@ function merge(parsed: DeepPartial<AppSettings> | null): AppSettings {
         (parsed?.notifications?.reminderOffsets as number[] | undefined) ??
         D.notifications.reminderOffsets,
     },
-    inventory: { ...D.inventory, ...parsed?.inventory },
     security: { ...D.security, ...parsed?.security },
   }
 }

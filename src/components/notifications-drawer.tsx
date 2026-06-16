@@ -27,23 +27,23 @@ export function NotificationsDrawer({
   stockItems: StockItem[]
 }) {
   const { t } = useTranslation()
-  const { inventory, notifications: prefs } = useAppSettings()
+  const { notifications: prefs } = useAppSettings()
 
-  // Low-stock notifications are derived live from inventory + the configured
-  // threshold, and only shown when the in-app "Low stock" preference is on.
+  // Low-stock notifications are derived live from each item's own threshold, and
+  // only shown when the in-app "Low stock" preference is on.
   const notifications = useMemo<Notification[]>(() => {
     if (!prefs.inApp.lowStock) return []
     return stockItems
-      .filter((item) => item.stock <= inventory.lowStockThreshold)
+      .filter((item) => item.stock <= item.lowStockThreshold)
       .sort((a, b) => a.stock - b.stock)
       .map((item) => ({
         id: `low-stock-${item.id}`,
         name: item.name,
         stock: item.stock,
-        threshold: inventory.lowStockThreshold,
+        threshold: item.lowStockThreshold,
         tone: "warning",
       }))
-  }, [inventory.lowStockThreshold, prefs.inApp.lowStock, stockItems])
+  }, [prefs.inApp.lowStock, stockItems])
 
   const count = notifications.length
 
