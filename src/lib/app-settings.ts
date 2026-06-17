@@ -163,6 +163,10 @@ function persist(clubId: string, settings: AppSettings) {
 // club is known (set by the authenticated layout) the store holds defaults.
 let activeClubId: string | null = null
 let store: AppSettings = DEFAULT_APP_SETTINGS
+// Whether the store has been pointed at the active club's settings yet. Stays
+// false during SSR and the first client render (the store still holds defaults),
+// then flips true once the authenticated layout resolves the active club.
+let hydrated = false
 const listeners = new Set<() => void>()
 
 function subscribe(listener: () => void) {
@@ -177,7 +181,14 @@ export function getAppSettings(): AppSettings {
 // Points the store at a club's settings. Called when the active club is known
 // or changes (e.g. after switching clubs). No-op when already active.
 export function setActiveSettingsClub(clubId: string | null) {
-  if (clubId === activeClubId) return
+  const wasHydrated = hydrated
+  hydrated = true
+  if (clubId === activeClubId) {
+    // Same club, but if this is the first resolution we still need to notify
+    // subscribers so any "loading" UI can flip to the ready state.
+    if (!wasHydrated) listeners.forEach((l) => l())
+    return
+  }
   activeClubId = clubId
   store = loadAppSettings(clubId)
   listeners.forEach((l) => l())
@@ -199,6 +210,19 @@ export function useAppSettings(): AppSettings {
     getAppSettings,
     () => DEFAULT_APP_SETTINGS
   )
+}
+
+function getHydrated(): boolean {
+  return hydrated
+}
+
+/**
+ * Whether the per-club settings have been loaded into the store. Returns false
+ * during SSR and the first client render, then true once the active club is
+ * resolved — useful for showing a loading skeleton instead of default values.
+ */
+export function useAppSettingsHydrated(): boolean {
+  return useSyncExternalStore(subscribe, getHydrated, () => false)
 }
 
 // --- Helpers ---
