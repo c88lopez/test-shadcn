@@ -11,6 +11,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Detects whether anything outside `.github/**` changed. The heavy jobs
+  # (build, integration, e2e) gate on this so workflow-only edits don't spin up
+  # Postgres / Playwright. Jobs skipped via `if:` still satisfy their required
+  # status check, so auto-merge isn't blocked (unlike skipping the whole
+  # workflow with `on.paths`, which leaves required checks pending forever).
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Filter paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - '!.github/**'
+
   quality:
     name: Typecheck, lint, format & test
     runs-on: ubuntu-latest
@@ -67,6 +89,8 @@ jobs:
 
   build:
     name: Build
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -85,6 +109,8 @@ jobs:
 
   integration:
     name: Integration tests (Postgres)
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -122,6 +148,8 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     services:
       postgres:
