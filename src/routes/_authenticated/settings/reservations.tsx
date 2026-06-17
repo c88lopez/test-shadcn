@@ -25,12 +25,9 @@ import {
 } from "@/lib/courts.functions"
 import type { CourtRecord } from "@/lib/courts.functions"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  SettingsSection,
+  SettingsSectionList,
+} from "@/components/settings-section"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -243,290 +240,284 @@ function ReservationSettingsPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {t("settings.reservations.operatingHours.title")}
-          </CardTitle>
-          <CardDescription>
-            {t("settings.reservations.operatingHours.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2 border-b pb-4 sm:max-w-xs">
-            <Label>{t("settings.reservations.timezone")}</Label>
-            <Select
-              value={reservations.timezone}
-              onValueChange={(v) => commit({ timezone: v })}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz} value={tz}>
-                    {tz}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {weekdays.map((day) => {
-            const value = reservations.hours[day.key]
-            const invalid = !value.closed && value.open >= value.close
-            return (
-              <div
-                key={day.key}
-                className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0"
-              >
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="w-24 text-sm font-medium">{day.label}</span>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={!value.closed}
-                      onCheckedChange={(checked) =>
-                        commitDay(day.key, { closed: !checked })
-                      }
-                    />
-                    <span className="w-12 text-xs text-muted-foreground">
-                      {value.closed
-                        ? t("settings.reservations.closed")
-                        : t("settings.reservations.open")}
-                    </span>
-                  </div>
-                  <Input
-                    type="time"
-                    value={value.open}
-                    disabled={value.closed}
-                    aria-invalid={invalid}
-                    onChange={(e) =>
-                      updateDayLocal(day.key, { open: e.target.value })
-                    }
-                    onBlur={flush}
-                    className="h-8 w-32"
-                  />
-                  <span className="text-muted-foreground">–</span>
-                  <Input
-                    type="time"
-                    value={value.close}
-                    disabled={value.closed}
-                    aria-invalid={invalid}
-                    onChange={(e) =>
-                      updateDayLocal(day.key, { close: e.target.value })
-                    }
-                    onBlur={flush}
-                    className="h-8 w-32"
-                  />
-                </div>
-                {invalid && (
-                  <p className="pl-24 text-xs text-destructive">
-                    {t("settings.reservations.invalidHours")}
-                  </p>
-                )}
-              </div>
-            )
-          })}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.reservations.courts.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.reservations.courts.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {courts.map((court) => (
-            <div
-              key={court.id}
-              className="flex flex-wrap items-center gap-3 border-b pb-3 last:border-b-0 last:pb-0"
-            >
-              <Input
-                value={court.name}
-                onChange={(e) =>
-                  updateCourtLocal(court.id, { name: e.target.value })
-                }
-                onBlur={(e) => saveCourt(court.id, { name: e.target.value })}
-                className="h-8 w-40"
-              />
+      <SettingsSectionList>
+        <SettingsSection
+          title={t("settings.reservations.operatingHours.title")}
+          description={t("settings.reservations.operatingHours.description")}
+        >
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 border-b pb-4 sm:max-w-xs">
+              <Label>{t("settings.reservations.timezone")}</Label>
               <Select
-                value={court.type}
-                onValueChange={(v) => {
-                  updateCourtLocal(court.id, { type: v as CourtType })
-                  saveCourt(court.id, { type: v as CourtType })
-                }}
+                value={reservations.timezone}
+                onValueChange={(v) => commit({ timezone: v })}
               >
-                <SelectTrigger className="h-8 w-32">
+                <SelectTrigger className="h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="indoor">
-                    {t("settings.reservations.courtTypeIndoor")}
-                  </SelectItem>
-                  <SelectItem value="outdoor">
-                    {t("settings.reservations.courtTypeOutdoor")}
-                  </SelectItem>
+                  {TIMEZONES.map((tz) => (
+                    <SelectItem key={tz} value={tz}>
+                      {tz}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={court.active}
-                  onCheckedChange={(checked) => {
-                    updateCourtLocal(court.id, { active: checked })
-                    saveCourt(court.id, { active: checked })
-                  }}
-                />
-                <span className="w-14 text-xs text-muted-foreground">
-                  {court.active ? t("common.active") : t("common.inactive")}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-auto size-8 text-muted-foreground hover:text-destructive"
-                onClick={() => setCourtToDelete(court)}
-                aria-label={t("settings.reservations.removeCourt", {
-                  name: localizeCourtName(court.name, t),
-                })}
-              >
-                <IconTrash className="size-4" />
-              </Button>
             </div>
-          ))}
-          <Button
-            variant="outline"
-            size="sm"
-            className="self-start"
-            onClick={addCourt}
-          >
-            <IconPlus className="size-4" />
-            {t("settings.reservations.addCourt")}
-          </Button>
-        </CardContent>
-      </Card>
+            {weekdays.map((day) => {
+              const value = reservations.hours[day.key]
+              const invalid = !value.closed && value.open >= value.close
+              return (
+                <div
+                  key={day.key}
+                  className="flex flex-col gap-1 border-b pb-3 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="w-24 text-sm font-medium">
+                      {day.label}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={!value.closed}
+                        onCheckedChange={(checked) =>
+                          commitDay(day.key, { closed: !checked })
+                        }
+                      />
+                      <span className="w-12 text-xs text-muted-foreground">
+                        {value.closed
+                          ? t("settings.reservations.closed")
+                          : t("settings.reservations.open")}
+                      </span>
+                    </div>
+                    <Input
+                      type="time"
+                      value={value.open}
+                      disabled={value.closed}
+                      aria-invalid={invalid}
+                      onChange={(e) =>
+                        updateDayLocal(day.key, { open: e.target.value })
+                      }
+                      onBlur={flush}
+                      className="h-8 w-32"
+                    />
+                    <span className="text-muted-foreground">–</span>
+                    <Input
+                      type="time"
+                      value={value.close}
+                      disabled={value.closed}
+                      aria-invalid={invalid}
+                      onChange={(e) =>
+                        updateDayLocal(day.key, { close: e.target.value })
+                      }
+                      onBlur={flush}
+                      className="h-8 w-32"
+                    />
+                  </div>
+                  {invalid && (
+                    <p className="pl-24 text-xs text-destructive">
+                      {t("settings.reservations.invalidHours")}
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.reservations.slots.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.reservations.slots.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label>{t("settings.reservations.slotDuration")}</Label>
-            <Select
-              value={String(reservations.slotDuration)}
-              onValueChange={(v) => commit({ slotDuration: Number(v) })}
+        <SettingsSection
+          title={t("settings.reservations.courts.title")}
+          description={t("settings.reservations.courts.description")}
+        >
+          <div className="flex flex-col gap-3">
+            {courts.map((court) => (
+              <div
+                key={court.id}
+                className="flex flex-wrap items-center gap-3 border-b pb-3 last:border-b-0 last:pb-0"
+              >
+                <Input
+                  value={court.name}
+                  onChange={(e) =>
+                    updateCourtLocal(court.id, { name: e.target.value })
+                  }
+                  onBlur={(e) => saveCourt(court.id, { name: e.target.value })}
+                  className="h-8 w-40"
+                />
+                <Select
+                  value={court.type}
+                  onValueChange={(v) => {
+                    updateCourtLocal(court.id, { type: v as CourtType })
+                    saveCourt(court.id, { type: v as CourtType })
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="indoor">
+                      {t("settings.reservations.courtTypeIndoor")}
+                    </SelectItem>
+                    <SelectItem value="outdoor">
+                      {t("settings.reservations.courtTypeOutdoor")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={court.active}
+                    onCheckedChange={(checked) => {
+                      updateCourtLocal(court.id, { active: checked })
+                      saveCourt(court.id, { active: checked })
+                    }}
+                  />
+                  <span className="w-14 text-xs text-muted-foreground">
+                    {court.active ? t("common.active") : t("common.inactive")}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto size-8 text-muted-foreground hover:text-destructive"
+                  onClick={() => setCourtToDelete(court)}
+                  aria-label={t("settings.reservations.removeCourt", {
+                    name: localizeCourtName(court.name, t),
+                  })}
+                >
+                  <IconTrash className="size-4" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={addCourt}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SLOT_DURATIONS.map((m) => (
-                  <SelectItem key={m} value={String(m)}>
-                    {t("settings.reservations.slotMinutes", { minutes: m })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <IconPlus className="size-4" />
+              {t("settings.reservations.addCourt")}
+            </Button>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="defaultBookingLength">
-              {t("settings.reservations.defaultBookingLength")}
-            </Label>
-            <Input
-              id="defaultBookingLength"
-              type="number"
-              min={30}
-              step={30}
-              value={reservations.defaultBookingLength}
-              onChange={(e) =>
-                updateLocal({
-                  defaultBookingLength: clampNumber(e.target.value, 30),
-                })
-              }
-              onBlur={flush}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.reservations.bookingRules.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.reservations.bookingRules.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="minAdvanceHours">
-              {t("settings.reservations.minAdvance")}
-            </Label>
-            <Input
-              id="minAdvanceHours"
-              type="number"
-              min={0}
-              value={reservations.minAdvanceHours}
-              onChange={(e) =>
-                updateLocal({ minAdvanceHours: clampNumber(e.target.value, 0) })
-              }
-              onBlur={flush}
-            />
+        <SettingsSection
+          title={t("settings.reservations.slots.title")}
+          description={t("settings.reservations.slots.description")}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label>{t("settings.reservations.slotDuration")}</Label>
+              <Select
+                value={String(reservations.slotDuration)}
+                onValueChange={(v) => commit({ slotDuration: Number(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SLOT_DURATIONS.map((m) => (
+                    <SelectItem key={m} value={String(m)}>
+                      {t("settings.reservations.slotMinutes", { minutes: m })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="defaultBookingLength">
+                {t("settings.reservations.defaultBookingLength")}
+              </Label>
+              <Input
+                id="defaultBookingLength"
+                type="number"
+                min={30}
+                step={30}
+                value={reservations.defaultBookingLength}
+                onChange={(e) =>
+                  updateLocal({
+                    defaultBookingLength: clampNumber(e.target.value, 30),
+                  })
+                }
+                onBlur={flush}
+              />
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="maxAdvanceDays">
-              {t("settings.reservations.maxAdvance")}
-            </Label>
-            <Input
-              id="maxAdvanceDays"
-              type="number"
-              min={1}
-              value={reservations.maxAdvanceDays}
-              onChange={(e) =>
-                updateLocal({ maxAdvanceDays: clampNumber(e.target.value, 1) })
-              }
-              onBlur={flush}
-            />
+        </SettingsSection>
+
+        <SettingsSection
+          title={t("settings.reservations.bookingRules.title")}
+          description={t("settings.reservations.bookingRules.description")}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="minAdvanceHours">
+                {t("settings.reservations.minAdvance")}
+              </Label>
+              <Input
+                id="minAdvanceHours"
+                type="number"
+                min={0}
+                value={reservations.minAdvanceHours}
+                onChange={(e) =>
+                  updateLocal({
+                    minAdvanceHours: clampNumber(e.target.value, 0),
+                  })
+                }
+                onBlur={flush}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="maxAdvanceDays">
+                {t("settings.reservations.maxAdvance")}
+              </Label>
+              <Input
+                id="maxAdvanceDays"
+                type="number"
+                min={1}
+                value={reservations.maxAdvanceDays}
+                onChange={(e) =>
+                  updateLocal({
+                    maxAdvanceDays: clampNumber(e.target.value, 1),
+                  })
+                }
+                onBlur={flush}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="cancellationCutoffHours">
+                {t("settings.reservations.cancellationCutoff")}
+              </Label>
+              <Input
+                id="cancellationCutoffHours"
+                type="number"
+                min={0}
+                value={reservations.cancellationCutoffHours}
+                onChange={(e) =>
+                  updateLocal({
+                    cancellationCutoffHours: clampNumber(e.target.value, 0),
+                  })
+                }
+                onBlur={flush}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="maxConcurrentPerPlayer">
+                {t("settings.reservations.maxConcurrent")}
+              </Label>
+              <Input
+                id="maxConcurrentPerPlayer"
+                type="number"
+                min={1}
+                value={reservations.maxConcurrentPerPlayer}
+                onChange={(e) =>
+                  updateLocal({
+                    maxConcurrentPerPlayer: clampNumber(e.target.value, 1),
+                  })
+                }
+                onBlur={flush}
+              />
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="cancellationCutoffHours">
-              {t("settings.reservations.cancellationCutoff")}
-            </Label>
-            <Input
-              id="cancellationCutoffHours"
-              type="number"
-              min={0}
-              value={reservations.cancellationCutoffHours}
-              onChange={(e) =>
-                updateLocal({
-                  cancellationCutoffHours: clampNumber(e.target.value, 0),
-                })
-              }
-              onBlur={flush}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="maxConcurrentPerPlayer">
-              {t("settings.reservations.maxConcurrent")}
-            </Label>
-            <Input
-              id="maxConcurrentPerPlayer"
-              type="number"
-              min={1}
-              value={reservations.maxConcurrentPerPlayer}
-              onChange={(e) =>
-                updateLocal({
-                  maxConcurrentPerPlayer: clampNumber(e.target.value, 1),
-                })
-              }
-              onBlur={flush}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        </SettingsSection>
+      </SettingsSectionList>
 
       <AlertDialog
         open={!!courtToDelete}

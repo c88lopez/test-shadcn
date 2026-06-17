@@ -27,14 +27,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  SettingsSection,
+  SettingsSectionList,
+} from "@/components/settings-section"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import {
   Select,
@@ -46,7 +44,12 @@ import {
 import { NewUserDrawer, USER_ROLES } from "@/components/new-user-drawer"
 import type { UserRole } from "@/components/new-user-drawer"
 import { cn } from "@/lib/utils"
-import { clampNumber, setAppSettings, useAppSettings } from "@/lib/app-settings"
+import {
+  clampNumber,
+  setAppSettings,
+  useAppSettings,
+  useAppSettingsHydrated,
+} from "@/lib/app-settings"
 import type { SecuritySettings } from "@/lib/app-settings"
 import { can } from "@/lib/permissions"
 import { listClubOptions } from "@/lib/clubs.functions"
@@ -245,6 +248,9 @@ function UserActions({
 function SecuritySection() {
   const { t } = useTranslation()
   const settings = useAppSettings()
+  // Per-club settings load from localStorage after mount; until then show a
+  // skeleton so the controls don't flash from default to real values.
+  const ready = useAppSettingsHydrated()
   const { security } = settings
 
   function update(partial: Partial<SecuritySettings>) {
@@ -252,117 +258,154 @@ function SecuritySection() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("settings.users.security.title")}</CardTitle>
-        <CardDescription>
-          {t("settings.users.security.description")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label>{t("settings.users.security.defaultRole")}</Label>
-            <Select
-              value={security.defaultRole}
-              onValueChange={(v) => update({ defaultRole: v as UserRole })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {USER_ROLES.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="sessionTimeout">
-              {t("settings.users.security.sessionTimeout")}
-            </Label>
-            <Input
-              id="sessionTimeout"
-              type="number"
-              min={5}
-              value={security.sessionTimeoutMinutes}
-              onChange={(e) =>
-                update({
-                  sessionTimeoutMinutes: clampNumber(e.target.value, 5),
-                })
-              }
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium">
-            {t("settings.users.security.passwordPolicy")}
-          </p>
+    <SettingsSectionList>
+      <SettingsSection
+        title={t("settings.users.security.title")}
+        description={t("settings.users.security.description")}
+      >
+        <div className="flex flex-col gap-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="minLength">
-                {t("settings.users.security.minLength")}
-              </Label>
-              <Input
-                id="minLength"
-                type="number"
-                min={6}
-                value={security.passwordMinLength}
-                onChange={(e) =>
-                  update({ passwordMinLength: clampNumber(e.target.value, 6) })
-                }
-              />
+              <Label>{t("settings.users.security.defaultRole")}</Label>
+              {ready ? (
+                <Select
+                  value={security.defaultRole}
+                  onValueChange={(v) => update({ defaultRole: v as UserRole })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USER_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Skeleton className="h-8 w-full rounded-2xl" />
+              )}
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="expiryDays">
-                {t("settings.users.security.expiry")}
+              <Label htmlFor="sessionTimeout">
+                {t("settings.users.security.sessionTimeout")}
               </Label>
-              <Input
-                id="expiryDays"
-                type="number"
-                min={0}
-                value={security.passwordExpiryDays}
-                onChange={(e) =>
-                  update({ passwordExpiryDays: clampNumber(e.target.value, 0) })
-                }
-              />
+              {ready ? (
+                <Input
+                  id="sessionTimeout"
+                  type="number"
+                  min={5}
+                  value={security.sessionTimeoutMinutes}
+                  onChange={(e) =>
+                    update({
+                      sessionTimeoutMinutes: clampNumber(e.target.value, 5),
+                    })
+                  }
+                />
+              ) : (
+                <Skeleton className="h-8 w-full rounded-2xl" />
+              )}
             </div>
           </div>
-          <div className="flex flex-col divide-y rounded-md border">
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <Switch
-                checked={security.passwordRequireUppercase}
-                onCheckedChange={(c) => update({ passwordRequireUppercase: c })}
-              />
-              <span className="text-sm">
-                {t("settings.users.security.requireUppercase")}
-              </span>
+
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-medium">
+              {t("settings.users.security.passwordPolicy")}
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="minLength">
+                  {t("settings.users.security.minLength")}
+                </Label>
+                {ready ? (
+                  <Input
+                    id="minLength"
+                    type="number"
+                    min={6}
+                    value={security.passwordMinLength}
+                    onChange={(e) =>
+                      update({
+                        passwordMinLength: clampNumber(e.target.value, 6),
+                      })
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-8 w-full rounded-2xl" />
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="expiryDays">
+                  {t("settings.users.security.expiry")}
+                </Label>
+                {ready ? (
+                  <Input
+                    id="expiryDays"
+                    type="number"
+                    min={0}
+                    value={security.passwordExpiryDays}
+                    onChange={(e) =>
+                      update({
+                        passwordExpiryDays: clampNumber(e.target.value, 0),
+                      })
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-8 w-full rounded-2xl" />
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <Switch
-                checked={security.passwordRequireNumber}
-                onCheckedChange={(c) => update({ passwordRequireNumber: c })}
-              />
-              <span className="text-sm">
-                {t("settings.users.security.requireNumber")}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <Switch
-                checked={security.passwordRequireSymbol}
-                onCheckedChange={(c) => update({ passwordRequireSymbol: c })}
-              />
-              <span className="text-sm">
-                {t("settings.users.security.requireSymbol")}
-              </span>
+            <div className="flex flex-col divide-y rounded-md border">
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                {ready ? (
+                  <Switch
+                    checked={security.passwordRequireUppercase}
+                    onCheckedChange={(c) =>
+                      update({ passwordRequireUppercase: c })
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-5 w-9 rounded-full" />
+                )}
+                <span className="text-sm">
+                  {t("settings.users.security.requireUppercase")}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                {ready ? (
+                  <Switch
+                    checked={security.passwordRequireNumber}
+                    onCheckedChange={(c) =>
+                      update({ passwordRequireNumber: c })
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-5 w-9 rounded-full" />
+                )}
+                <span className="text-sm">
+                  {t("settings.users.security.requireNumber")}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                {ready ? (
+                  <Switch
+                    checked={security.passwordRequireSymbol}
+                    onCheckedChange={(c) =>
+                      update({ passwordRequireSymbol: c })
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-5 w-9 rounded-full" />
+                )}
+                <span className="text-sm">
+                  {t("settings.users.security.requireSymbol")}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </SettingsSection>
+    </SettingsSectionList>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   createFileRoute,
   useLoaderData,
@@ -15,12 +15,10 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  SettingsSection,
+  SettingsSectionList,
+} from "@/components/settings-section"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import {
   ACCENT_COLORS,
@@ -77,6 +75,11 @@ function UiSettingsPage() {
   const [activeLocale, setActiveLocale] = useState<Locale>(
     () => i18n.language as Locale
   )
+  // Theme/accent/font size resolve from localStorage on the client only, so the
+  // selected state would otherwise pop in after mount. Gate on mount and show a
+  // skeleton until the real selections are known.
+  const [ready, setReady] = useState(false)
+  useEffect(() => setReady(true), [])
 
   // Theme / font size — global preferences.
   function update(partial: Partial<UiSettings>) {
@@ -130,140 +133,181 @@ function UiSettingsPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.ui.language.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.ui.language.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-            {SUPPORTED_LOCALES.map((locale) => {
-              const active = activeLocale === locale.code
-              return (
-                <button
+      <SettingsSectionList>
+        <SettingsSection
+          title={t("settings.ui.language.title")}
+          description={t("settings.ui.language.description")}
+        >
+          {ready ? (
+            <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+              {SUPPORTED_LOCALES.map((locale) => {
+                const active = activeLocale === locale.code
+                return (
+                  <button
+                    key={locale.code}
+                    type="button"
+                    onClick={() => void changeLanguage(locale.code)}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-lg border p-4 text-sm transition-colors hover:bg-muted",
+                      active
+                        ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
+                        : "border-border"
+                    )}
+                  >
+                    {active && <IconCheck className="size-4" />}
+                    {locale.label}
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+              {SUPPORTED_LOCALES.map((locale) => (
+                <Skeleton
                   key={locale.code}
-                  type="button"
-                  onClick={() => void changeLanguage(locale.code)}
-                  className={cn(
-                    "flex items-center justify-center gap-2 rounded-lg border p-4 text-sm transition-colors hover:bg-muted",
-                    active
-                      ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
-                      : "border-border"
-                  )}
+                  className="rounded-lg border border-transparent p-4 text-sm"
                 >
-                  {active && <IconCheck className="size-4" />}
-                  {locale.label}
-                </button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                  <span className="invisible">{locale.label}</span>
+                </Skeleton>
+              ))}
+            </div>
+          )}
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.ui.theme.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.ui.theme.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-3 sm:max-w-md">
-            {themeOptions.map((opt) => {
-              const active = settings.theme === opt.value
-              return (
-                <button
+        <SettingsSection
+          title={t("settings.ui.theme.title")}
+          description={t("settings.ui.theme.description")}
+        >
+          {ready ? (
+            <div className="grid grid-cols-3 gap-3 sm:max-w-md">
+              {themeOptions.map((opt) => {
+                const active = settings.theme === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update({ theme: opt.value })}
+                    className={cn(
+                      "flex flex-col items-center gap-2 rounded-lg border p-4 text-sm transition-colors hover:bg-muted",
+                      active
+                        ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
+                        : "border-border"
+                    )}
+                  >
+                    <opt.icon className="size-5" />
+                    {t(opt.labelKey)}
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 sm:max-w-md">
+              {themeOptions.map((opt) => (
+                <Skeleton
                   key={opt.value}
-                  type="button"
-                  onClick={() => update({ theme: opt.value })}
-                  className={cn(
-                    "flex flex-col items-center gap-2 rounded-lg border p-4 text-sm transition-colors hover:bg-muted",
-                    active
-                      ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
-                      : "border-border"
-                  )}
+                  className="flex flex-col items-center gap-2 rounded-lg border border-transparent p-4 text-sm"
                 >
-                  <opt.icon className="size-5" />
-                  {t(opt.labelKey)}
-                </button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                  <span className="block size-5" />
+                  <span className="invisible">{t(opt.labelKey)}</span>
+                </Skeleton>
+              ))}
+            </div>
+          )}
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.ui.accent.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.ui.accent.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {ACCENT_COLORS.map((color) => {
-              const active = accent === color.key
-              return (
-                <button
-                  key={color.key}
-                  type="button"
-                  title={color.label}
-                  aria-label={color.label}
-                  onClick={() => updateAccent(color.key)}
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-full transition-transform hover:scale-105",
-                    active &&
-                      "ring-2 ring-ring ring-offset-2 ring-offset-background"
-                  )}
-                  style={{ backgroundColor: color.swatch }}
-                >
-                  {active && (
-                    <IconCheck className="size-5 text-white" stroke={3} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+        <SettingsSection
+          title={t("settings.ui.accent.title")}
+          description={t("settings.ui.accent.description")}
+        >
+          {ready ? (
+            <div className="flex flex-wrap gap-3">
+              {ACCENT_COLORS.map((color) => {
+                const active = accent === color.key
+                return (
+                  <button
+                    key={color.key}
+                    type="button"
+                    title={color.label}
+                    aria-label={color.label}
+                    onClick={() => updateAccent(color.key)}
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-full transition-transform hover:scale-105",
+                      active &&
+                        "ring-2 ring-ring ring-offset-2 ring-offset-background"
+                    )}
+                    style={{ backgroundColor: color.swatch }}
+                  >
+                    {active && (
+                      <IconCheck className="size-5 text-white" stroke={3} />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {ACCENT_COLORS.map((color) => (
+                <Skeleton key={color.key} className="size-10 rounded-full" />
+              ))}
+            </div>
+          )}
+        </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.ui.fontSize.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.ui.fontSize.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-3 sm:max-w-md">
-            {FONT_SIZES.map((size) => {
-              const active = settings.fontSize === size.key
-              return (
-                <button
+        <SettingsSection
+          title={t("settings.ui.fontSize.title")}
+          description={t("settings.ui.fontSize.description")}
+        >
+          {ready ? (
+            <div className="grid grid-cols-4 gap-3 sm:max-w-md">
+              {FONT_SIZES.map((size) => {
+                const active = settings.fontSize === size.key
+                return (
+                  <button
+                    key={size.key}
+                    type="button"
+                    onClick={() => update({ fontSize: size.key })}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg border p-4 transition-colors hover:bg-muted",
+                      active
+                        ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
+                        : "border-border"
+                    )}
+                  >
+                    <span
+                      className="font-semibold"
+                      style={{ fontSize: size.px }}
+                    >
+                      A
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {t(fontSizeLabelKeys[size.key])}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-3 sm:max-w-md">
+              {FONT_SIZES.map((size) => (
+                <Skeleton
                   key={size.key}
-                  type="button"
-                  onClick={() => update({ fontSize: size.key })}
-                  className={cn(
-                    "flex flex-col items-center gap-1 rounded-lg border p-4 transition-colors hover:bg-muted",
-                    active
-                      ? "border-primary ring-2 ring-ring ring-offset-2 ring-offset-background"
-                      : "border-border"
-                  )}
+                  className="flex flex-col items-center gap-1 rounded-lg border border-transparent p-4"
                 >
-                  <span className="font-semibold" style={{ fontSize: size.px }}>
+                  <span
+                    className="invisible font-semibold"
+                    style={{ fontSize: size.px }}
+                  >
                     A
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="invisible text-xs">
                     {t(fontSizeLabelKeys[size.key])}
                   </span>
-                </button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                </Skeleton>
+              ))}
+            </div>
+          )}
+        </SettingsSection>
+      </SettingsSectionList>
     </div>
   )
 }
