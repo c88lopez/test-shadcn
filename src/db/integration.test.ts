@@ -30,11 +30,20 @@ import { classStatus } from "@/lib/classes"
 // default `bun run test` needs no database.
 const TEST_URL = process.env.DATABASE_URL_TEST
 
+// The `*.server.ts` helpers exercised in the tenant-isolation block import the
+// app's shared `@/db`, which reads `DATABASE_URL`. Point it at the same
+// throwaway database as our direct connection so both see identical data.
+if (TEST_URL) process.env.DATABASE_URL = TEST_URL
+
 // Default club seeded by migration 0004; all domain rows are scoped to it.
 const CLUB_ID = "00000000-0000-0000-0000-000000000001"
+// A second club used to prove cross-tenant isolation.
+const CLUB_B_ID = "00000000-0000-0000-0000-0000000000b2"
 // Two fixed courts for this club, created in beforeAll.
 const COURT1_ID = "00000000-0000-0000-0000-0000000c0001"
 const COURT2_ID = "00000000-0000-0000-0000-0000000c0002"
+// A court that belongs to the second club.
+const COURT_B_ID = "00000000-0000-0000-0000-0000000c00b1"
 
 describe.skipIf(!TEST_URL)("database integration", () => {
   let pool: Pool
@@ -72,6 +81,23 @@ describe.skipIf(!TEST_URL)("database integration", () => {
     await db
       .insert(clubReservationSettings)
       .values({ clubId: CLUB_ID, ...DEFAULT_RESERVATION_SETTINGS })
+      .onConflictDoNothing()
+
+    // Second club + its own court, for tenant-isolation checks.
+    await db
+      .insert(club)
+      .values({ id: CLUB_B_ID, name: "Second Club", slug: "second-club" })
+      .onConflictDoNothing()
+    await db
+      .insert(court)
+      .values({
+        id: COURT_B_ID,
+        name: "B Court",
+        type: "indoor",
+        active: true,
+        sortOrder: 1,
+        clubId: CLUB_B_ID,
+      })
       .onConflictDoNothing()
   })
 
@@ -409,6 +435,59 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           new Date("2026-03-01T12:00:00")
         )
       ).toBe("Completed")
+    })
+  })
+
+  // Exercises the real club-scoping in courts.server.ts: every query is filtered
+  // by clubId, so one club must never read or mutate another club's rows.
+  describe("tenant isolation (courts.server)", () => {
+    // Loaded dynamically (not a static import) so the app's `@/db` connects only
+    // after DATABASE_URL is pointed at the test database above.
+    const loadCourts = () => import("@/lib/courts.server")
+    let courts: Awaited<ReturnType<typeof loadCourts>>
+
+    beforeAll(async () => {
+      courts = await loadCourts()
+    })
+
+    it("lists only the requested club's courts", async () => {
+      const a = await courts.listCourtRecords(CLUB_ID)
+      const aIds = a.map((c) => c.id)
+      expect(aIds).toEqual(expect.arrayContaining([COURT1_ID, COURT2_ID]))
+      // Club A must never see the other club's court.
+      expect(aIds).not.toContain(COURT_B_ID)
+
+      // Club B sees exactly its own court — none of club A's leak through.
+      const b = await courts.listCourtRecords(CLUB_B_ID)
+      expect(b.map((c) => c.id)).toEqual([COURT_B_ID])
+    })
+
+    it("refuses to update another club's court", async () => {
+      await expect(
+        courts.updateCourtRecord(CLUB_B_ID, {
+          id: COURT1_ID,
+          name: "Hijacked",
+        })
+      ).rejects.toThrow("Court not found.")
+
+      const [row] = await db.select().from(court).where(eq(court.id, COURT1_ID))
+      expect(row.name).toBe("Court 1")
+    })
+
+    it("does not delete another club's court", async () => {
+      await courts.deleteCourtRecord(CLUB_B_ID, COURT1_ID)
+      const rows = await db.select().from(court).where(eq(court.id, COURT1_ID))
+      expect(rows).toHaveLength(1)
+    })
+
+    it("treats another club's court as not bookable", async () => {
+      await expect(
+        courts.assertCourtBookable(CLUB_B_ID, COURT1_ID)
+      ).rejects.toThrow()
+      // Sanity: the court is bookable within its own club.
+      await expect(
+        courts.assertCourtBookable(CLUB_ID, COURT1_ID)
+      ).resolves.toBeUndefined()
     })
   })
 })
