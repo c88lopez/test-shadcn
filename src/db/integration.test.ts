@@ -490,4 +490,87 @@ describe.skipIf(!TEST_URL)("database integration", () => {
       ).resolves.toBeUndefined()
     })
   })
+
+  // Exercises the DB-backed per-player concurrency rule in
+  // reservation-settings.server.ts (the pure window/cutoff rules are unit-tested
+  // separately in reservation-settings.test.ts).
+  describe("per-player booking limit (reservation-settings.server)", () => {
+    const loadSettings = () => import("@/lib/reservation-settings.server")
+    let settingsServer: Awaited<ReturnType<typeof loadSettings>>
+
+    // A weekday a few days out: comfortably inside the advance window and on an
+    // open day (default hours close only on Sunday).
+    function futureOpenDate(daysAhead = 5): string {
+      const d = new Date()
+      d.setDate(d.getDate() + daysAhead)
+      if (d.getDay() === 0) d.setDate(d.getDate() + 1)
+      return d.toISOString().slice(0, 10)
+    }
+
+    const PLAYER = "Concurrency Player"
+
+    beforeAll(async () => {
+      settingsServer = await loadSettings()
+      // Pin a known rule set so the window checks pass and the limit is 2.
+      await settingsServer.upsertReservationSettingsRecord(CLUB_ID, {
+        maxConcurrentPerPlayer: 2,
+        minAdvanceHours: 1,
+        maxAdvanceDays: 30,
+      })
+    })
+
+    async function seedUpcoming(date: string) {
+      return db
+        .insert(reservation)
+        .values([
+          {
+            courtId: COURT1_ID,
+            player: PLAYER,
+            bookedBy: "Front Desk",
+            date,
+            startTime: "10:00",
+            durationMinutes: 60,
+            paymentStatus: "paid",
+            clubId: CLUB_ID,
+          },
+          {
+            courtId: COURT2_ID,
+            player: PLAYER,
+            bookedBy: "Front Desk",
+            date,
+            startTime: "11:00",
+            durationMinutes: 60,
+            paymentStatus: "paid",
+            clubId: CLUB_ID,
+          },
+        ])
+        .returning({ id: reservation.id })
+    }
+
+    it("rejects a booking that exceeds the per-player limit", async () => {
+      const date = futureOpenDate()
+      await seedUpcoming(date)
+      await expect(
+        settingsServer.assertBookingAllowed(CLUB_ID, {
+          player: PLAYER,
+          date,
+          startTime: "12:00",
+          durationMinutes: 60,
+        })
+      ).rejects.toThrow(/per-player limit/)
+    })
+
+    it("does not count the reservation being edited against the limit", async () => {
+      const date = futureOpenDate()
+      const [first] = await seedUpcoming(date)
+      // Editing one of the two existing bookings: excluding itself leaves 1 < 2.
+      await expect(
+        settingsServer.assertBookingAllowed(
+          CLUB_ID,
+          { player: PLAYER, date, startTime: "12:00", durationMinutes: 60 },
+          { excludeId: first.id }
+        )
+      ).resolves.toBeUndefined()
+    })
+  })
 })
