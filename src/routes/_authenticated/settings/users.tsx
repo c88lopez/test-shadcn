@@ -332,32 +332,32 @@ function SecuritySection() {
             </div>
           </div>
           <div className="flex flex-col divide-y rounded-md border">
-            <div className="flex items-center justify-between px-3 py-2.5">
-              <span className="text-sm">
-                {t("settings.users.security.requireUppercase")}
-              </span>
+            <div className="flex items-center gap-3 px-3 py-2.5">
               <Switch
                 checked={security.passwordRequireUppercase}
                 onCheckedChange={(c) => update({ passwordRequireUppercase: c })}
               />
-            </div>
-            <div className="flex items-center justify-between px-3 py-2.5">
               <span className="text-sm">
-                {t("settings.users.security.requireNumber")}
+                {t("settings.users.security.requireUppercase")}
               </span>
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2.5">
               <Switch
                 checked={security.passwordRequireNumber}
                 onCheckedChange={(c) => update({ passwordRequireNumber: c })}
               />
-            </div>
-            <div className="flex items-center justify-between px-3 py-2.5">
               <span className="text-sm">
-                {t("settings.users.security.requireSymbol")}
+                {t("settings.users.security.requireNumber")}
               </span>
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2.5">
               <Switch
                 checked={security.passwordRequireSymbol}
                 onCheckedChange={(c) => update({ passwordRequireSymbol: c })}
               />
+              <span className="text-sm">
+                {t("settings.users.security.requireSymbol")}
+              </span>
             </div>
           </div>
         </div>
