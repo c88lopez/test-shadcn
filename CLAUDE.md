@@ -25,6 +25,7 @@ This is a **TanStack Start** (SSR-capable React meta-framework) app using **file
 **UI components**: shadcn/ui components are added via `npx shadcn add <component>` and land in `src/components/ui/`. The config is `components.json` (style: `radix-rhea`, base color: olive, icon library: tabler). After adding any component, remove the `"use client"` directive at the top of the file — it's a Next.js RSC artifact that causes Vinxi to treat the module as a client-only boundary, breaking SSR.
 
 **Known gotchas**:
+
 - `src/client.tsx` overrides TanStack Start's default client entry to remove `React.StrictMode`. StrictMode causes shadcn sidebar/sheet CSS enter transitions to replay rapidly (looks like a page refresh) because it double-invokes effects in development. Do not re-add StrictMode.
 - The root route uses both `shellComponent` (SSR HTML shell) and `component` (layout with `<Outlet />`). Keep the sidebar layout in `component`, not `shellComponent` — putting stateful React in the shell causes hydration mismatches.
 - **Never run a second `bun run dev` in the background while the dev server is already running.** Both instances watch the same source files and `node_modules/.vite` cache. The second instance's dep pre-bundling writes to that cache, which the first instance interprets as file changes and sends a `full-reload` to the browser — causing a constant page refresh. Always reuse the already-running server (e.g. `curl` or connect Playwright to the existing port).
@@ -34,3 +35,8 @@ This is a **TanStack Start** (SSR-capable React meta-framework) app using **file
 **Icons**: Use `@tabler/icons-react` (configured as the shadcn icon library).
 
 **Testing**: Vitest + `@testing-library/react` with jsdom environment.
+
+## Pull requests
+
+- When creating a PR, assign it to the repo owner (`gh pr create --assignee @me`).
+- Auto-merge is enabled automatically for non-draft PRs and squash-merges once required checks pass, then deletes the branch. PRs touching `.github/**` are excluded and require a manual human merge.
