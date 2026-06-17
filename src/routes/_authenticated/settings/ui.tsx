@@ -61,6 +61,7 @@ const fontSizeLabelKeys: Record<string, TranslationKey> = {
   sm: "settings.ui.fontSize.small",
   md: "settings.ui.fontSize.default",
   lg: "settings.ui.fontSize.large",
+  xl: "settings.ui.fontSize.extraLarge",
 }
 
 function UiSettingsPage() {
@@ -236,7 +237,7 @@ function UiSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-3 sm:max-w-md">
+          <div className="grid grid-cols-4 gap-3 sm:max-w-md">
             {FONT_SIZES.map((size) => {
               const active = settings.fontSize === size.key
               return (

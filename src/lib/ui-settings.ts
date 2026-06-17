@@ -14,7 +14,7 @@
  */
 
 export type ThemeMode = "light" | "dark" | "system"
-export type FontSizeKey = "sm" | "md" | "lg"
+export type FontSizeKey = "sm" | "md" | "lg" | "xl"
 
 export interface AccentColor {
   key: string
@@ -150,6 +150,7 @@ export const FONT_SIZES: { key: FontSizeKey; label: string; px: number }[] = [
   { key: "sm", label: "Small", px: 14 },
   { key: "md", label: "Default", px: 16 },
   { key: "lg", label: "Large", px: 18 },
+  { key: "xl", label: "Extra Large", px: 20 },
 ]
 
 export interface UiSettings {
