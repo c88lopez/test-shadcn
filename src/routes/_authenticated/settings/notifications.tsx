@@ -59,15 +59,13 @@ function ToggleRow({
   icon?: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b py-3 first:pt-0 last:border-b-0 last:pb-0">
-      <div className="flex items-start gap-3">
-        {icon && <span className="mt-0.5 text-muted-foreground">{icon}</span>}
-        <div>
-          <p className="text-sm font-medium">{title}</p>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
+    <div className="flex items-start gap-3 border-b py-3 first:pt-0 last:border-b-0 last:pb-0">
+      <Switch className="mt-0.5" checked={checked} onCheckedChange={onChange} />
+      {icon && <span className="mt-0.5 text-muted-foreground">{icon}</span>}
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   )
 }
