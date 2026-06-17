@@ -2,7 +2,11 @@ name: Auto-merge
 
 # Turns on GitHub's native auto-merge for every non-draft PR. GitHub then
 # squash-merges the PR automatically once all required status checks pass
-# (see branch protection on `main`). Marking a PR as draft opts it out.
+# (see branch protection on `main`) and deletes the head branch. Marking a PR
+# as draft opts it out.
+#
+# PRs that touch `.github/**` (workflows, CI, automation) are excluded: those
+# changes are security-sensitive, so they require a human to review and merge.
 on:
   pull_request:
     types: [opened, reopened, ready_for_review]
@@ -16,8 +20,26 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
+      - name: Detect workflow/CI changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            workflow:
+              - '.github/**'
+
       - name: Enable auto-merge (squash)
+        if: ${{ steps.filter.outputs.workflow == 'false' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: gh pr merge --auto --squash --delete-branch "$PR_URL"
+
+      - name: Require manual merge for .github changes
+        if: ${{ steps.filter.outputs.workflow == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          echo "PR touches .github/** — leaving auto-merge off; manual merge required."
+          gh pr comment "$PR_URL" --body ":lock: This PR changes \`.github/\` (workflows/CI), so auto-merge is disabled. A human needs to review and merge it manually."
