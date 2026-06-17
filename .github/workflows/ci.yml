@@ -11,11 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Detects whether anything outside `.github/**` changed. The heavy jobs
-  # (build, integration, e2e) gate on this so workflow-only edits don't spin up
-  # Postgres / Playwright. Jobs skipped via `if:` still satisfy their required
-  # status check, so auto-merge isn't blocked (unlike skipping the whole
-  # workflow with `on.paths`, which leaves required checks pending forever).
+  # Detects whether any non-docs, non-workflow file changed. The heavy jobs
+  # (build, integration, e2e) gate on this so edits to `.github/**` or markdown
+  # docs don't spin up Postgres / Playwright. Jobs skipped via `if:` still
+  # satisfy their required status check, so auto-merge isn't blocked (unlike
+  # skipping the whole workflow with `on.paths`, which leaves required checks
+  # pending forever).
   changes:
     name: Detect changes
     runs-on: ubuntu-latest
@@ -29,9 +30,13 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # `every`: a file counts as "code" only if it matches ALL patterns
+          # below (i.e. it is neither under .github/ nor a markdown doc).
+          predicate-quantifier: every
           filters: |
             code:
               - '!.github/**'
+              - '!**/*.md'
 
   quality:
     name: Typecheck, lint, format & test
