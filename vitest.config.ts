@@ -30,8 +30,18 @@ export default defineConfig({
         "src/lib/**/*.functions.ts",
         "src/lib/**/*.server.ts",
       ],
-      // No enforced thresholds yet — this PR establishes the baseline. Once we
-      // know the numbers we can ratchet these up so coverage can only improve.
+      // Soft thresholds: set a couple points below the current baseline
+      // (statements 56.3 / branches 55.0 / functions 58.9 / lines 57.7) so the
+      // run fails on regressions without demanding new tests. The small margin
+      // avoids flaky failures from tiny line-count shifts. Ratchet these up as
+      // coverage improves (or flip `autoUpdate` on to do it automatically).
+      thresholds: {
+        statements: 54,
+        branches: 53,
+        functions: 56,
+        lines: 55,
+        autoUpdate: false,
+      },
     },
   },
 })
