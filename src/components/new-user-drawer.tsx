@@ -290,11 +290,11 @@ export function NewUserDrawer({
                               key={c.id}
                               onClick={() => toggle(c.id)}
                               aria-pressed={isOn}
-                              className="flex items-center justify-between px-3 py-2.5 text-left text-sm hover:bg-accent"
+                              className="group flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
                             >
                               <span>{c.name}</span>
                               {isOn && (
-                                <IconCheck className="size-4 text-primary" />
+                                <IconCheck className="size-4 text-primary group-hover:text-primary-foreground" />
                               )}
                             </button>
                           )
