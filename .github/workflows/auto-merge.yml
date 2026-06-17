@@ -1,0 +1,23 @@
+name: Auto-merge
+
+# Turns on GitHub's native auto-merge for every non-draft PR. GitHub then
+# squash-merges the PR automatically once all required status checks pass
+# (see branch protection on `main`). Marking a PR as draft opts it out.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-auto-merge:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
