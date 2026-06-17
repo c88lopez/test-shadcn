@@ -12,7 +12,7 @@ import { DataTable } from "@/components/data-table"
 import { NewStockItemDrawer } from "@/components/new-stock-item-drawer"
 import { RowActions } from "@/components/row-actions"
 import { cn } from "@/lib/utils"
-import { formatCurrency, useAppSettings } from "@/lib/app-settings"
+import { formatCurrency } from "@/lib/app-settings"
 import {
   deleteStockItem,
   listStockItems,
@@ -28,11 +28,9 @@ export const Route = createFileRoute("/_authenticated/inventory/")({
 
 function EditableStockCell({
   item,
-  threshold,
   canManage,
 }: {
   item: StockItem
-  threshold: number
   canManage: boolean
 }) {
   const { t } = useTranslation()
@@ -96,7 +94,7 @@ function EditableStockCell({
 
   const className = cn(
     "rounded px-1 py-0.5 text-sm",
-    item.stock <= threshold && "font-medium text-destructive"
+    item.stock <= item.lowStockThreshold && "font-medium text-destructive"
   )
 
   const unitsLabel =
@@ -155,7 +153,6 @@ function StockActions({ item }: { item: StockItem }) {
 
 function buildStockColumns(
   t: TFunction,
-  threshold: number,
   canManage: boolean
 ): ColumnDef<StockItem>[] {
   const columns: ColumnDef<StockItem>[] = [
@@ -182,11 +179,7 @@ function buildStockColumns(
       accessorKey: "stock",
       header: t("fields.stock"),
       cell: ({ row }) => (
-        <EditableStockCell
-          item={row.original}
-          threshold={threshold}
-          canManage={canManage}
-        />
+        <EditableStockCell item={row.original} canManage={canManage} />
       ),
     },
   ]
@@ -207,12 +200,10 @@ function StockPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const canManage = useCan("inventory:manage")
-  const { inventory } = useAppSettings()
   const { stockItems } = Route.useLoaderData()
-  const threshold = inventory.lowStockThreshold
   const stockColumns = useMemo(
-    () => buildStockColumns(t, threshold, canManage),
-    [t, threshold, canManage]
+    () => buildStockColumns(t, canManage),
+    [t, canManage]
   )
 
   return (
@@ -222,7 +213,7 @@ function StockPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           {t("pages.stock.manage")}{" "}
           {canManage ? `${t("pages.stock.clickToEdit")} ` : ""}
-          {t("pages.stock.threshold", { threshold })}
+          {t("pages.stock.threshold")}
         </p>
       </div>
 

@@ -225,6 +225,9 @@ export const stockItem = pgTable("stock_item", {
   category: text("category").notNull(),
   price: doublePrecision("price").notNull(),
   stock: integer("stock").notNull().default(0),
+  // Per-item low-stock threshold: items at or below this are flagged. Defaults
+  // to 10 so existing rows and new items have a sensible starting point.
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(10),
   clubId: text("club_id")
     .notNull()
     .references(() => club.id, { onDelete: "cascade" }),

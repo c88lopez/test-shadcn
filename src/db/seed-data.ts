@@ -302,34 +302,93 @@ export const reservationSeeds: ReservationSeed[] = [
 
 // Initial stock catalogue used to seed an empty database. Mirrors the data that
 // previously lived inline in the inventory mock.
+// Thresholds vary by item: fast-moving drinks need a higher reorder point than
+// pricey rackets that sell a few units at a time.
 export const stockSeeds: Omit<NewStockItem, "id" | "createdAt" | "clubId">[] = [
-  { name: "Water Bottle (500ml)", category: "Drinks", price: 1.5, stock: 120 },
-  { name: "Energy Drink", category: "Drinks", price: 2.5, stock: 48 },
-  { name: "Sports Juice", category: "Drinks", price: 2.0, stock: 60 },
-  { name: "Isotonic Drink", category: "Drinks", price: 2.2, stock: 35 },
+  {
+    name: "Water Bottle (500ml)",
+    category: "Drinks",
+    price: 1.5,
+    stock: 120,
+    lowStockThreshold: 40,
+  },
+  {
+    name: "Energy Drink",
+    category: "Drinks",
+    price: 2.5,
+    stock: 48,
+    lowStockThreshold: 24,
+  },
+  {
+    name: "Sports Juice",
+    category: "Drinks",
+    price: 2.0,
+    stock: 60,
+    lowStockThreshold: 24,
+  },
+  {
+    name: "Isotonic Drink",
+    category: "Drinks",
+    price: 2.2,
+    stock: 35,
+    lowStockThreshold: 24,
+  },
   {
     name: "Padel Racket (Basic)",
     category: "Equipment",
     price: 49.99,
     stock: 8,
+    lowStockThreshold: 3,
   },
   {
     name: "Padel Racket (Pro)",
     category: "Equipment",
     price: 149.99,
     stock: 4,
+    lowStockThreshold: 2,
   },
   {
     name: "Ball Pack (3 units)",
     category: "Equipment",
     price: 6.99,
     stock: 55,
+    lowStockThreshold: 20,
   },
-  { name: "Overgrip Tape", category: "Accessories", price: 3.5, stock: 80 },
-  { name: "Wristband", category: "Accessories", price: 4.0, stock: 40 },
-  { name: "Sports Towel", category: "Accessories", price: 8.99, stock: 22 },
-  { name: "Padel Bag", category: "Equipment", price: 34.99, stock: 6 },
-  { name: "Sports Socks", category: "Accessories", price: 5.99, stock: 50 },
+  {
+    name: "Overgrip Tape",
+    category: "Accessories",
+    price: 3.5,
+    stock: 80,
+    lowStockThreshold: 15,
+  },
+  {
+    name: "Wristband",
+    category: "Accessories",
+    price: 4.0,
+    stock: 40,
+    lowStockThreshold: 10,
+  },
+  {
+    name: "Sports Towel",
+    category: "Accessories",
+    price: 8.99,
+    stock: 22,
+    lowStockThreshold: 8,
+  },
+  {
+    name: "Padel Bag",
+    category: "Equipment",
+    price: 34.99,
+    stock: 6,
+    lowStockThreshold: 3,
+  },
+  {
+    name: "Sports Socks",
+    category: "Accessories",
+    price: 5.99,
+    stock: 50,
+    lowStockThreshold: 12,
+  },
 ]
 
 // Historical sales to seed. `daysAgo` is resolved to a date at seed time. These

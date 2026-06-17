@@ -1,7 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 import {
   IconBell,
-  IconBox,
   IconBuildingStore,
   IconBuildings,
   IconCalendarCog,
@@ -41,12 +40,6 @@ const navItems: {
     to: "/settings/notifications",
     labelKey: "settings.nav.notifications",
     icon: IconBell,
-    permission: "settings:manage",
-  },
-  {
-    to: "/settings/inventory",
-    labelKey: "settings.nav.inventory",
-    icon: IconBox,
     permission: "settings:manage",
   },
   {

@@ -10,6 +10,7 @@ const stockItemInput = z.object({
   category: z.string().min(1),
   price: z.coerce.number().positive(),
   stock: z.coerce.number().int().min(0),
+  lowStockThreshold: z.coerce.number().int().min(0),
 })
 
 export const listStockItems = createServerFn({ method: "GET" }).handler(

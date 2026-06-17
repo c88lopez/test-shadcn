@@ -108,13 +108,6 @@ const COMMANDS: CommandItem[] = [
     keywords: "email whatsapp reminders notificaciones",
   },
   {
-    labelKey: "commandPalette.items.inventorySettings",
-    to: "/settings/inventory",
-    groupKey: "commandPalette.groups.settings",
-    icon: IconBox,
-    keywords: "low stock threshold inventario",
-  },
-  {
     labelKey: "commandPalette.items.users",
     to: "/settings/users",
     groupKey: "commandPalette.groups.settings",

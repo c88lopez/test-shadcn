@@ -11,7 +11,8 @@ test("creates a stock item", async ({ page }) => {
   await selectOption(page, dialog, "Category", "Drinks")
   // The price label includes the currency symbol, e.g. "Price ($)".
   await dialog.getByLabel(/^Price/).fill("9.50")
-  await dialog.getByLabel("Stock").fill("25")
+  await dialog.getByLabel("Stock", { exact: true }).fill("25")
+  await dialog.getByLabel("Low-stock threshold").fill("5")
   await dialog.getByRole("button", { name: "Add Item" }).click()
 
   await expect(page.getByText("Item created")).toBeVisible()
