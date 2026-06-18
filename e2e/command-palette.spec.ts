@@ -5,10 +5,15 @@ test("opens with the keyboard shortcut and navigates", async ({ page }) => {
   await page.goto("/")
   await waitForHydration(page)
 
-  // The palette listens for Ctrl+K or Cmd+K; Control works on every platform.
-  await page.keyboard.press("Control+KeyK")
+  // The palette attaches its Ctrl/Cmd+K listener in a useEffect, which can run
+  // just after hydration — so the first keypress may race it. Retry until the
+  // palette opens. (The handler toggles, but once open the assertion passes and
+  // the retry stops, so we never toggle it back closed.)
   const input = page.getByPlaceholder("Jump to a page...")
-  await expect(input).toBeVisible()
+  await expect(async () => {
+    await page.keyboard.press("Control+KeyK")
+    await expect(input).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 15000 })
 
   // Filter to a single result and pick it with Enter.
   await input.fill("Players")
