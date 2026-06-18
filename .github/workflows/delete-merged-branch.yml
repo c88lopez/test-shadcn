@@ -1,0 +1,26 @@
+name: Delete merged branch
+
+# Guaranteed head-branch cleanup after a PR merges. The repo's "automatically
+# delete head branches" setting (and `gh pr merge --delete-branch`) can silently
+# fail when auto-merge completes via the Actions token, so this runs at merge
+# time and deletes the ref explicitly. The `|| true` keeps it green if the branch
+# is already gone (e.g. the repo setting did fire).
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete head branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X DELETE \
+            "repos/${{ github.repository }}/git/refs/heads/${{ github.event.pull_request.head.ref }}" \
+            --silent || true
