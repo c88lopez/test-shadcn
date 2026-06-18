@@ -12,18 +12,26 @@ import {
 // and `threshold` let callers create low-stock (stock <= threshold) items.
 async function createItem(
   page: Page,
-  { stock = 25, threshold = 5 }: { stock?: number; threshold?: number } = {}
+  {
+    price = 9.5,
+    stock = 25,
+    threshold = 5,
+  }: { price?: number; stock?: number; threshold?: number } = {}
 ): Promise<string> {
   const name = `E2E Item ${Date.now()}-${Math.floor(Math.random() * 1e4)}`
   const dialog = await openDrawer(page, "New Item")
   await dialog.getByLabel("Product Name").fill(name)
   await selectOption(page, dialog, "Category", "Drinks")
   // The price label includes the currency symbol, e.g. "Price ($)".
-  await dialog.getByLabel(/^Price/).fill("9.50")
+  await dialog.getByLabel(/^Price/).fill(String(price))
   await dialog.getByLabel("Stock", { exact: true }).fill(String(stock))
   await dialog.getByLabel("Low-stock threshold").fill(String(threshold))
   await dialog.getByRole("button", { name: "Add Item" }).click()
-  await expect(page.getByText("Item created")).toBeVisible()
+  // Toasts can briefly overlap when creating several items in a row.
+  await expect(page.getByText("Item created").first()).toBeVisible()
+  // Wait for the drawer to finish closing so a follow-up create can't click the
+  // still-animating one.
+  await expect(dialog).toBeHidden()
   return name
 }
 
@@ -116,4 +124,64 @@ test("records a sale in the sales log", async ({ page }) => {
   // Stock should have decremented from 25 to 23.
   const row = await findRow(page, name)
   await expect(row.getByText(/^23 units$/)).toBeVisible()
+})
+
+test("records a multi-item sale and shows correct data when expanded", async ({
+  page,
+}) => {
+  // Create six distinct products with known prices so subtotals are verifiable.
+  // price = 1..6, qty = 2..7 → no subtotal equals its own unit price.
+  await page.goto("/inventory")
+  await waitForHydration(page)
+  const lines: { name: string; price: number; qty: number }[] = []
+  for (let i = 0; i < 6; i++) {
+    const price = i + 1
+    const name = await createItem(page, { price, stock: 50 })
+    lines.push({ name, price, qty: i + 2 })
+  }
+
+  // Record a single sale containing all six line items.
+  await page.goto("/inventory/sales-log")
+  await waitForHydration(page)
+  const dialog = await openDrawer(page, "New Sale")
+  await pickCalendarDay(page, dialog, await dateKeyAhead(page, 0, false))
+  // The drawer starts with one line; add the other five.
+  for (let i = 1; i < lines.length; i++) {
+    await dialog.getByRole("button", { name: "Add Item" }).click()
+  }
+  for (let i = 0; i < lines.length; i++) {
+    const block = dialog.locator("div.rounded-md.border.p-3").nth(i)
+    await block.getByLabel("Product").click()
+    const option = page.getByRole("option", {
+      name: `${lines[i].name} (50 in stock)`,
+      exact: true,
+    })
+    await option.click()
+    await option.waitFor({ state: "hidden" })
+    await block.getByLabel("Qty").fill(String(lines[i].qty))
+  }
+  await dialog.getByRole("button", { name: "Record Sale" }).click()
+  await expect(page.getByText("Sale recorded")).toBeVisible()
+
+  // The collapsed row should summarise the sale: "6 items" and the grand total.
+  await page.goto("/inventory/sales-log")
+  await waitForHydration(page)
+  await page.getByPlaceholder("Search sales...").fill(lines[0].name)
+  const total = lines.reduce((sum, l) => sum + l.price * l.qty, 0)
+  const summaryRow = page.getByRole("row", { name: /6 items/ })
+  await expect(summaryRow).toBeVisible()
+  await expect(summaryRow).toContainText(`$${total.toFixed(2)}`)
+
+  // Expand and verify every line's product, quantity, unit price and subtotal.
+  // Matching the full row name (exact) asserts all four cells at once and avoids
+  // also matching the wrapper row, whose name concatenates the whole sub-table.
+  await summaryRow.click()
+  for (const line of lines) {
+    const unitPrice = `$${line.price.toFixed(2)}`
+    const subtotal = `$${(line.price * line.qty).toFixed(2)}`
+    const expected = `${line.name} ${line.qty} ${unitPrice} ${subtotal}`
+    await expect(
+      page.getByRole("row", { name: expected, exact: true })
+    ).toBeVisible()
+  }
 })
