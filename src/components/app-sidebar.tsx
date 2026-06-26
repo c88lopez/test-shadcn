@@ -30,6 +30,7 @@ import { setActiveClub } from "@/lib/clubs.functions"
 import type { ClubContext } from "@/lib/clubs.functions"
 import {
   ACCENT_COLORS,
+  applyUiSettingsForClub,
   loadUiSettings,
   resolveAccent,
   UI_ACCENT_EVENT,
@@ -246,19 +247,7 @@ function ClubSwitcher({
           <IconSelector className="ml-auto size-4 shrink-0 opacity-50" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side="bottom"
-        align="start"
-        className="w-60"
-        // Hover/active highlight on items uses `--accent`; scope it to the
-        // active club's color here so it matches the selected club.
-        style={
-          {
-            "--accent": "var(--primary)",
-            "--accent-foreground": "var(--primary-foreground)",
-          } as CSSProperties
-        }
-      >
+      <DropdownMenuContent side="bottom" align="start" className="w-60">
         {context.clubs.map((club) => (
           <DropdownMenuItem
             key={club.id}
@@ -300,6 +289,9 @@ export function AppSidebar({
 
   async function handleSignOut() {
     await authClient.signOut()
+    // Drop the per-club accent so the login page (no club context) renders with
+    // the default/global accent instead of the last club's branding.
+    applyUiSettingsForClub(null)
     router.navigate({ to: "/login" })
   }
 
