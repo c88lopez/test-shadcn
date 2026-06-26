@@ -12,7 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { authClient } from "@/lib/auth-client"
-import { applyUiSettingsForClub } from "@/lib/ui-settings"
+import {
+  applyUiSettings,
+  DEFAULT_UI_SETTINGS,
+  loadUiSettings,
+  setActiveUiClub,
+} from "@/lib/ui-settings"
 
 export const Route = createFileRoute("/login")({ component: LoginPage })
 
@@ -24,11 +29,13 @@ function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // The login page has no club context, so reset to the default/global accent
-  // and clear the active-club mirror — otherwise the last signed-in club's
-  // branding would leak onto this page (and on the next boot's pre-paint init).
+  // The login page has no club context, so force the default green accent
+  // (keeping the global theme/font size) and clear the active-club mirror —
+  // otherwise the last signed-in club's branding would leak onto this page
+  // (and onto the next boot's pre-paint init).
   useEffect(() => {
-    applyUiSettingsForClub(null)
+    setActiveUiClub(null)
+    applyUiSettings(loadUiSettings(), DEFAULT_UI_SETTINGS.accent)
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
