@@ -95,7 +95,7 @@ function ClubActions({ club }: { club: ClubRecord }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
+            variant="destructive"
             disabled={isDefault}
             onClick={() => setConfirmOpen(true)}
           >

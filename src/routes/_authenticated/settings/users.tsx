@@ -212,7 +212,7 @@ function UserActions({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
+            variant="destructive"
             onClick={() => setConfirmOpen(true)}
           >
             {t("common.delete")}
