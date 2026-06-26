@@ -7,6 +7,15 @@ import viteReact from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 
 const config = defineConfig({
+  // Bind the dev server to a fixed port and fail (instead of auto-incrementing
+  // to the next free port) if it's already taken. A second `vite dev` would
+  // otherwise start on another port but share the `node_modules/.vite` cache,
+  // and its dep pre-bundling would trigger constant `full-reload`s in the first
+  // instance's browser. Failing fast keeps a single dev server authoritative.
+  server: {
+    port: 3003,
+    strictPort: true,
+  },
   resolve: {
     tsconfigPaths: true,
     // Alias bare `kysely` imports to a shim that adds two constants Better
