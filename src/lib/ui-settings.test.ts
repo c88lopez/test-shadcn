@@ -121,6 +121,11 @@ describe("ui-settings", () => {
     expect(root.style.getPropertyValue("--primary-foreground")).toBe(
       fallbackAccent.primaryForeground
     )
+    // The item hover/focus highlight (`--accent`) must track the active accent.
+    expect(root.style.getPropertyValue("--accent")).toBe(fallbackAccent.primary)
+    expect(root.style.getPropertyValue("--accent-foreground")).toBe(
+      fallbackAccent.primaryForeground
+    )
     expect(root.style.getPropertyValue("--chart-1")).toBe(
       fallbackAccent.chart[0]
     )
@@ -154,6 +159,7 @@ describe("ui-settings", () => {
     expect(localStorage.getItem("ui_active_club")).toBe("club-a")
     expect(root.classList.contains("dark")).toBe(false)
     expect(root.style.getPropertyValue("--primary")).toBe(accent.primary)
+    expect(root.style.getPropertyValue("--accent")).toBe(accent.primary)
     expect(root.style.fontSize).toBe("14px")
   })
 
@@ -188,6 +194,10 @@ describe("ui-settings", () => {
     const accent = ACCENT_COLORS.find((a) => a.key === "rose")!
     expect(root.classList.contains("dark")).toBe(true)
     expect(root.style.getPropertyValue("--primary")).toBe(accent.primary)
+    expect(root.style.getPropertyValue("--accent")).toBe(accent.primary)
+    expect(root.style.getPropertyValue("--accent-foreground")).toBe(
+      accent.primaryForeground
+    )
     expect(root.style.fontSize).toBe("18px")
   })
 })

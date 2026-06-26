@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import { ProgressButton } from "@/components/progress-button"
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { authClient } from "@/lib/auth-client"
+import { applyUiSettingsForClub } from "@/lib/ui-settings"
 
 export const Route = createFileRoute("/login")({ component: LoginPage })
 
@@ -22,6 +23,13 @@ function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  // The login page has no club context, so reset to the default/global accent
+  // and clear the active-club mirror — otherwise the last signed-in club's
+  // branding would leak onto this page (and on the next boot's pre-paint init).
+  useEffect(() => {
+    applyUiSettingsForClub(null)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

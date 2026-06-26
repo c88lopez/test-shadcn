@@ -268,6 +268,8 @@ r.style.setProperty("--primary",a.primary);
 r.style.setProperty("--primary-foreground",a.primaryForeground);
 r.style.setProperty("--sidebar-primary",a.primary);
 r.style.setProperty("--sidebar-primary-foreground",a.primaryForeground);
+r.style.setProperty("--accent",a.primary);
+r.style.setProperty("--accent-foreground",a.primaryForeground);
 r.style.setProperty("--ring",a.primary);
 for(var i=0;i<a.chart.length;i++){r.style.setProperty("--chart-"+(i+1),a.chart[i]);}
 var f=F.filter(function(x){return x.key===s.fontSize;})[0]||F[1];
@@ -291,6 +293,11 @@ export function applyUiSettings(settings: UiSettings, accentKey?: string) {
     "--sidebar-primary-foreground",
     accent.primaryForeground
   )
+  // `--accent` (item hover/focus highlight) defaults to the brand color in this
+  // theme, so keep it in sync with the active accent. Otherwise menus/command
+  // palette would keep the static default color instead of the club's.
+  root.style.setProperty("--accent", accent.primary)
+  root.style.setProperty("--accent-foreground", accent.primaryForeground)
   root.style.setProperty("--ring", accent.primary)
   accent.chart.forEach((shade, i) => {
     root.style.setProperty(`--chart-${i + 1}`, shade)
