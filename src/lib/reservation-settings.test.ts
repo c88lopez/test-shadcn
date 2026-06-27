@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 import {
   bookingRuleMessage,
   DEFAULT_RESERVATION_SETTINGS,
+  defaultHours,
+  todayHours,
   validateBookingWindow,
   validateCancellation,
   weekdayKey,
@@ -23,6 +25,22 @@ describe("weekdayKey", () => {
   it("maps calendar dates to weekday keys", () => {
     expect(weekdayKey(THU)).toBe("thu")
     expect(weekdayKey(SUN)).toBe("sun")
+  })
+})
+
+describe("defaultHours", () => {
+  it("opens Monday–Saturday and closes Sunday", () => {
+    const hours = defaultHours()
+    expect(hours.mon).toEqual({ open: "08:00", close: "23:00", closed: false })
+    expect(hours.sun.closed).toBe(true)
+  })
+})
+
+describe("todayHours", () => {
+  it("returns the hours for the current weekday", () => {
+    const keys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
+    const expected = settings.hours[keys[new Date().getDay()]]
+    expect(todayHours(settings)).toEqual(expected)
   })
 })
 

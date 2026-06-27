@@ -8,7 +8,7 @@ import {
   requirePermission,
   resolveActiveClubId,
 } from "@/lib/auth.server"
-import { findStockShortages } from "@/lib/inventory"
+import { aggregateQuantities, findStockShortages } from "@/lib/inventory"
 import type { SaleLineItem } from "@/lib/sales"
 
 const saleInput = z.object({
@@ -111,13 +111,7 @@ export const createSale = createServerFn({ method: "POST" })
       )
 
       // Decrement stock for each distinct product sold.
-      const soldQty = new Map<string, number>()
-      for (const i of data.items) {
-        soldQty.set(
-          i.stockItemId,
-          (soldQty.get(i.stockItemId) ?? 0) + i.quantity
-        )
-      }
+      const soldQty = aggregateQuantities(data.items)
       for (const [id, qty] of soldQty) {
         await tx
           .update(stockItem)
