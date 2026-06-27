@@ -2,126 +2,12 @@ import { useEffect, useMemo, useState } from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
-import {
-  IconBell,
-  IconBox,
-  IconBuildingStore,
-  IconCalendar,
-  IconCalendarCog,
-  IconChartBar,
-  IconCornerDownLeft,
-  IconDashboard,
-  IconPalette,
-  IconReceipt,
-  IconSchool,
-  IconSearch,
-  IconTrophy,
-  IconUsers,
-  IconUserStar,
-} from "@tabler/icons-react"
-import type { Icon } from "@tabler/icons-react"
+import { IconCornerDownLeft, IconSearch } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
-import type { TranslationKey } from "@/lib/i18n"
+import { COMMAND_ITEMS } from "@/lib/navigation"
+import type { CommandNavItem } from "@/lib/navigation"
 
-interface CommandItem {
-  labelKey: TranslationKey
-  groupKey: TranslationKey
-  to: string
-  icon: Icon
-  keywords?: string
-}
-
-const COMMANDS: CommandItem[] = [
-  {
-    labelKey: "commandPalette.items.dashboard",
-    to: "/",
-    groupKey: "commandPalette.groups.courts",
-    icon: IconDashboard,
-  },
-  {
-    labelKey: "commandPalette.items.reservations",
-    to: "/reservations",
-    groupKey: "commandPalette.groups.courts",
-    icon: IconCalendar,
-  },
-  {
-    labelKey: "commandPalette.items.salesDashboard",
-    to: "/inventory/dashboard",
-    groupKey: "commandPalette.groups.inventory",
-    icon: IconChartBar,
-  },
-  {
-    labelKey: "commandPalette.items.stock",
-    to: "/inventory",
-    groupKey: "commandPalette.groups.inventory",
-    icon: IconBox,
-  },
-  {
-    labelKey: "commandPalette.items.salesLog",
-    to: "/inventory/sales-log",
-    groupKey: "commandPalette.groups.inventory",
-    icon: IconReceipt,
-  },
-  {
-    labelKey: "commandPalette.items.coaches",
-    to: "/coaches",
-    groupKey: "commandPalette.groups.coaches",
-    icon: IconUserStar,
-  },
-  {
-    labelKey: "commandPalette.items.classes",
-    to: "/coaches/classes",
-    groupKey: "commandPalette.groups.coaches",
-    icon: IconSchool,
-  },
-  {
-    labelKey: "commandPalette.items.players",
-    to: "/players",
-    groupKey: "commandPalette.groups.players",
-    icon: IconUsers,
-  },
-  {
-    labelKey: "commandPalette.items.tournaments",
-    to: "/tournaments",
-    groupKey: "commandPalette.groups.tournaments",
-    icon: IconTrophy,
-  },
-  {
-    labelKey: "commandPalette.items.generalSettings",
-    to: "/settings/general",
-    groupKey: "commandPalette.groups.settings",
-    icon: IconBuildingStore,
-    keywords: "club currency locale profile general configuración",
-  },
-  {
-    labelKey: "commandPalette.items.reservationSettings",
-    to: "/settings/reservations",
-    groupKey: "commandPalette.groups.settings",
-    icon: IconCalendarCog,
-    keywords: "hours courts booking rules reservas pistas",
-  },
-  {
-    labelKey: "commandPalette.items.notificationSettings",
-    to: "/settings/notifications",
-    groupKey: "commandPalette.groups.settings",
-    icon: IconBell,
-    keywords: "email whatsapp reminders notificaciones",
-  },
-  {
-    labelKey: "commandPalette.items.users",
-    to: "/settings/users",
-    groupKey: "commandPalette.groups.settings",
-    icon: IconUsers,
-    keywords: "roles security password usuarios",
-  },
-  {
-    labelKey: "commandPalette.items.appearance",
-    to: "/settings/ui",
-    groupKey: "commandPalette.groups.settings",
-    icon: IconPalette,
-    keywords: "theme accent color font size ui idioma apariencia",
-  },
-]
+const COMMANDS = COMMAND_ITEMS
 
 export function CommandPalette() {
   const router = useRouter()
@@ -155,7 +41,7 @@ export function CommandPalette() {
     setActiveIdx(0)
   }, [query, open])
 
-  function go(item: CommandItem | undefined) {
+  function go(item: CommandNavItem | undefined) {
     if (!item) return
     setOpen(false)
     setQuery("")

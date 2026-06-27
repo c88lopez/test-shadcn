@@ -1,16 +1,7 @@
 import { useEffect, useReducer, useState } from "react"
 import type { CSSProperties } from "react"
 import {
-  IconDashboard,
   IconSettings,
-  IconUsers,
-  IconCalendar,
-  IconReceipt,
-  IconChartBar,
-  IconBox,
-  IconTrophy,
-  IconUserStar,
-  IconSchool,
   IconDotsVertical,
   IconSelector,
   IconCheck,
@@ -36,6 +27,8 @@ import {
   UI_ACCENT_EVENT,
 } from "@/lib/ui-settings"
 import type { TranslationKey } from "@/lib/i18n"
+import { SIDEBAR_GROUPS, sidebarItemsForGroup } from "@/lib/navigation"
+import type { SidebarNavItem } from "@/lib/navigation"
 
 import {
   Sidebar,
@@ -50,53 +43,19 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-type NavItem = {
-  titleKey: TranslationKey
-  url: string
-  icon: typeof IconDashboard
+const settingsItem = {
+  titleKey: "nav.items.settings" as TranslationKey,
+  url: "/settings",
+  icon: IconSettings,
 }
 
-const navCourtManagement: NavItem[] = [
-  { titleKey: "nav.items.dashboard", url: "/", icon: IconDashboard },
-  {
-    titleKey: "nav.items.reservations",
-    url: "/reservations",
-    icon: IconCalendar,
-  },
-]
-
-const navInventory: NavItem[] = [
-  {
-    titleKey: "nav.items.inventoryDashboard",
-    url: "/inventory/dashboard",
-    icon: IconChartBar,
-  },
-  { titleKey: "nav.items.stock", url: "/inventory", icon: IconBox },
-  {
-    titleKey: "nav.items.salesLog",
-    url: "/inventory/sales-log",
-    icon: IconReceipt,
-  },
-]
-
-const navCoaches: NavItem[] = [
-  { titleKey: "nav.items.coaches", url: "/coaches", icon: IconUserStar },
-  { titleKey: "nav.items.classes", url: "/coaches/classes", icon: IconSchool },
-]
-
-const navPlayers: NavItem[] = [
-  { titleKey: "nav.items.players", url: "/players", icon: IconUsers },
-]
-
-const navTournaments: NavItem[] = [
-  { titleKey: "nav.items.tournaments", url: "/tournaments", icon: IconTrophy },
-]
-
-const navSecondary: NavItem[] = [
-  { titleKey: "nav.items.settings", url: "/settings", icon: IconSettings },
-]
-
-function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
+function NavGroup({
+  label,
+  items,
+}: {
+  label: string
+  items: SidebarNavItem[]
+}) {
   const { t } = useTranslation()
   return (
     <SidebarGroup>
@@ -104,11 +63,11 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
-            <SidebarMenuItem key={item.url}>
+            <SidebarMenuItem key={item.to}>
               <SidebarMenuButton asChild>
-                <a href={item.url}>
+                <a href={item.to}>
                   <item.icon />
-                  <span>{t(item.titleKey)}</span>
+                  <span>{t(item.labelKey)}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -316,27 +275,27 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <NavGroup label={t("nav.groups.courts")} items={navCourtManagement} />
-        <NavGroup label={t("nav.groups.inventory")} items={navInventory} />
-        <NavGroup label={t("nav.groups.coaches")} items={navCoaches} />
-        <NavGroup label={t("nav.groups.players")} items={navPlayers} />
-        <NavGroup label={t("nav.groups.tournaments")} items={navTournaments} />
+        {SIDEBAR_GROUPS.map(({ group, labelKey }) => (
+          <NavGroup
+            key={group}
+            label={t(labelKey)}
+            items={sidebarItemsForGroup(group)}
+          />
+        ))}
       </SidebarContent>
 
       <SidebarFooter>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navSecondary.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{t(item.titleKey)}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href={settingsItem.url}>
+                    <settingsItem.icon />
+                    <span>{t(settingsItem.titleKey)}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
