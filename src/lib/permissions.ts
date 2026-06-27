@@ -11,6 +11,7 @@ export const PERMISSIONS = [
   "reservations:manage",
   "inventory:manage",
   "coaches:manage",
+  "tournaments:manage",
   // Platform-level: provisioning clubs and assigning users across clubs.
   "clubs:manage",
 ] as const
@@ -35,6 +36,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "reservations:manage",
     "inventory:manage",
     "coaches:manage",
+    "tournaments:manage",
   ],
   Coach: ["coaches:manage"],
   "Front Desk": ["players:manage", "reservations:manage", "inventory:manage"],

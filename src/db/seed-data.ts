@@ -1,4 +1,9 @@
-import type { NewCoach, NewPlayer, NewStockItem } from "@/db/schema"
+import type {
+  NewCoach,
+  NewPlayer,
+  NewStockItem,
+  NewTournament,
+} from "@/db/schema"
 
 // Initial player roster used to seed an empty database. Mirrors the data that
 // previously lived inline in the Players route.
@@ -516,5 +521,37 @@ export const saleSeeds: SaleSeed[] = [
       { item: "Sports Socks", quantity: 4, unitPrice: 5.99 },
       { item: "Wristband", quantity: 3, unitPrice: 4.0 },
     ],
+  },
+]
+
+// Tournaments to seed. `offsetDays` is relative to seed time, mapped to a date.
+export interface TournamentSeed extends Omit<
+  NewTournament,
+  "id" | "createdAt" | "clubId" | "date"
+> {
+  offsetDays: number
+}
+
+export const tournamentSeeds: TournamentSeed[] = [
+  {
+    name: "Summer Open 2026",
+    offsetDays: 14,
+    category: "C5",
+    format: "elimination",
+    maxTeams: 16,
+  },
+  {
+    name: "Mixed Doubles Cup",
+    offsetDays: 30,
+    category: "Mixed",
+    format: "round_robin",
+    maxTeams: 8,
+  },
+  {
+    name: "Club Championship",
+    offsetDays: 45,
+    category: "C4",
+    format: "double_elimination",
+    maxTeams: 32,
   },
 ]

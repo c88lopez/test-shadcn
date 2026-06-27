@@ -317,3 +317,24 @@ export const coachClass = pgTable("coach_class", {
 
 export type CoachClass = typeof coachClass.$inferSelect
 export type NewCoachClass = typeof coachClass.$inferInsert
+
+export const tournament = pgTable("tournament", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  date: date("date").notNull(),
+  category: text("category").notNull(),
+  // One of "round_robin" | "elimination" | "double_elimination".
+  format: text("format").notNull(),
+  maxTeams: integer("max_teams").notNull(),
+  clubId: text("club_id")
+    .notNull()
+    .references(() => club.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+})
+
+export type Tournament = typeof tournament.$inferSelect
+export type NewTournament = typeof tournament.$inferInsert
