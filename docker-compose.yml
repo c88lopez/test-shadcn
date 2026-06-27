@@ -58,7 +58,56 @@ services:
     depends_on:
       - prometheus
 
+  # Postgres metrics for Prometheus.
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: padel-postgres-exporter
+    profiles: ["observability"]
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres:5432/padel?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+
+  # Log aggregation: Loki stores logs, Alloy ships container logs to it.
+  loki:
+    image: grafana/loki:3.3.0
+    container_name: padel-loki
+    profiles: ["observability"]
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - padel-loki-data:/loki
+    ports:
+      - "3100:3100"
+
+  alloy:
+    image: grafana/alloy:v1.5.1
+    container_name: padel-alloy
+    profiles: ["observability"]
+    restart: unless-stopped
+    # Root so Alloy can read the Docker socket to discover/tail container logs.
+    user: root
+    command:
+      - "run"
+      - "/etc/alloy/config.alloy"
+      - "--server.http.listen-addr=0.0.0.0:12345"
+      - "--storage.path=/var/lib/alloy/data"
+    volumes:
+      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - padel-alloy-data:/var/lib/alloy/data
+    ports:
+      - "12345:12345"
+    depends_on:
+      - loki
+
 volumes:
   padel-pgdata:
   padel-prometheus-data:
   padel-grafana-data:
+  padel-loki-data:
+  padel-alloy-data:

@@ -12,6 +12,13 @@ scrape_configs:
         labels:
           service: padel-club-admin
 
+  # Postgres metrics via postgres_exporter (same compose network).
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+        labels:
+          service: padel-club-admin
+
   # Prometheus scraping itself (handy for sanity checks).
   - job_name: prometheus
     static_configs:
