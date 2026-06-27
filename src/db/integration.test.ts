@@ -557,7 +557,7 @@ describe.skipIf(!TEST_URL)("database integration", () => {
           startTime: "12:00",
           durationMinutes: 60,
         })
-      ).rejects.toThrow(/per-player limit/)
+      ).rejects.toThrow(/errors\.booking\.concurrency/)
     })
 
     it("does not count the reservation being edited against the limit", async () => {

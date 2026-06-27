@@ -39,6 +39,7 @@ import { ROLE_DESCRIPTIONS, USER_ROLES } from "@/lib/users"
 import type { UserRole } from "@/lib/users"
 import { SUPER_ADMIN_ROLE } from "@/lib/permissions"
 import { useAppSettings } from "@/lib/app-settings"
+import { translateError } from "@/lib/errors"
 
 export { ROLE_DESCRIPTIONS, USER_ROLES }
 export type { UserRole }
@@ -172,11 +173,13 @@ export function NewUserDrawer({
         schedule(() => setOpen(false), 900)
       },
       onError: (error) => {
-        const message =
-          error instanceof Error
-            ? error.message
-            : t("forms.user.errorDescription")
-        toast.error(t("forms.user.errorTitle"), { description: message })
+        toast.error(t("forms.user.errorTitle"), {
+          description: translateError(
+            error,
+            t,
+            t("forms.user.errorDescription")
+          ),
+        })
       },
     })
   }

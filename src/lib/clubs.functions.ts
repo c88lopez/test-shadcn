@@ -11,6 +11,7 @@ import {
   resolveActiveClubId,
 } from "@/lib/auth.server"
 import { can } from "@/lib/permissions"
+import { AppError } from "@/lib/errors"
 import {
   createClubRecord,
   deleteClubRecord,
@@ -77,9 +78,9 @@ export const renameActiveClub = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await requirePermission("settings:manage")
     const clubId = await resolveActiveClubId(session.user)
-    if (!clubId) throw new Error("No active club to rename.")
+    if (!clubId) throw new AppError("errors.club.noActiveToRename")
     const name = data.name.trim()
-    if (!name) throw new Error("Club name is required.")
+    if (!name) throw new AppError("errors.club.nameRequired")
     await db.update(club).set({ name }).where(eq(club.id, clubId))
     return { id: clubId, name }
   })
@@ -145,7 +146,7 @@ export const setActiveClub = createServerFn({ method: "POST" })
         .from(club)
         .where(eq(club.id, data.clubId))
         .limit(1)
-      if (exists.length === 0) throw new Error("Club not found.")
+      if (exists.length === 0) throw new AppError("errors.club.notFound")
     } else if (data.clubId !== session.user.clubId) {
       const member = await db
         .select({ clubId: clubMember.clubId })
@@ -158,7 +159,7 @@ export const setActiveClub = createServerFn({ method: "POST" })
         )
         .limit(1)
       if (member.length === 0) {
-        throw new Error("You don't have access to that club.")
+        throw new AppError("errors.club.noAccess")
       }
     }
 

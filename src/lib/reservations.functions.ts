@@ -15,6 +15,7 @@ import {
   assertCancellationAllowed,
 } from "@/lib/reservation-settings.server"
 import { findOverlap, timeToMin } from "@/lib/reservation-overlap"
+import { AppError } from "@/lib/errors"
 
 const reservationInput = z.object({
   courtId: z.string().min(1),
@@ -72,9 +73,11 @@ function conflictError(conflict: {
   const end = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(
     endMin % 60
   ).padStart(2, "0")}`
-  throw new Error(
-    `Court is already booked ${conflict.startTime}–${end} (${conflict.player}). Pick another time or court.`
-  )
+  throw new AppError("errors.reservation.conflict", {
+    start: conflict.startTime,
+    end,
+    player: conflict.player,
+  })
 }
 
 export const listReservations = createServerFn({ method: "GET" }).handler(
@@ -109,7 +112,7 @@ export const createReservation = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await requirePermission("reservations:manage")
     const clubId = await resolveActiveClubId(session.user)
-    if (!clubId) throw new Error("This action requires a club context.")
+    if (!clubId) throw new AppError("errors.clubContextRequired")
     await assertCourtBookable(clubId, data.courtId)
     await assertBookingAllowed(clubId, data)
     const conflict = await findConflict(clubId, data)

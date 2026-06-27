@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth"
 import { requirePermission } from "@/lib/auth.server"
 import { can, SUPER_ADMIN_ROLE } from "@/lib/permissions"
 import { USER_ROLES } from "@/lib/users"
+import { AppError } from "@/lib/errors"
 
 // Super Admin is assignable only by other super-admins; the schema accepts it
 // and the handlers enforce who may use it.
@@ -55,7 +56,7 @@ async function resolveAssignment(
 ): Promise<ClubAssignment> {
   const isSuper = can(actor.role, "clubs:manage")
   if (role === SUPER_ADMIN_ROLE) {
-    if (!isSuper) throw new Error("You cannot assign the Super Admin role.")
+    if (!isSuper) throw new AppError("errors.user.cannotAssignSuperAdmin")
     return { primary: null, memberships: [] }
   }
 
@@ -66,7 +67,7 @@ async function resolveAssignment(
         ? [clubId]
         : []
   if (ids.length === 0) {
-    if (!actor.clubId) throw new Error("Select a club for this user.")
+    if (!actor.clubId) throw new AppError("errors.user.selectClub")
     ids = [actor.clubId]
   }
 
@@ -75,7 +76,7 @@ async function resolveAssignment(
     .from(club)
     .where(inArray(club.id, ids))
   if (found.length !== ids.length) {
-    throw new Error("Invalid club selection.")
+    throw new AppError("errors.user.invalidClub")
   }
 
   const primary =
@@ -107,7 +108,7 @@ async function assertManageable(actor: Actor, targetId: string): Promise<void> {
     .where(eq(user.id, targetId))
     .limit(1)
   if (rows.length === 0 || rows[0].clubId !== actor.clubId) {
-    throw new Error("User not found.")
+    throw new AppError("errors.user.notFound")
   }
 }
 
@@ -179,7 +180,7 @@ export const createUser = createServerFn({ method: "POST" })
       .where(eq(user.email, data.email))
       .limit(1)
     if (existing.length > 0) {
-      throw new Error("A user with this email already exists.")
+      throw new AppError("errors.user.emailExists")
     }
 
     const id = crypto.randomUUID()
@@ -235,7 +236,7 @@ export const updateUser = createServerFn({ method: "POST" })
       .where(eq(user.email, data.email))
       .limit(1)
     if (clash.length > 0 && clash[0].id !== data.id) {
-      throw new Error("A user with this email already exists.")
+      throw new AppError("errors.user.emailExists")
     }
 
     await db
@@ -267,7 +268,7 @@ export const resetUserPassword = createServerFn({ method: "POST" })
       .where(eq(account.userId, data.id))
       .returning({ id: account.id })
     if (updated.length === 0) {
-      throw new Error("This user has no password login to reset.")
+      throw new AppError("errors.user.noPasswordReset")
     }
     return { tempPassword }
   })
@@ -280,7 +281,7 @@ export const setUserArchived = createServerFn({ method: "POST" })
     const session = await requirePermission("users:manage")
     await assertManageable(session.user, data.id)
     if (data.archived && data.id === session.user.id) {
-      throw new Error("You cannot archive your own account.")
+      throw new AppError("errors.user.cannotArchiveSelf")
     }
     await db
       .update(user)
@@ -300,7 +301,7 @@ export const deleteUser = createServerFn({ method: "POST" })
     const session = await requirePermission("users:manage")
     await assertManageable(session.user, data.id)
     if (data.id === session.user.id) {
-      throw new Error("You cannot delete your own account.")
+      throw new AppError("errors.user.cannotDeleteSelf")
     }
     await db.delete(user).where(eq(user.id, data.id))
     return { id: data.id }

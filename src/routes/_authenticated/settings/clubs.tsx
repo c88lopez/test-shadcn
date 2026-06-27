@@ -34,6 +34,7 @@ import {
   updateClub,
 } from "@/lib/clubs.functions"
 import type { ClubRecord } from "@/lib/clubs.functions"
+import { translateError } from "@/lib/errors"
 
 export const Route = createFileRoute("/_authenticated/settings/clubs")({
   beforeLoad: ({ context }) =>
@@ -60,8 +61,7 @@ function ClubActions({ club }: { club: ClubRecord }) {
       router.invalidate()
     } catch (error) {
       toast.error(t("settings.clubs.deleteError"), {
-        description:
-          error instanceof Error ? error.message : t("common.tryAgain"),
+        description: translateError(error, t, t("common.tryAgain")),
       })
     } finally {
       setConfirmOpen(false)

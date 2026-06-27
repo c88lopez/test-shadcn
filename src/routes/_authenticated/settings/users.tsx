@@ -53,6 +53,7 @@ import {
 import type { SecuritySettings } from "@/lib/app-settings"
 import { can } from "@/lib/permissions"
 import { listClubOptions } from "@/lib/clubs.functions"
+import { translateError } from "@/lib/errors"
 import {
   createUser,
   deleteUser,
@@ -115,8 +116,7 @@ function UserActions({
       })
     } catch (error) {
       toast.error(t("settings.users.resetPasswordError"), {
-        description:
-          error instanceof Error ? error.message : t("common.tryAgain"),
+        description: translateError(error, t, t("common.tryAgain")),
       })
     }
   }
@@ -139,8 +139,7 @@ function UserActions({
       router.invalidate()
     } catch (error) {
       toast.error(t("settings.users.updateError"), {
-        description:
-          error instanceof Error ? error.message : t("common.tryAgain"),
+        description: translateError(error, t, t("common.tryAgain")),
       })
     }
   }
@@ -156,8 +155,7 @@ function UserActions({
       router.invalidate()
     } catch (error) {
       toast.error(t("settings.users.deleteError"), {
-        description:
-          error instanceof Error ? error.message : t("common.tryAgain"),
+        description: translateError(error, t, t("common.tryAgain")),
       })
     } finally {
       setConfirmOpen(false)

@@ -29,6 +29,7 @@ import {
 import type { TranslationKey } from "@/lib/i18n"
 import { SIDEBAR_GROUPS, sidebarItemsForGroup } from "@/lib/navigation"
 import type { SidebarNavItem } from "@/lib/navigation"
+import { translateError } from "@/lib/errors"
 
 import {
   Sidebar,
@@ -169,8 +170,7 @@ function ClubSwitcher({
       await router.invalidate()
     } catch (error) {
       toast.error(t("clubSwitcher.switchError"), {
-        description:
-          error instanceof Error ? error.message : t("clubSwitcher.tryAgain"),
+        description: translateError(error, t, t("clubSwitcher.tryAgain")),
       })
     } finally {
       setPending(false)
