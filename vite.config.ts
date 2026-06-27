@@ -15,6 +15,10 @@ const config = defineConfig({
   server: {
     port: 3003,
     strictPort: true,
+    // Allow the Prometheus container to scrape /api/metrics via the host
+    // gateway. Vite blocks unknown Host headers (DNS-rebinding protection) with
+    // a 403, which otherwise makes the scrape target fail in dev.
+    allowedHosts: ["host.docker.internal"],
   },
   resolve: {
     tsconfigPaths: true,
