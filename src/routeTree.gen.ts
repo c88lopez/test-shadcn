@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as ApiMetricsRouteImport } from './routes/api/metrics'
 import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
@@ -45,6 +46,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiMetricsRoute = ApiMetricsRouteImport.update({
+  id: '/api/metrics',
+  path: '/api/metrics',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTournamentsRoute =
   AuthenticatedTournamentsRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/reservations': typeof AuthenticatedReservationsRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tournaments': typeof AuthenticatedTournamentsRoute
+  '/api/metrics': typeof ApiMetricsRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
   '/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/tournaments': typeof AuthenticatedTournamentsRoute
+  '/api/metrics': typeof ApiMetricsRoute
   '/': typeof AuthenticatedIndexRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tournaments': typeof AuthenticatedTournamentsRoute
+  '/api/metrics': typeof ApiMetricsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/_authenticated/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/reservations'
     | '/settings'
     | '/tournaments'
+    | '/api/metrics'
     | '/coaches/classes'
     | '/inventory/dashboard'
     | '/inventory/sales-log'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/players'
     | '/reservations'
     | '/tournaments'
+    | '/api/metrics'
     | '/'
     | '/coaches/classes'
     | '/inventory/dashboard'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reservations'
     | '/_authenticated/settings'
     | '/_authenticated/tournaments'
+    | '/api/metrics'
     | '/_authenticated/'
     | '/_authenticated/coaches/classes'
     | '/_authenticated/inventory/dashboard'
@@ -300,6 +312,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiMetricsRoute: typeof ApiMetricsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiClubsIdRoute: typeof ApiClubsIdRoute
   ApiClubsIndexRoute: typeof ApiClubsIndexRoute
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/metrics': {
+      id: '/api/metrics'
+      path: '/api/metrics'
+      fullPath: '/api/metrics'
+      preLoaderRoute: typeof ApiMetricsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tournaments': {
       id: '/_authenticated/tournaments'
@@ -524,6 +544,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiMetricsRoute: ApiMetricsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiClubsIdRoute: ApiClubsIdRoute,
   ApiClubsIndexRoute: ApiClubsIndexRoute,
