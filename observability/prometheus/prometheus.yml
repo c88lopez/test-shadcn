@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape the app's /api/metrics. The app runs on the host (dev server on
+  # 3003), so reach it via host.docker.internal from inside the container.
+  - job_name: padel-app
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["host.docker.internal:3003"]
+        labels:
+          service: padel-club-admin
+
+  # Prometheus scraping itself (handy for sanity checks).
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

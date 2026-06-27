@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     container_name: padel-postgres
     restart: unless-stopped
     environment:
@@ -17,5 +17,46 @@ services:
       timeout: 5s
       retries: 10
 
+  # Observability stack. Behind the `observability` profile so the default
+  # `docker compose up` (and `bun run db:up`) only starts Postgres. Start it
+  # with `bun run obs:up` (or `docker compose --profile observability up -d`).
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: padel-prometheus
+    profiles: ["observability"]
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - padel-prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    # Lets the container reach the app's /api/metrics on the host (works on
+    # Docker Desktop automatically; the mapping is required on Linux).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: padel-grafana
+    profiles: ["observability"]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - padel-grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
 volumes:
   padel-pgdata:
+  padel-prometheus-data:
+  padel-grafana-data:

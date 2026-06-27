@@ -1,0 +1,175 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "schemaVersion": 39,
+  "tags": ["padel", "app"],
+  "title": "Padel Club Admin — App Overview",
+  "uid": "padel-app-overview",
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "10s",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request rate (req/s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (kind) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{kind}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Error rate (5xx, req/s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Request duration (p50 / p95 / p99, s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 0 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Requests by status",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "stacking": { "mode": "normal" }
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Process resident memory",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "rss"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "CPU usage (cores)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(process_cpu_seconds_total[5m])",
+          "legendFormat": "cpu"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Event loop lag (p99, s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "nodejs_eventloop_lag_p99_seconds",
+          "legendFormat": "lag p99"
+        }
+      ]
+    }
+  ]
+}
