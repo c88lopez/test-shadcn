@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth.server"
 import { aggregateQuantities, findStockShortages } from "@/lib/inventory"
 import type { SaleLineItem } from "@/lib/sales"
+import { AppError } from "@/lib/errors"
 
 const saleInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -73,7 +74,7 @@ export const createSale = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const session = await requirePermission("inventory:manage")
     const clubId = await resolveActiveClubId(session.user)
-    if (!clubId) throw new Error("This action requires a club context.")
+    if (!clubId) throw new AppError("errors.clubContextRequired")
 
     return db.transaction(async (tx) => {
       const ids = [...new Set(data.items.map((i) => i.stockItemId))]
@@ -89,9 +90,9 @@ export const createSale = createServerFn({ method: "POST" })
       const shortages = findStockShortages(data.items, levels)
       if (shortages.length > 0) {
         const detail = shortages
-          .map((s) => `${s.name} (need ${s.requested}, have ${s.available})`)
+          .map((s) => `${s.name} (${s.requested}/${s.available})`)
           .join(", ")
-        throw new Error(`Not enough stock: ${detail}`)
+        throw new AppError("errors.sale.insufficientStock", { detail })
       }
 
       const nameById = new Map(levels.map((l) => [l.id, l.name]))

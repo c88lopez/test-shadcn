@@ -34,6 +34,53 @@ export const es: DeepString<typeof en> = {
     savedSuccess: "{{name}} se ha guardado correctamente.",
     genericError: "Algo salió mal",
   },
+  errors: {
+    unauthorized: "No autorizado",
+    forbidden: "Acceso denegado",
+    noClub: "No hay ningún club disponible para esta cuenta.",
+    clubContextRequired: "Esta acción requiere un club activo.",
+    club: {
+      notFound: "Club no encontrado.",
+      noAccess: "No tienes acceso a ese club.",
+      noActiveToRename: "No hay un club activo para renombrar.",
+      nameRequired: "El nombre del club es obligatorio.",
+    },
+    user: {
+      cannotAssignSuperAdmin: "No puedes asignar el rol de Super Admin.",
+      selectClub: "Selecciona un club para este usuario.",
+      invalidClub: "Selección de club no válida.",
+      notFound: "Usuario no encontrado.",
+      emailExists: "Ya existe un usuario con este correo.",
+      noPasswordReset:
+        "Este usuario no tiene acceso con contraseña para restablecer.",
+      cannotArchiveSelf: "No puedes archivar tu propia cuenta.",
+      cannotDeleteSelf: "No puedes eliminar tu propia cuenta.",
+    },
+    court: {
+      gone: "Esa pista ya no existe. Elige otra pista.",
+      inactive: "Esa pista está inactiva. Elige otra pista.",
+    },
+    reservation: {
+      conflict:
+        "La pista ya está reservada {{start}}–{{end}} ({{player}}). Elige otra hora o pista.",
+    },
+    sale: {
+      insufficientStock: "Stock insuficiente: {{detail}}",
+    },
+    booking: {
+      closed: "El club está cerrado ese día. Elige otra fecha.",
+      outsideHours:
+        "Esa hora está fuera del horario de apertura ({{open}}–{{close}}).",
+      tooSoon:
+        "Las reservas deben hacerse con al menos {{hours}}h de antelación.",
+      tooFar:
+        "Las reservas no pueden hacerse con más de {{days}} días de antelación.",
+      cutoffPassed:
+        "Esta reserva ya no se puede cancelar (dentro de {{hours}}h del inicio).",
+      concurrency:
+        "{{player}} ya tiene {{max}} reserva(s) próxima(s): el límite por jugador.",
+    },
+  },
   stats: {
     noReservationsYet: "Aún no hay reservas",
     reservationOne: "{{count}} reserva",

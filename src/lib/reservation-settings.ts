@@ -11,6 +11,7 @@ import {
   todayInZone,
   zonedWallTimeToUtcMs,
 } from "@/lib/tz"
+import { AppError } from "@/lib/errors"
 
 export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 
@@ -176,20 +177,29 @@ export function validateCancellation(
   return null
 }
 
-/** Human-readable message for a rule violation (thrown by server fns). */
-export function bookingRuleMessage(
+/** Maps a rule violation to a coded, localizable AppError (thrown by server fns). */
+export function bookingRuleError(
   error: BookingRuleError | CancellationRuleError
-): string {
+): AppError {
   switch (error.code) {
     case "CLOSED":
-      return "The club is closed on that day. Pick another date."
+      return new AppError("errors.booking.closed")
     case "OUTSIDE_HOURS":
-      return `That time is outside opening hours (${error.open}–${error.close}).`
+      return new AppError("errors.booking.outsideHours", {
+        open: error.open,
+        close: error.close,
+      })
     case "TOO_SOON":
-      return `Bookings must be made at least ${error.minAdvanceHours}h in advance.`
+      return new AppError("errors.booking.tooSoon", {
+        hours: error.minAdvanceHours,
+      })
     case "TOO_FAR":
-      return `Bookings can't be made more than ${error.maxAdvanceDays} days ahead.`
+      return new AppError("errors.booking.tooFar", {
+        days: error.maxAdvanceDays,
+      })
     case "CUTOFF_PASSED":
-      return `This booking can no longer be cancelled (within ${error.cancellationCutoffHours}h of start).`
+      return new AppError("errors.booking.cutoffPassed", {
+        hours: error.cancellationCutoffHours,
+      })
   }
 }

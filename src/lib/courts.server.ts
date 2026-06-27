@@ -1,6 +1,7 @@
 import { and, asc, count, eq, sql } from "drizzle-orm"
 import { db } from "@/db"
 import { coachClass, court, reservation } from "@/db/schema"
+import { AppError } from "@/lib/errors"
 
 // Pure data-access helpers for courts (no auth). Kept in a server-only module so
 // the Postgres driver (`pg`) never leaks into the client bundle. Shared by the
@@ -141,10 +142,10 @@ export async function assertCourtBookable(
     .where(and(eq(court.id, courtId), eq(court.clubId, clubId)))
     .limit(1)
   if (rows.length === 0) {
-    throw new Error("That court no longer exists. Pick another court.")
+    throw new AppError("errors.court.gone")
   }
   if (!rows[0].active) {
-    throw new Error("That court is inactive. Pick another court.")
+    throw new AppError("errors.court.inactive")
   }
 }
 

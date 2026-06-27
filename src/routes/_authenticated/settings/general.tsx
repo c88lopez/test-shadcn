@@ -29,6 +29,7 @@ import {
 } from "@/lib/app-settings"
 import type { GeneralSettings, TimeFormat, WeekStart } from "@/lib/app-settings"
 import { getClubContext, renameActiveClub } from "@/lib/clubs.functions"
+import { translateError } from "@/lib/errors"
 
 export const Route = createFileRoute("/_authenticated/settings/general")({
   beforeLoad: ({ context }) =>
@@ -84,8 +85,7 @@ function GeneralSettingsPage() {
       toast.success(t("settings.general.clubNameSaved"))
     } catch (error) {
       toast.error(t("settings.general.clubNameError"), {
-        description:
-          error instanceof Error ? error.message : t("common.tryAgain"),
+        description: translateError(error, t, t("common.tryAgain")),
       })
       setClubName(savedClubName)
     }

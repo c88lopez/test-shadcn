@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { translateError } from "@/lib/errors"
 
 function makeSchema(t: TFunction) {
   return z.object({
@@ -158,11 +159,13 @@ export function NewReservationDrawer({
         schedule(() => setOpen(false), 900)
       },
       onError: (error) => {
-        const message =
-          error instanceof Error
-            ? error.message
-            : t("forms.reservation.errorDescription")
-        toast.error(t("forms.reservation.errorTitle"), { description: message })
+        toast.error(t("forms.reservation.errorTitle"), {
+          description: translateError(
+            error,
+            t,
+            t("forms.reservation.errorDescription")
+          ),
+        })
       },
     })
   }

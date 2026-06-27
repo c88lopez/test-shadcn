@@ -2,7 +2,7 @@ import { and, count, eq, gte, ne } from "drizzle-orm"
 import { db } from "@/db"
 import { clubReservationSettings, reservation } from "@/db/schema"
 import {
-  bookingRuleMessage,
+  bookingRuleError,
   DEFAULT_RESERVATION_SETTINGS,
   validateBookingWindow,
   validateCancellation,
@@ -12,6 +12,7 @@ import type {
   ReservationSettingsData,
 } from "@/lib/reservation-settings"
 import { todayInZone } from "@/lib/tz"
+import { AppError } from "@/lib/errors"
 
 // Pure data-access + rule enforcement for per-club reservation settings (no
 // auth). Kept server-only so the Postgres driver never leaks into the client
@@ -89,7 +90,7 @@ export async function assertBookingAllowed(
   const settings = await getReservationSettingsRecord(clubId)
 
   const windowError = validateBookingWindow(settings, booking)
-  if (windowError) throw new Error(bookingRuleMessage(windowError))
+  if (windowError) throw bookingRuleError(windowError)
 
   // Concurrency: how many other upcoming reservations this player already has.
   const today = todayInZone(settings.timezone)
@@ -104,9 +105,10 @@ export async function assertBookingAllowed(
     .from(reservation)
     .where(and(...filters))
   if (upcoming >= settings.maxConcurrentPerPlayer) {
-    throw new Error(
-      `${booking.player} already has ${settings.maxConcurrentPerPlayer} upcoming booking(s) — the per-player limit.`
-    )
+    throw new AppError("errors.booking.concurrency", {
+      player: booking.player,
+      max: settings.maxConcurrentPerPlayer,
+    })
   }
 }
 
@@ -117,5 +119,5 @@ export async function assertCancellationAllowed(
 ): Promise<void> {
   const settings = await getReservationSettingsRecord(clubId)
   const error = validateCancellation(settings, booking)
-  if (error) throw new Error(bookingRuleMessage(error))
+  if (error) throw bookingRuleError(error)
 }

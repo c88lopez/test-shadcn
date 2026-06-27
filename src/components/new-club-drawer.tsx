@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import { zodFormResolver } from "@/lib/form"
+import { translateError } from "@/lib/errors"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -99,10 +100,11 @@ export function NewClubDrawer({
       },
       onError: (error) => {
         toast.error(t("forms.club.errorTitle"), {
-          description:
-            error instanceof Error
-              ? error.message
-              : t("forms.club.errorDescription"),
+          description: translateError(
+            error,
+            t,
+            t("forms.club.errorDescription")
+          ),
         })
       },
     })

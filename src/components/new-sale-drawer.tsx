@@ -44,6 +44,7 @@ import {
 import { cn } from "@/lib/utils"
 import { getCurrencySymbol } from "@/lib/app-settings"
 import { createSale } from "@/lib/sales.functions"
+import { translateError } from "@/lib/errors"
 import type { StockItem } from "@/db/schema"
 
 function makeSchema(t: TFunction) {
@@ -118,9 +119,12 @@ export function NewSaleDrawer({ trigger, stockItems, onSaved }: Props) {
         schedule(() => setOpen(false), 900)
       },
       onError: (error) => {
-        const message = error instanceof Error ? error.message : undefined
         toast.error(t("common.genericError"), {
-          description: message ?? t("forms.sale.errorDescription"),
+          description: translateError(
+            error,
+            t,
+            t("forms.sale.errorDescription")
+          ),
         })
       },
     })

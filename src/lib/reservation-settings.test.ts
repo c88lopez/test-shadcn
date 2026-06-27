@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
-  bookingRuleMessage,
+  bookingRuleError,
   DEFAULT_RESERVATION_SETTINGS,
   defaultHours,
   todayHours,
@@ -230,24 +230,32 @@ describe("validateCancellation", () => {
   })
 })
 
-describe("bookingRuleMessage", () => {
-  it("formats every rule violation into a human-readable message", () => {
-    expect(bookingRuleMessage({ code: "CLOSED" })).toMatch(/closed/i)
+describe("bookingRuleError", () => {
+  it("maps each rule violation to a coded AppError with params", () => {
+    expect(bookingRuleError({ code: "CLOSED" })).toMatchObject({
+      code: "errors.booking.closed",
+    })
     expect(
-      bookingRuleMessage({
+      bookingRuleError({
         code: "OUTSIDE_HOURS",
         open: "08:00",
         close: "23:00",
       })
-    ).toContain("08:00–23:00")
+    ).toMatchObject({
+      code: "errors.booking.outsideHours",
+      params: { open: "08:00", close: "23:00" },
+    })
     expect(
-      bookingRuleMessage({ code: "TOO_SOON", minAdvanceHours: 1 })
-    ).toContain("1h")
+      bookingRuleError({ code: "TOO_SOON", minAdvanceHours: 1 })
+    ).toMatchObject({ code: "errors.booking.tooSoon", params: { hours: 1 } })
     expect(
-      bookingRuleMessage({ code: "TOO_FAR", maxAdvanceDays: 30 })
-    ).toContain("30 days")
+      bookingRuleError({ code: "TOO_FAR", maxAdvanceDays: 30 })
+    ).toMatchObject({ code: "errors.booking.tooFar", params: { days: 30 } })
     expect(
-      bookingRuleMessage({ code: "CUTOFF_PASSED", cancellationCutoffHours: 24 })
-    ).toContain("24h")
+      bookingRuleError({ code: "CUTOFF_PASSED", cancellationCutoffHours: 24 })
+    ).toMatchObject({
+      code: "errors.booking.cutoffPassed",
+      params: { hours: 24 },
+    })
   })
 })

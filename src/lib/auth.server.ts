@@ -5,6 +5,7 @@ import { club, clubMember } from "@/db/schema"
 import { auth } from "@/lib/auth"
 import { can } from "@/lib/permissions"
 import type { Permission } from "@/lib/permissions"
+import { AppError } from "@/lib/errors"
 
 // Cookie that records which club a platform super-admin is currently acting as.
 // Ignored for club-scoped users, who are always pinned to their own club.
@@ -22,7 +23,7 @@ export async function requireSession() {
   const { headers } = getRequest()
   const session = await auth.api.getSession({ headers })
   if (!session || session.user.status === "archived") {
-    throw new Error("Unauthorized")
+    throw new AppError("errors.unauthorized")
   }
   return session
 }
@@ -34,7 +35,7 @@ export async function requireSession() {
 export async function requirePermission(permission: Permission) {
   const session = await requireSession()
   if (!can(session.user.role, permission)) {
-    throw new Error("Forbidden")
+    throw new AppError("errors.forbidden")
   }
   return session
 }
@@ -91,7 +92,7 @@ export async function resolveActiveClubId(user: {
 export async function currentClubId(): Promise<string> {
   const session = await requireSession()
   const clubId = await resolveActiveClubId(session.user)
-  if (!clubId) throw new Error("No club is available for this account.")
+  if (!clubId) throw new AppError("errors.noClub")
   return clubId
 }
 
@@ -103,7 +104,7 @@ export async function requireClubId(permission: Permission): Promise<string> {
   const session = await requirePermission(permission)
   const clubId = await resolveActiveClubId(session.user)
   if (!clubId) {
-    throw new Error("This action requires a club context.")
+    throw new AppError("errors.clubContextRequired")
   }
   return clubId
 }

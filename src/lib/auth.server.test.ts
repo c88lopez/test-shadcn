@@ -51,12 +51,12 @@ beforeEach(() => {
 describe("requireSession", () => {
   it("throws Unauthorized when there is no session", async () => {
     mocks.getSession.mockResolvedValue(null)
-    await expect(requireSession()).rejects.toThrow("Unauthorized")
+    await expect(requireSession()).rejects.toThrow("errors.unauthorized")
   })
 
   it("throws Unauthorized when the account is archived", async () => {
     mocks.getSession.mockResolvedValue(makeSession({ status: "archived" }))
-    await expect(requireSession()).rejects.toThrow("Unauthorized")
+    await expect(requireSession()).rejects.toThrow("errors.unauthorized")
   })
 
   it("returns the session for an active account", async () => {
@@ -75,7 +75,7 @@ describe("requirePermission", () => {
   it("throws Forbidden when the role lacks the permission", async () => {
     mocks.getSession.mockResolvedValue(makeSession({ role: "Front Desk" }))
     await expect(requirePermission("settings:manage")).rejects.toThrow(
-      "Forbidden"
+      "errors.forbidden"
     )
   })
 
@@ -87,7 +87,7 @@ describe("requirePermission", () => {
   it("propagates Unauthorized when unauthenticated", async () => {
     mocks.getSession.mockResolvedValue(null)
     await expect(requirePermission("players:manage")).rejects.toThrow(
-      "Unauthorized"
+      "errors.unauthorized"
     )
   })
 })
@@ -119,6 +119,8 @@ describe("requireClubId", () => {
 
   it("throws Forbidden before resolving a club when not permitted", async () => {
     mocks.getSession.mockResolvedValue(makeSession({ role: "Coach" }))
-    await expect(requireClubId("settings:manage")).rejects.toThrow("Forbidden")
+    await expect(requireClubId("settings:manage")).rejects.toThrow(
+      "errors.forbidden"
+    )
   })
 })

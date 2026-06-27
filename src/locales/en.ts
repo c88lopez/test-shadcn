@@ -30,6 +30,49 @@ export const en = {
     savedSuccess: "{{name}} has been saved successfully.",
     genericError: "Something went wrong",
   },
+  errors: {
+    unauthorized: "Unauthorized",
+    forbidden: "Forbidden",
+    noClub: "No club is available for this account.",
+    clubContextRequired: "This action requires a club context.",
+    club: {
+      notFound: "Club not found.",
+      noAccess: "You don't have access to that club.",
+      noActiveToRename: "No active club to rename.",
+      nameRequired: "Club name is required.",
+    },
+    user: {
+      cannotAssignSuperAdmin: "You cannot assign the Super Admin role.",
+      selectClub: "Select a club for this user.",
+      invalidClub: "Invalid club selection.",
+      notFound: "User not found.",
+      emailExists: "A user with this email already exists.",
+      noPasswordReset: "This user has no password login to reset.",
+      cannotArchiveSelf: "You cannot archive your own account.",
+      cannotDeleteSelf: "You cannot delete your own account.",
+    },
+    court: {
+      gone: "That court no longer exists. Pick another court.",
+      inactive: "That court is inactive. Pick another court.",
+    },
+    reservation: {
+      conflict:
+        "Court is already booked {{start}}–{{end}} ({{player}}). Pick another time or court.",
+    },
+    sale: {
+      insufficientStock: "Not enough stock: {{detail}}",
+    },
+    booking: {
+      closed: "The club is closed on that day. Pick another date.",
+      outsideHours: "That time is outside opening hours ({{open}}–{{close}}).",
+      tooSoon: "Bookings must be made at least {{hours}}h in advance.",
+      tooFar: "Bookings can't be made more than {{days}} days ahead.",
+      cutoffPassed:
+        "This booking can no longer be cancelled (within {{hours}}h of start).",
+      concurrency:
+        "{{player}} already has {{max}} upcoming booking(s) — the per-player limit.",
+    },
+  },
   stats: {
     noReservationsYet: "No reservations yet",
     reservationOne: "{{count}} reservation",
