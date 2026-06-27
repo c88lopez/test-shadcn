@@ -14,6 +14,7 @@ import {
   sale,
   saleItem,
   stockItem,
+  tournament,
   user,
 } from "@/db/schema"
 import { seedDefaultCourts } from "@/lib/courts.server"
@@ -26,6 +27,7 @@ import {
   saleSeeds,
   coachSeeds,
   classSeeds,
+  tournamentSeeds,
 } from "@/db/seed-data"
 
 // Standalone seed: creates an initial admin user through Better Auth so the
@@ -291,6 +293,27 @@ async function seedCoaching() {
   console.log(`✓ Seeded ${classSeeds.length} classes`)
 }
 
+async function seedTournaments() {
+  const existing = await db
+    .select({ id: tournament.id })
+    .from(tournament)
+    .limit(1)
+  if (existing.length > 0) {
+    console.log("• Tournaments already seeded, skipping.")
+    return
+  }
+  await db.insert(tournament).values(
+    tournamentSeeds.map(({ offsetDays, ...rest }) => ({
+      ...rest,
+      date: new Date(Date.now() + offsetDays * 86_400_000)
+        .toISOString()
+        .slice(0, 10),
+      clubId: DEFAULT_CLUB_ID,
+    }))
+  )
+  console.log(`✓ Seeded ${tournamentSeeds.length} tournaments`)
+}
+
 // Demo data (extra users + players/reservations/inventory/coaching) is only
 // inserted when run with `--demo` (i.e. `bun run db:seed:demo`). The default
 // `db:seed` just bootstraps the Default Club and the admin login so a fresh
@@ -308,6 +331,7 @@ async function main() {
       await seedReservationSchedule()
       await seedInventory()
       await seedCoaching()
+      await seedTournaments()
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

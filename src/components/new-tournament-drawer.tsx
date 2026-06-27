@@ -42,50 +42,109 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { createTournament, updateTournament } from "@/lib/tournaments.functions"
+
+const TOURNAMENT_FORMATS = [
+  "round_robin",
+  "elimination",
+  "double_elimination",
+] as const
+
+type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number]
 
 function makeSchema(t: TFunction) {
   return z.object({
     name: z.string().min(1, t("validation.nameRequired")),
     date: z.date({ error: t("validation.dateRequired") }),
     category: z.string().min(1, t("validation.categoryRequired")),
-    format: z.string().min(1, t("validation.formatRequired")),
+    format: z.enum(TOURNAMENT_FORMATS, {
+      error: t("validation.formatRequired"),
+    }),
     maxTeams: z.coerce.number().int().min(2, t("validation.minTeams")),
   })
 }
 
 type FormValues = z.infer<ReturnType<typeof makeSchema>>
-type FormInput = Omit<FormValues, "date"> & { date?: Date }
+type FormInput = Omit<FormValues, "date" | "format"> & {
+  date?: Date
+  format?: TournamentFormat
+}
 
-export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
+export interface TournamentData {
+  name: string
+  date: Date
+  category: string
+  format: TournamentFormat
+  maxTeams: number
+}
+
+interface Props {
+  trigger?: React.ReactNode
+  tournament?: TournamentData & { id?: string }
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
+}
+
+function defaults(tournament?: TournamentData): FormInput {
+  return {
+    name: tournament?.name ?? "",
+    date: tournament?.date,
+    category: tournament?.category ?? "",
+    format: tournament?.format,
+    maxTeams: tournament?.maxTeams ?? 8,
+  }
+}
+
+export function NewTournamentDrawer({
+  trigger,
+  tournament,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  onSaved,
+}: Props) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
+  const isEditing = !!tournament
 
   const { status, progress, run, reset, schedule } = useSubmitLifecycle()
   const schema = useMemo(() => makeSchema(t), [t])
 
   const form = useForm<FormInput>({
     resolver: zodFormResolver<FormInput>(schema),
-    defaultValues: { name: "", category: "", format: "", maxTeams: 8 },
+    defaultValues: defaults(tournament),
   })
 
   useEffect(() => {
     if (open) {
-      form.reset({ name: "", category: "", format: "", maxTeams: 8 })
+      form.reset(defaults(tournament))
       reset()
     }
-  }, [open, form, reset])
+  }, [open, tournament, form, reset])
 
   function onSubmit(values: FormInput) {
-    // PoC: type "fail" anywhere in the form to exercise the error path.
+    const payload = {
+      name: values.name,
+      date: format(values.date as Date, "yyyy-MM-dd"),
+      category: values.category,
+      format: values.format as TournamentFormat,
+      maxTeams: values.maxTeams,
+    }
     run({
-      willFail: JSON.stringify(values).toLowerCase().includes("fail"),
+      action: () =>
+        tournament?.id
+          ? updateTournament({ data: { id: tournament.id, ...payload } })
+          : createTournament({ data: payload }),
       onSuccess: () => {
-        console.log("New tournament:", values)
-        toast.success(t("forms.tournament.created"), {
-          description: t("forms.tournament.savedDescription", {
-            name: values.name,
-          }),
-        })
+        toast.success(
+          isEditing
+            ? t("forms.tournament.updated")
+            : t("forms.tournament.created"),
+          { description: t("common.savedSuccess", { name: values.name }) }
+        )
+        onSaved?.()
         schedule(() => setOpen(false), 900)
       },
       onError: () => {
@@ -98,10 +157,14 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
 
   return (
     <Drawer direction="right" open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{t("forms.tournament.title")}</DrawerTitle>
+          <DrawerTitle>
+            {isEditing
+              ? t("forms.tournament.titleEdit")
+              : t("forms.tournament.title")}
+          </DrawerTitle>
         </DrawerHeader>
         <Form {...form}>
           <form
@@ -252,7 +315,11 @@ export function NewTournamentDrawer({ trigger }: { trigger: React.ReactNode }) {
               <DrawerSubmitButton
                 status={status}
                 progress={progress}
-                label={t("forms.tournament.submit")}
+                label={
+                  isEditing
+                    ? t("common.saveChanges")
+                    : t("forms.tournament.submit")
+                }
               />
               <DrawerClose asChild>
                 <Button variant="outline" disabled={status === "submitting"}>

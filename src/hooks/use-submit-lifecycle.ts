@@ -3,21 +3,18 @@ import { useCallback, useEffect, useRef, useState } from "react"
 export type SubmitStatus = "idle" | "submitting" | "success" | "error"
 
 interface RunOptions {
-  /** Simulated failure (only used when no real `action` is provided). */
-  willFail?: boolean
   /**
-   * Real async work to perform. When provided, the progress bar animates while
-   * the promise is pending, then completes on resolve or resets on reject.
+   * Async work to perform. The progress bar animates while the promise is
+   * pending, then completes on resolve or resets on reject.
    */
-  action?: () => Promise<unknown>
+  action: () => Promise<unknown>
   onSuccess: () => void
   onError: (error?: unknown) => void
 }
 
 /**
  * Submit lifecycle: drives a progress bar and status flags around an async
- * operation (submitting → success | error). Pass `action` to await a real
- * request; omit it to run the simulated PoC path (toggle with `willFail`).
+ * operation (submitting → success | error).
  */
 export function useSubmitLifecycle() {
   const [status, setStatus] = useState<SubmitStatus>("idle")
@@ -45,7 +42,7 @@ export function useSubmitLifecycle() {
   }, [])
 
   const run = useCallback(
-    ({ willFail, action, onSuccess, onError }: RunOptions) => {
+    ({ action, onSuccess, onError }: RunOptions) => {
       clearTimers()
       setStatus("submitting")
       setProgress(8)
@@ -63,23 +60,11 @@ export function useSubmitLifecycle() {
         onError(error)
       }
 
-      // Real async path: climb progress while the request is in flight.
-      if (action) {
-        ;[25, 45, 65, 85].forEach((p, i) => {
-          schedule(() => setProgress(p), 200 * (i + 1))
-        })
-        action().then(succeed, fail)
-        return
-      }
-
-      // Simulated PoC path.
+      // Climb progress while the request is in flight.
       ;[25, 45, 65, 85].forEach((p, i) => {
-        schedule(() => setProgress(p), 250 * (i + 1))
+        schedule(() => setProgress(p), 200 * (i + 1))
       })
-      schedule(() => {
-        if (willFail) fail()
-        else succeed()
-      }, 1500)
+      action().then(succeed, fail)
     },
     [clearTimers, schedule]
   )
