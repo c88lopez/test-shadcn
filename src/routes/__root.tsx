@@ -60,7 +60,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script
@@ -70,7 +70,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <TanStackDevtools
-          config={{ position: "bottom-right" }}
+          config={{ position: "bottom-left" }}
           plugins={[
             {
               name: "Tanstack Router",

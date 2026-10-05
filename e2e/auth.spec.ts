@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test"
-import { waitForHydration } from "./helpers"
+import { waitForHydration, ENGLISH_STATE } from "./helpers"
 
 // These run without the saved admin session.
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: ENGLISH_STATE })
 
 test("unauthenticated users are redirected to login", async ({ page }) => {
   await page.goto("/reservations")

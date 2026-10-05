@@ -13,10 +13,23 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number]["code"]
 
 export const LOCALE_CODES: Locale[] = SUPPORTED_LOCALES.map((l) => l.code)
 
-export const DEFAULT_LOCALE: Locale = "en"
+// Spanish by default: the product primarily targets Spanish-speaking clubs.
+export const DEFAULT_LOCALE: Locale = "es"
 
-/** Non-httpOnly so the value is readable during SSR and client hydration. */
+/**
+ * Fallback language cookie, used before a club is in scope (e.g. the login
+ * page). Non-httpOnly so the value is readable during SSR and client hydration.
+ */
 export const LOCALE_COOKIE = "lang"
+
+/**
+ * Language is a per-club setting: each club's chosen locale is stored in its own
+ * cookie (`lang_<clubId>`) so switching clubs switches the language, and SSR can
+ * resolve the right locale for the active club. Non-httpOnly, like LOCALE_COOKIE.
+ */
+export function clubLocaleCookie(clubId: string): string {
+  return `lang_${clubId}`
+}
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && LOCALE_CODES.includes(value as Locale)

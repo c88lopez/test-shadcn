@@ -1,9 +1,12 @@
 import "@testing-library/jest-dom/vitest"
-// Initialize the i18n singleton (English) so `useTranslation().t` returns real
-// strings in component tests instead of raw keys.
-import "@/lib/i18n"
+// Initialize the i18n singleton so `useTranslation().t` returns real strings in
+// component tests instead of raw keys. The app defaults to Spanish, but tests
+// assert English copy, so pin the test locale to English for stability.
+import i18n from "@/lib/i18n"
 import { afterEach } from "vitest"
 import { cleanup } from "@testing-library/react"
+
+void i18n.changeLanguage("en")
 
 afterEach(() => {
   cleanup()

@@ -72,9 +72,14 @@ function UiSettingsPage() {
   const [accent, setAccent] = useState<string>(() =>
     resolveAccent(clubId, loadUiSettings())
   )
+  // Language is per club; i18n already reflects the active club's locale (resolved
+  // by the root route). Re-sync the selection when the active club changes.
   const [activeLocale, setActiveLocale] = useState<Locale>(
     () => i18n.language as Locale
   )
+  useEffect(() => {
+    setActiveLocale(i18n.language as Locale)
+  }, [clubId])
   // Theme/accent/font size resolve from localStorage on the client only, so the
   // selected state would otherwise pop in after mount. Gate on mount and show a
   // skeleton until the real selections are known.

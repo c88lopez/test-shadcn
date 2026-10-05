@@ -200,4 +200,26 @@ describe("ui-settings", () => {
     )
     expect(root.style.fontSize).toBe("18px")
   })
+
+  it("init script forces the default accent on the login page", () => {
+    saveUiSettings({ ...DEFAULT_UI_SETTINGS, accent: "violet", fontSize: "lg" })
+    saveClubAccent("club-a", "rose")
+    setActiveUiClub("club-a")
+
+    window.history.pushState({}, "", "/login")
+    try {
+      new Function(getUiSettingsInitScript())()
+    } finally {
+      window.history.pushState({}, "", "/")
+    }
+
+    const root = document.documentElement
+    const defaultAccent = ACCENT_COLORS.find(
+      (a) => a.key === DEFAULT_UI_SETTINGS.accent
+    )!
+    expect(root.style.getPropertyValue("--primary")).toBe(defaultAccent.primary)
+    expect(root.style.getPropertyValue("--accent")).toBe(defaultAccent.primary)
+    // Global (non-accent) settings still apply on the login page.
+    expect(root.style.fontSize).toBe("18px")
+  })
 })

@@ -243,6 +243,10 @@ function resolveDark(theme: ThemeMode): boolean {
  * document <head> so a full page load starts at the saved theme/accent/size
  * instead of flashing the defaults first. Mirrors `applyUiSettings`; the data
  * (accents/sizes/defaults) is serialized from this module so it stays in sync.
+ *
+ * On /login the saved club/global accent is skipped in favor of the default
+ * one (theme/font size still apply): the login page has no club context and
+ * would otherwise flash the stored branding until its post-hydration reset.
  */
 export function getUiSettingsInitScript(): string {
   const accents = ACCENT_COLORS.map((a) => ({
@@ -258,8 +262,8 @@ var ACCENT_PREFIX=${JSON.stringify(CLUB_ACCENT_PREFIX)},ACTIVE=${JSON.stringify(
 var raw=localStorage.getItem(KEY);
 var s=raw?Object.assign({},D,JSON.parse(raw)):D;
 var accentKey=s.accent;
-var club=localStorage.getItem(ACTIVE);
-if(club){var ca=localStorage.getItem(ACCENT_PREFIX+":"+club);if(ca){accentKey=ca;}}
+if(location.pathname==="/login"){accentKey=D.accent;}
+else{var club=localStorage.getItem(ACTIVE);if(club){var ca=localStorage.getItem(ACCENT_PREFIX+":"+club);if(ca){accentKey=ca;}}}
 var r=document.documentElement;
 var dark=s.theme==="dark"||(s.theme==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
 r.classList.toggle("dark",dark);
