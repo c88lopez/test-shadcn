@@ -158,6 +158,17 @@ export const en = {
     error: "Something went wrong.",
     you: "You",
     assistant: "Assistant",
+    voice: {
+      start: "Record a voice message",
+      stop: "Stop recording",
+      cancel: "Cancel",
+      recording: "Recording {{time}} / {{max}}",
+      transcribing: "Transcribing…",
+      permissionDenied:
+        "Microphone access is blocked. Allow it in your browser settings to use voice.",
+      noSpeech: "No speech detected. Try again.",
+      failed: "Couldn't transcribe the recording. Try again.",
+    },
   },
   notifications: {
     title: "Notifications",

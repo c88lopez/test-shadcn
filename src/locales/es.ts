@@ -166,6 +166,17 @@ export const es: DeepString<typeof en> = {
     error: "Algo salió mal.",
     you: "Tú",
     assistant: "Asistente",
+    voice: {
+      start: "Grabar un mensaje de voz",
+      stop: "Detener grabación",
+      cancel: "Cancelar",
+      recording: "Grabando {{time}} / {{max}}",
+      transcribing: "Transcribiendo…",
+      permissionDenied:
+        "El acceso al micrófono está bloqueado. Permítelo en la configuración del navegador para usar la voz.",
+      noSpeech: "No se detectó voz. Inténtalo de nuevo.",
+      failed: "No se pudo transcribir la grabación. Inténtalo de nuevo.",
+    },
   },
   notifications: {
     title: "Notificaciones",
