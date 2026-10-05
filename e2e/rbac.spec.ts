@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test"
-import { loginAs, waitForHydration } from "./helpers"
+import { loginAs, waitForHydration, ENGLISH_STATE } from "./helpers"
 
 // The Coach role (seeded as laura@padelclub.es) only has `coaches:manage`. These
 // tests sign in fresh as the coach instead of reusing the admin storage state.
-test.use({ storageState: { cookies: [], origins: [] } })
+test.use({ storageState: ENGLISH_STATE })
 
 const COACH_EMAIL = "laura@padelclub.es"
 const COACH_PASSWORD = "padel1234"

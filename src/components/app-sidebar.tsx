@@ -6,7 +6,7 @@ import {
   IconSelector,
   IconCheck,
 } from "@tabler/icons-react"
-import { useRouter } from "@tanstack/react-router"
+import { Link, useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -66,10 +66,10 @@ function NavGroup({
           {items.map((item) => (
             <SidebarMenuItem key={item.to}>
               <SidebarMenuButton asChild>
-                <a href={item.to}>
+                <Link to={item.to}>
                   <item.icon />
                   <span>{t(item.labelKey)}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -290,10 +290,10 @@ export function AppSidebar({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href={settingsItem.url}>
+                  <Link to={settingsItem.url}>
                     <settingsItem.icon />
                     <span>{t(settingsItem.titleKey)}</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

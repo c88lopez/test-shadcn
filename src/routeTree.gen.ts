@@ -13,14 +13,17 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as ApiMetricsRouteImport } from './routes/api/metrics'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
+import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
 import { Route as ApiClubsIndexRouteImport } from './routes/api/clubs/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
 import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
+import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
 import { Route as ApiClubsIdRouteImport } from './routes/api/clubs/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
@@ -52,6 +55,11 @@ const ApiMetricsRoute = ApiMetricsRouteImport.update({
   path: '/api/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedTournamentsRoute =
   AuthenticatedTournamentsRouteImport.update({
     id: '/tournaments',
@@ -73,6 +81,11 @@ const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
   id: '/players',
   path: '/players',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiUsersIndexRoute = ApiUsersIndexRouteImport.update({
+  id: '/api/users/',
+  path: '/api/users/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiClubsIndexRoute = ApiClubsIndexRouteImport.update({
   id: '/api/clubs/',
@@ -97,6 +110,11 @@ const AuthenticatedCoachesIndexRoute =
     path: '/coaches/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
+  id: '/api/users/$id',
+  path: '/api/users/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiClubsIdRoute = ApiClubsIdRouteImport.update({
   id: '/api/clubs/$id',
   path: '/api/clubs/$id',
@@ -168,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/reservations': typeof AuthenticatedReservationsRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/tournaments': typeof AuthenticatedTournamentsRoute
+  '/api/chat': typeof ApiChatRoute
   '/api/metrics': typeof ApiMetricsRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
@@ -180,16 +199,19 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/clubs/$id': typeof ApiClubsIdRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/clubs/': typeof ApiClubsIndexRoute
+  '/api/users/': typeof ApiUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/players': typeof AuthenticatedPlayersRoute
   '/reservations': typeof AuthenticatedReservationsRoute
   '/tournaments': typeof AuthenticatedTournamentsRoute
+  '/api/chat': typeof ApiChatRoute
   '/api/metrics': typeof ApiMetricsRoute
   '/': typeof AuthenticatedIndexRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
@@ -203,10 +225,12 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/clubs/$id': typeof ApiClubsIdRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/coaches': typeof AuthenticatedCoachesIndexRoute
   '/inventory': typeof AuthenticatedInventoryIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/clubs': typeof ApiClubsIndexRoute
+  '/api/users': typeof ApiUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -216,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/reservations': typeof AuthenticatedReservationsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/tournaments': typeof AuthenticatedTournamentsRoute
+  '/api/chat': typeof ApiChatRoute
   '/api/metrics': typeof ApiMetricsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/coaches/classes': typeof AuthenticatedCoachesClassesRoute
@@ -229,10 +254,12 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/clubs/$id': typeof ApiClubsIdRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/_authenticated/coaches/': typeof AuthenticatedCoachesIndexRoute
   '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/clubs/': typeof ApiClubsIndexRoute
+  '/api/users/': typeof ApiUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -243,6 +270,7 @@ export interface FileRouteTypes {
     | '/reservations'
     | '/settings'
     | '/tournaments'
+    | '/api/chat'
     | '/api/metrics'
     | '/coaches/classes'
     | '/inventory/dashboard'
@@ -255,16 +283,19 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/api/auth/$'
     | '/api/clubs/$id'
+    | '/api/users/$id'
     | '/coaches/'
     | '/inventory/'
     | '/settings/'
     | '/api/clubs/'
+    | '/api/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/players'
     | '/reservations'
     | '/tournaments'
+    | '/api/chat'
     | '/api/metrics'
     | '/'
     | '/coaches/classes'
@@ -278,10 +309,12 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/api/auth/$'
     | '/api/clubs/$id'
+    | '/api/users/$id'
     | '/coaches'
     | '/inventory'
     | '/settings'
     | '/api/clubs'
+    | '/api/users'
   id:
     | '__root__'
     | '/_authenticated'
@@ -290,6 +323,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reservations'
     | '/_authenticated/settings'
     | '/_authenticated/tournaments'
+    | '/api/chat'
     | '/api/metrics'
     | '/_authenticated/'
     | '/_authenticated/coaches/classes'
@@ -303,19 +337,24 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/api/auth/$'
     | '/api/clubs/$id'
+    | '/api/users/$id'
     | '/_authenticated/coaches/'
     | '/_authenticated/inventory/'
     | '/_authenticated/settings/'
     | '/api/clubs/'
+    | '/api/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiChatRoute: typeof ApiChatRoute
   ApiMetricsRoute: typeof ApiMetricsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiClubsIdRoute: typeof ApiClubsIdRoute
+  ApiUsersIdRoute: typeof ApiUsersIdRoute
   ApiClubsIndexRoute: typeof ApiClubsIndexRoute
+  ApiUsersIndexRoute: typeof ApiUsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -348,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/tournaments': {
       id: '/_authenticated/tournaments'
       path: '/tournaments'
@@ -376,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/users/': {
+      id: '/api/users/'
+      path: '/api/users'
+      fullPath: '/api/users/'
+      preLoaderRoute: typeof ApiUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/clubs/': {
       id: '/api/clubs/'
       path: '/api/clubs'
@@ -403,6 +456,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/coaches/'
       preLoaderRoute: typeof AuthenticatedCoachesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/users/$id': {
+      id: '/api/users/$id'
+      path: '/api/users/$id'
+      fullPath: '/api/users/$id'
+      preLoaderRoute: typeof ApiUsersIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/clubs/$id': {
       id: '/api/clubs/$id'
@@ -544,20 +604,24 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiChatRoute: ApiChatRoute,
   ApiMetricsRoute: ApiMetricsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiClubsIdRoute: ApiClubsIdRoute,
+  ApiUsersIdRoute: ApiUsersIdRoute,
   ApiClubsIndexRoute: ApiClubsIndexRoute,
+  ApiUsersIndexRoute: ApiUsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

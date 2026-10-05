@@ -129,11 +129,16 @@ function buildColumns(t: TFunction): ColumnDef<Player>[] {
     {
       accessorKey: "gender",
       header: t("fields.gender"),
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.getValue("gender")}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const gender = row.getValue<string>("gender")
+        const label =
+          gender === "Male"
+            ? t("options.male")
+            : gender === "Female"
+              ? t("options.female")
+              : gender
+        return <span className="text-sm text-muted-foreground">{label}</span>
+      },
     },
     {
       accessorKey: "category",

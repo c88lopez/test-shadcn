@@ -1,13 +1,26 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { useRouter } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
-import { IconCornerDownLeft, IconSearch } from "@tabler/icons-react"
+import {
+  IconCornerDownLeft,
+  IconSearch,
+  IconSparkles,
+} from "@tabler/icons-react"
+import type { Icon } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { COMMAND_ITEMS } from "@/lib/navigation"
-import type { CommandNavItem } from "@/lib/navigation"
+import type { TranslationKey } from "@/lib/i18n"
+import { useAssistant } from "@/components/assistant-panel"
 
-const COMMANDS = COMMAND_ITEMS
+interface Command {
+  id: string
+  icon: Icon
+  labelKey: TranslationKey
+  groupKey: TranslationKey
+  keywords?: string
+  run: () => void
+}
 
 export function CommandPalette() {
   const router = useRouter()
@@ -15,6 +28,32 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [activeIdx, setActiveIdx] = useState(0)
+  const assistant = useAssistant()
+  // Set when a command moves focus elsewhere (e.g. the assistant input), so the
+  // dialog doesn't pull it back to the trigger on close.
+  const skipReturnFocus = useRef(false)
+
+  const commands = useMemo<Command[]>(
+    () => [
+      {
+        id: "assistant",
+        icon: IconSparkles,
+        labelKey: "commandPalette.items.assistant",
+        groupKey: "commandPalette.groups.assistant",
+        keywords: "ai chat search assistant ia",
+        run: () => {
+          skipReturnFocus.current = true
+          assistant.setOpen(true)
+        },
+      },
+      ...COMMAND_ITEMS.map((item) => ({
+        ...item,
+        id: item.to,
+        run: () => void router.navigate({ to: item.to }),
+      })),
+    ],
+    [assistant, router]
+  )
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -29,23 +68,23 @@ export function CommandPalette() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return COMMANDS
-    return COMMANDS.filter((c) =>
+    if (!q) return commands
+    return commands.filter((c) =>
       `${t(c.labelKey)} ${t(c.groupKey)} ${c.keywords ?? ""}`
         .toLowerCase()
         .includes(q)
     )
-  }, [query, t])
+  }, [commands, query, t])
 
   useEffect(() => {
     setActiveIdx(0)
   }, [query, open])
 
-  function go(item: CommandNavItem | undefined) {
+  function go(item: Command | undefined) {
     if (!item) return
     setOpen(false)
     setQuery("")
-    void router.navigate({ to: item.to })
+    item.run()
   }
 
   function onInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -86,6 +125,10 @@ export function CommandPalette() {
               // Defer to the input's autoFocus instead of focusing the content.
               e.preventDefault()
             }}
+            onCloseAutoFocus={(e) => {
+              if (skipReturnFocus.current) e.preventDefault()
+              skipReturnFocus.current = false
+            }}
           >
             <DialogPrimitive.Title className="sr-only">
               {t("commandPalette.srTitle")}
@@ -116,7 +159,7 @@ export function CommandPalette() {
                   const active = i === activeIdx
                   return (
                     <button
-                      key={item.to}
+                      key={item.id}
                       type="button"
                       onMouseEnter={() => setActiveIdx(i)}
                       onClick={() => go(item)}

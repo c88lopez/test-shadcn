@@ -112,6 +112,7 @@ export const en = {
     srTitle: "Command palette",
     srDescription: "Search and jump to any page.",
     groups: {
+      assistant: "Assistant",
       courts: "Courts",
       inventory: "Inventory",
       coaches: "Coaches",
@@ -120,6 +121,7 @@ export const en = {
       settings: "Settings",
     },
     items: {
+      assistant: "AI Assistant",
       dashboard: "Dashboard",
       reservations: "Reservations",
       salesDashboard: "Sales Dashboard",
@@ -135,6 +137,27 @@ export const en = {
       users: "Users",
       appearance: "Appearance",
     },
+  },
+  assistant: {
+    title: "AI Assistant",
+    open: "Open AI assistant",
+    close: "Close assistant",
+    newChat: "New conversation",
+    stop: "Stop",
+    placeholder: "Ask the assistant…",
+    empty:
+      "Try: “players under 30 with category at least C6 and a phone”, upload a CSV of stock items, or “reserve court 3 for Maria García tomorrow at 18:00”.",
+    uploadCsv: "Upload CSV of stock items",
+    csvPrompt: "Load these inventory items from CSV:",
+    thinking: "Thinking…",
+    running: "Running {{tool}}…",
+    approveTitle: "Approve this action?",
+    approve: "Approve",
+    deny: "Deny",
+    playersFound: "{{count}} players found",
+    error: "Something went wrong.",
+    you: "You",
+    assistant: "Assistant",
   },
   notifications: {
     title: "Notifications",
@@ -419,7 +442,7 @@ export const en = {
       },
       language: {
         title: "Language",
-        description: "Choose the language used across the app.",
+        description: "Choose the language used for this club.",
       },
       resetToast: "Appearance reset to defaults",
     },

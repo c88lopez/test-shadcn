@@ -120,6 +120,7 @@ export const es: DeepString<typeof en> = {
     srTitle: "Paleta de comandos",
     srDescription: "Busca y salta a cualquier página.",
     groups: {
+      assistant: "Asistente",
       courts: "Pistas",
       inventory: "Inventario",
       coaches: "Entrenadores",
@@ -128,6 +129,7 @@ export const es: DeepString<typeof en> = {
       settings: "Configuración",
     },
     items: {
+      assistant: "Asistente IA",
       dashboard: "Panel",
       reservations: "Reservas",
       salesDashboard: "Panel de ventas",
@@ -143,6 +145,27 @@ export const es: DeepString<typeof en> = {
       users: "Usuarios",
       appearance: "Apariencia",
     },
+  },
+  assistant: {
+    title: "Asistente IA",
+    open: "Abrir asistente IA",
+    close: "Cerrar asistente",
+    newChat: "Nueva conversación",
+    stop: "Detener",
+    placeholder: "Pregunta al asistente…",
+    empty:
+      "Prueba: «jugadores menores de 30 con categoría al menos C6 y teléfono», sube un CSV de artículos de stock, o «reserva la pista 3 para María García mañana a las 18:00».",
+    uploadCsv: "Subir CSV de artículos de stock",
+    csvPrompt: "Carga estos artículos de inventario desde CSV:",
+    thinking: "Pensando…",
+    running: "Ejecutando {{tool}}…",
+    approveTitle: "¿Aprobar esta acción?",
+    approve: "Aprobar",
+    deny: "Denegar",
+    playersFound: "{{count}} jugadores encontrados",
+    error: "Algo salió mal.",
+    you: "Tú",
+    assistant: "Asistente",
   },
   notifications: {
     title: "Notificaciones",
@@ -431,7 +454,7 @@ export const es: DeepString<typeof en> = {
       },
       language: {
         title: "Idioma",
-        description: "Elige el idioma usado en toda la app.",
+        description: "Elige el idioma usado para este club.",
       },
       resetToast: "Apariencia restablecida a los valores predeterminados",
     },

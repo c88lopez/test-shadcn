@@ -6,6 +6,11 @@ import { Separator } from "@/components/ui/separator"
 import { AppSidebar } from "@/components/app-sidebar"
 import { CommandPalette } from "@/components/command-palette"
 import { NotificationsDrawer } from "@/components/notifications-drawer"
+import {
+  AssistantPanel,
+  AssistantProvider,
+  AssistantTrigger,
+} from "@/components/assistant-panel"
 import { getSession } from "@/lib/auth.functions"
 import { getClubContext } from "@/lib/clubs.functions"
 import { listStockItems } from "@/lib/inventory.functions"
@@ -45,22 +50,26 @@ function AuthenticatedLayout() {
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <AppSidebar clubContext={clubContext} user={user} />
-        <main className="flex h-svh min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="z-10 flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" />
-            <CommandPalette />
-            <div className="ml-auto flex items-center gap-3">
-              <NotificationsDrawer stockItems={stockItems} />
+      <AssistantProvider>
+        <SidebarProvider>
+          <AppSidebar clubContext={clubContext} user={user} />
+          <main className="flex h-svh min-w-0 flex-1 flex-col overflow-hidden">
+            <header className="z-10 flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
+              <SidebarTrigger />
+              <Separator orientation="vertical" />
+              <CommandPalette />
+              <div className="ml-auto flex items-center gap-3">
+                <AssistantTrigger />
+                <NotificationsDrawer stockItems={stockItems} />
+              </div>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <Outlet />
             </div>
-          </header>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-            <Outlet />
-          </div>
-        </main>
-      </SidebarProvider>
+          </main>
+        </SidebarProvider>
+        <AssistantPanel />
+      </AssistantProvider>
     </TooltipProvider>
   )
 }

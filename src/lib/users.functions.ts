@@ -31,6 +31,26 @@ const updateInput = z.object({
   clubIds: z.array(z.string().min(1)).optional(),
 })
 
+// Request-body schemas for the REST routes under src/routes/api/users. Kept
+// separate from the drawer-oriented schemas above: POST requires a full body
+// while PATCH accepts any subset of fields.
+export const userApiCreateInput = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  role: roleSchema,
+  password: z.string().min(6),
+  clubId: z.string().min(1).nullish(),
+  clubIds: z.array(z.string().min(1)).optional(),
+})
+
+export const userApiPatchInput = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  role: roleSchema.optional(),
+  clubId: z.string().min(1).nullish(),
+  clubIds: z.array(z.string().min(1)).optional(),
+})
+
 interface Actor {
   role?: string | null
   clubId?: string | null
