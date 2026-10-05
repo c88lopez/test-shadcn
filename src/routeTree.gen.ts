@@ -18,6 +18,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiMetricsRouteImport } from './routes/api/metrics'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
 import { Route as AuthenticatedCoachesClassesRouteImport } from './routes/_authenticated/coaches/classes'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
@@ -80,6 +81,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
 const ApiMetricsRoute = ApiMetricsRouteImport.update({
   id: '/api/metrics',
   path: '/api/metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCoachesIndexRoute =
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/tournaments': typeof AuthenticatedTournamentsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/metrics': typeof ApiMetricsRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
   '/inventory/sales-log': typeof AuthenticatedInventorySalesLogRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/tournaments': typeof AuthenticatedTournamentsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/metrics': typeof ApiMetricsRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/': typeof AuthenticatedIndexRoute
   '/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/_authenticated/tournaments': typeof AuthenticatedTournamentsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/metrics': typeof ApiMetricsRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/coaches/classes': typeof AuthenticatedCoachesClassesRoute
   '/_authenticated/inventory/dashboard': typeof AuthenticatedInventoryDashboardRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/api/chat'
     | '/api/metrics'
+    | '/api/transcribe'
     | '/coaches/classes'
     | '/inventory/dashboard'
     | '/inventory/sales-log'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/api/chat'
     | '/api/metrics'
+    | '/api/transcribe'
     | '/'
     | '/coaches/classes'
     | '/inventory/dashboard'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tournaments'
     | '/api/chat'
     | '/api/metrics'
+    | '/api/transcribe'
     | '/_authenticated/'
     | '/_authenticated/coaches/classes'
     | '/_authenticated/inventory/dashboard'
@@ -350,6 +362,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiMetricsRoute: typeof ApiMetricsRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiClubsIdRoute: typeof ApiClubsIdRoute
   ApiUsersIdRoute: typeof ApiUsersIdRoute
@@ -420,6 +433,13 @@ declare module '@tanstack/react-router' {
       path: '/api/metrics'
       fullPath: '/api/metrics'
       preLoaderRoute: typeof ApiMetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/coaches/': {
@@ -606,6 +626,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ApiChatRoute: ApiChatRoute,
   ApiMetricsRoute: ApiMetricsRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiClubsIdRoute: ApiClubsIdRoute,
   ApiUsersIdRoute: ApiUsersIdRoute,

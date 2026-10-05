@@ -9,8 +9,11 @@ import {
 import { useChat } from "@ai-sdk/react"
 import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import {
+  IconLoader2,
   IconMessagePlus,
+  IconMicrophone,
   IconPlayerStopFilled,
   IconSend,
   IconSparkles,
@@ -28,6 +31,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import {
+  appendTranscript,
+  formatDuration,
+  MAX_RECORDING_SECONDS,
+} from "@/lib/voice"
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder"
+import type { VoiceError, VoiceStatus } from "@/hooks/use-voice-recorder"
+import type { TranslationKey } from "@/lib/i18n"
 
 interface AssistantContextValue {
   open: boolean
@@ -211,6 +222,12 @@ function ToolPartView({
   )
 }
 
+const VOICE_ERROR_KEYS: Record<VoiceError, TranslationKey> = {
+  permissionDenied: "assistant.voice.permissionDenied",
+  noSpeech: "assistant.voice.noSpeech",
+  failed: "assistant.voice.failed",
+}
+
 // Non-modal floating panel: the page behind stays interactive, and the panel
 // stays mounted while hidden so the conversation survives closing it and
 // navigating between pages.
@@ -234,9 +251,20 @@ export function AssistantPanel() {
 
   const busy = status === "submitted" || status === "streaming"
 
+  // Voice input fills the composer; the user reviews the text and sends it.
+  const voice = useVoiceRecorder({
+    onTranscript: (text) => {
+      setInput((current) => appendTranscript(current, text))
+      inputRef.current?.focus()
+    },
+    onError: (error) => toast.error(t(VOICE_ERROR_KEYS[error])),
+  })
+  const { cancel: cancelRecording } = voice
+
   useEffect(() => {
     if (open) inputRef.current?.focus()
-  }, [open])
+    else cancelRecording()
+  }, [open, cancelRecording])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -270,7 +298,10 @@ export function AssistantPanel() {
       aria-label={t("assistant.title")}
       hidden={!open}
       onKeyDown={(e) => {
-        if (e.key === "Escape") setOpen(false)
+        if (e.key !== "Escape") return
+        // Esc discards an in-progress recording before it closes the panel.
+        if (voice.status === "recording") voice.cancel()
+        else setOpen(false)
       }}
       className={cn(
         "fixed inset-x-2 bottom-2 z-40 flex h-[min(640px,calc(100svh-4rem))] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[420px]",
@@ -350,6 +381,38 @@ export function AssistantPanel() {
         )}
       </div>
 
+      {voice.status !== "idle" && (
+        <div
+          role="status"
+          className="flex shrink-0 items-center gap-2 border-t px-3 py-2 text-xs text-muted-foreground"
+        >
+          {voice.status === "recording" ? (
+            <>
+              <span className="size-2 animate-pulse rounded-full bg-destructive" />
+              <span className="flex-1 tabular-nums">
+                {t("assistant.voice.recording", {
+                  time: formatDuration(voice.elapsed),
+                  max: formatDuration(MAX_RECORDING_SECONDS),
+                })}
+              </span>
+              <Button
+                type="button"
+                size="xs"
+                variant="ghost"
+                onClick={voice.cancel}
+              >
+                {t("assistant.voice.cancel")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <IconLoader2 className="size-3.5 animate-spin" />
+              <span>{t("assistant.voice.transcribing")}</span>
+            </>
+          )}
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -378,6 +441,13 @@ export function AssistantPanel() {
           <IconUpload className="size-4" />
           <span className="sr-only">{t("assistant.uploadCsv")}</span>
         </Button>
+        {voice.supported && (
+          <VoiceButton
+            status={voice.status}
+            onStart={() => void voice.start()}
+            onStop={voice.stop}
+          />
+        )}
         <Input
           ref={inputRef}
           value={input}
@@ -403,5 +473,49 @@ export function AssistantPanel() {
         )}
       </form>
     </section>
+  )
+}
+
+function VoiceButton({
+  status,
+  onStart,
+  onStop,
+}: {
+  status: VoiceStatus
+  onStart: () => void
+  onStop: () => void
+}) {
+  const { t } = useTranslation()
+  if (status === "recording") {
+    return (
+      <Button
+        type="button"
+        size="icon"
+        variant="destructive"
+        title={t("assistant.voice.stop")}
+        onClick={onStop}
+      >
+        <IconPlayerStopFilled className="size-4" />
+        <span className="sr-only">{t("assistant.voice.stop")}</span>
+      </Button>
+    )
+  }
+  const label = t("assistant.voice.start")
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="outline"
+      title={label}
+      disabled={status === "transcribing"}
+      onClick={onStart}
+    >
+      {status === "transcribing" ? (
+        <IconLoader2 className="size-4 animate-spin" />
+      ) : (
+        <IconMicrophone className="size-4" />
+      )}
+      <span className="sr-only">{label}</span>
+    </Button>
   )
 }
