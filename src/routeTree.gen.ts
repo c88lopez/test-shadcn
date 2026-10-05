@@ -9,40 +9,40 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as ApiMetricsRouteImport } from './routes/api/metrics'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
 import { Route as AuthenticatedPlayersRouteImport } from './routes/_authenticated/players'
-import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
-import { Route as ApiClubsIndexRouteImport } from './routes/api/clubs/index'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
+import { Route as AuthenticatedReservationsRouteImport } from './routes/_authenticated/reservations'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedTournamentsRouteImport } from './routes/_authenticated/tournaments'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiMetricsRouteImport } from './routes/api/metrics'
 import { Route as AuthenticatedCoachesIndexRouteImport } from './routes/_authenticated/coaches/index'
-import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
-import { Route as ApiClubsIdRouteImport } from './routes/api/clubs/$id'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
-import { Route as AuthenticatedSettingsUiRouteImport } from './routes/_authenticated/settings/ui'
-import { Route as AuthenticatedSettingsReservationsRouteImport } from './routes/_authenticated/settings/reservations'
-import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
-import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
-import { Route as AuthenticatedSettingsClubsRouteImport } from './routes/_authenticated/settings/clubs'
-import { Route as AuthenticatedInventorySalesLogRouteImport } from './routes/_authenticated/inventory/sales-log'
-import { Route as AuthenticatedInventoryDashboardRouteImport } from './routes/_authenticated/inventory/dashboard'
 import { Route as AuthenticatedCoachesClassesRouteImport } from './routes/_authenticated/coaches/classes'
+import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
+import { Route as AuthenticatedInventoryDashboardRouteImport } from './routes/_authenticated/inventory/dashboard'
+import { Route as AuthenticatedInventorySalesLogRouteImport } from './routes/_authenticated/inventory/sales-log'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsClubsRouteImport } from './routes/_authenticated/settings/clubs'
+import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsReservationsRouteImport } from './routes/_authenticated/settings/reservations'
+import { Route as AuthenticatedSettingsUiRouteImport } from './routes/_authenticated/settings/ui'
+import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiClubsIndexRouteImport } from './routes/api/clubs/index'
+import { Route as ApiClubsIdRouteImport } from './routes/api/clubs/$id'
+import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
+import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
 
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -50,25 +50,9 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ApiMetricsRoute = ApiMetricsRouteImport.update({
-  id: '/api/metrics',
-  path: '/api/metrics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedTournamentsRoute =
-  AuthenticatedTournamentsRouteImport.update({
-    id: '/tournaments',
-    path: '/tournaments',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedReservationsRoute =
@@ -77,99 +61,31 @@ const AuthenticatedReservationsRoute =
     path: '/reservations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedPlayersRoute = AuthenticatedPlayersRouteImport.update({
-  id: '/players',
-  path: '/players',
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ApiUsersIndexRoute = ApiUsersIndexRouteImport.update({
-  id: '/api/users/',
-  path: '/api/users/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiClubsIndexRoute = ApiClubsIndexRouteImport.update({
-  id: '/api/clubs/',
-  path: '/api/clubs/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedInventoryIndexRoute =
-  AuthenticatedInventoryIndexRouteImport.update({
-    id: '/inventory/',
-    path: '/inventory/',
+const AuthenticatedTournamentsRoute =
+  AuthenticatedTournamentsRouteImport.update({
+    id: '/tournaments',
+    path: '/tournaments',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMetricsRoute = ApiMetricsRouteImport.update({
+  id: '/api/metrics',
+  path: '/api/metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCoachesIndexRoute =
   AuthenticatedCoachesIndexRouteImport.update({
     id: '/coaches/',
     path: '/coaches/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
-  id: '/api/users/$id',
-  path: '/api/users/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiClubsIdRoute = ApiClubsIdRouteImport.update({
-  id: '/api/clubs/$id',
-  path: '/api/clubs/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSettingsUsersRoute =
-  AuthenticatedSettingsUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsUiRoute = AuthenticatedSettingsUiRouteImport.update({
-  id: '/ui',
-  path: '/ui',
-  getParentRoute: () => AuthenticatedSettingsRoute,
-} as any)
-const AuthenticatedSettingsReservationsRoute =
-  AuthenticatedSettingsReservationsRouteImport.update({
-    id: '/reservations',
-    path: '/reservations',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsNotificationsRoute =
-  AuthenticatedSettingsNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsGeneralRoute =
-  AuthenticatedSettingsGeneralRouteImport.update({
-    id: '/general',
-    path: '/general',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsClubsRoute =
-  AuthenticatedSettingsClubsRouteImport.update({
-    id: '/clubs',
-    path: '/clubs',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedInventorySalesLogRoute =
-  AuthenticatedInventorySalesLogRouteImport.update({
-    id: '/inventory/sales-log',
-    path: '/inventory/sales-log',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedInventoryDashboardRoute =
-  AuthenticatedInventoryDashboardRouteImport.update({
-    id: '/inventory/dashboard',
-    path: '/inventory/dashboard',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCoachesClassesRoute =
@@ -178,6 +94,90 @@ const AuthenticatedCoachesClassesRoute =
     path: '/coaches/classes',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedInventoryIndexRoute =
+  AuthenticatedInventoryIndexRouteImport.update({
+    id: '/inventory/',
+    path: '/inventory/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedInventoryDashboardRoute =
+  AuthenticatedInventoryDashboardRouteImport.update({
+    id: '/inventory/dashboard',
+    path: '/inventory/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedInventorySalesLogRoute =
+  AuthenticatedInventorySalesLogRouteImport.update({
+    id: '/inventory/sales-log',
+    path: '/inventory/sales-log',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsClubsRoute =
+  AuthenticatedSettingsClubsRouteImport.update({
+    id: '/clubs',
+    path: '/clubs',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsGeneralRoute =
+  AuthenticatedSettingsGeneralRouteImport.update({
+    id: '/general',
+    path: '/general',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsReservationsRoute =
+  AuthenticatedSettingsReservationsRouteImport.update({
+    id: '/reservations',
+    path: '/reservations',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsUiRoute = AuthenticatedSettingsUiRouteImport.update({
+  id: '/ui',
+  path: '/ui',
+  getParentRoute: () => AuthenticatedSettingsRoute,
+} as any)
+const AuthenticatedSettingsUsersRoute =
+  AuthenticatedSettingsUsersRouteImport.update({
+    id: '/users',
+    path: '/users',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClubsIndexRoute = ApiClubsIndexRouteImport.update({
+  id: '/api/clubs/',
+  path: '/api/clubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClubsIdRoute = ApiClubsIdRouteImport.update({
+  id: '/api/clubs/$id',
+  path: '/api/clubs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUsersIndexRoute = ApiUsersIndexRouteImport.update({
+  id: '/api/users/',
+  path: '/api/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
+  id: '/api/users/$id',
+  path: '/api/users/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -359,18 +359,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -380,32 +380,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/metrics': {
-      id: '/api/metrics'
-      path: '/api/metrics'
-      fullPath: '/api/metrics'
-      preLoaderRoute: typeof ApiMetricsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/tournaments': {
-      id: '/_authenticated/tournaments'
-      path: '/tournaments'
-      fullPath: '/tournaments'
-      preLoaderRoute: typeof AuthenticatedTournamentsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+    '/_authenticated/players': {
+      id: '/_authenticated/players'
+      path: '/players'
+      fullPath: '/players'
+      preLoaderRoute: typeof AuthenticatedPlayersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/reservations': {
@@ -415,40 +394,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReservationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/players': {
-      id: '/_authenticated/players'
-      path: '/players'
-      fullPath: '/players'
-      preLoaderRoute: typeof AuthenticatedPlayersRouteImport
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/users/': {
-      id: '/api/users/'
-      path: '/api/users'
-      fullPath: '/api/users/'
-      preLoaderRoute: typeof ApiUsersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/clubs/': {
-      id: '/api/clubs/'
-      path: '/api/clubs'
-      fullPath: '/api/clubs/'
-      preLoaderRoute: typeof ApiClubsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/inventory/': {
-      id: '/_authenticated/inventory/'
-      path: '/inventory'
-      fullPath: '/inventory/'
-      preLoaderRoute: typeof AuthenticatedInventoryIndexRouteImport
+    '/_authenticated/tournaments': {
+      id: '/_authenticated/tournaments'
+      path: '/tournaments'
+      fullPath: '/tournaments'
+      preLoaderRoute: typeof AuthenticatedTournamentsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/metrics': {
+      id: '/api/metrics'
+      path: '/api/metrics'
+      fullPath: '/api/metrics'
+      preLoaderRoute: typeof ApiMetricsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/coaches/': {
       id: '/_authenticated/coaches/'
@@ -457,74 +429,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/users/$id': {
-      id: '/api/users/$id'
-      path: '/api/users/$id'
-      fullPath: '/api/users/$id'
-      preLoaderRoute: typeof ApiUsersIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/coaches/classes': {
+      id: '/_authenticated/coaches/classes'
+      path: '/coaches/classes'
+      fullPath: '/coaches/classes'
+      preLoaderRoute: typeof AuthenticatedCoachesClassesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/api/clubs/$id': {
-      id: '/api/clubs/$id'
-      path: '/api/clubs/$id'
-      fullPath: '/api/clubs/$id'
-      preLoaderRoute: typeof ApiClubsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/settings/users': {
-      id: '/_authenticated/settings/users'
-      path: '/users'
-      fullPath: '/settings/users'
-      preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/ui': {
-      id: '/_authenticated/settings/ui'
-      path: '/ui'
-      fullPath: '/settings/ui'
-      preLoaderRoute: typeof AuthenticatedSettingsUiRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/reservations': {
-      id: '/_authenticated/settings/reservations'
-      path: '/reservations'
-      fullPath: '/settings/reservations'
-      preLoaderRoute: typeof AuthenticatedSettingsReservationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/notifications': {
-      id: '/_authenticated/settings/notifications'
-      path: '/notifications'
-      fullPath: '/settings/notifications'
-      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/general': {
-      id: '/_authenticated/settings/general'
-      path: '/general'
-      fullPath: '/settings/general'
-      preLoaderRoute: typeof AuthenticatedSettingsGeneralRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/clubs': {
-      id: '/_authenticated/settings/clubs'
-      path: '/clubs'
-      fullPath: '/settings/clubs'
-      preLoaderRoute: typeof AuthenticatedSettingsClubsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/inventory/sales-log': {
-      id: '/_authenticated/inventory/sales-log'
-      path: '/inventory/sales-log'
-      fullPath: '/inventory/sales-log'
-      preLoaderRoute: typeof AuthenticatedInventorySalesLogRouteImport
+    '/_authenticated/inventory/': {
+      id: '/_authenticated/inventory/'
+      path: '/inventory'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof AuthenticatedInventoryIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/inventory/dashboard': {
@@ -534,12 +450,96 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/coaches/classes': {
-      id: '/_authenticated/coaches/classes'
-      path: '/coaches/classes'
-      fullPath: '/coaches/classes'
-      preLoaderRoute: typeof AuthenticatedCoachesClassesRouteImport
+    '/_authenticated/inventory/sales-log': {
+      id: '/_authenticated/inventory/sales-log'
+      path: '/inventory/sales-log'
+      fullPath: '/inventory/sales-log'
+      preLoaderRoute: typeof AuthenticatedInventorySalesLogRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/clubs': {
+      id: '/_authenticated/settings/clubs'
+      path: '/clubs'
+      fullPath: '/settings/clubs'
+      preLoaderRoute: typeof AuthenticatedSettingsClubsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/general': {
+      id: '/_authenticated/settings/general'
+      path: '/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof AuthenticatedSettingsGeneralRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/reservations': {
+      id: '/_authenticated/settings/reservations'
+      path: '/reservations'
+      fullPath: '/settings/reservations'
+      preLoaderRoute: typeof AuthenticatedSettingsReservationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/ui': {
+      id: '/_authenticated/settings/ui'
+      path: '/ui'
+      fullPath: '/settings/ui'
+      preLoaderRoute: typeof AuthenticatedSettingsUiRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/users': {
+      id: '/_authenticated/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/clubs/': {
+      id: '/api/clubs/'
+      path: '/api/clubs'
+      fullPath: '/api/clubs/'
+      preLoaderRoute: typeof ApiClubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/clubs/$id': {
+      id: '/api/clubs/$id'
+      path: '/api/clubs/$id'
+      fullPath: '/api/clubs/$id'
+      preLoaderRoute: typeof ApiClubsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/users/': {
+      id: '/api/users/'
+      path: '/api/users'
+      fullPath: '/api/users/'
+      preLoaderRoute: typeof ApiUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/users/$id': {
+      id: '/api/users/$id'
+      path: '/api/users/$id'
+      fullPath: '/api/users/$id'
+      preLoaderRoute: typeof ApiUsersIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
